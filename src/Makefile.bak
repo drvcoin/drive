@@ -1,0 +1,31 @@
+HEADERS = \
+  Action.h \
+  BitSet.h \
+  Util.h \
+  Options.h \
+  Partition.h \
+  Volume.h
+
+SOURCES = \
+  Action.cpp \
+  Util.cpp \
+  Main.cpp \
+  Options.cpp \
+  Volume.cpp \
+  VolumeCell.cpp \
+  VolumeColumn.cpp \
+  VolumeRow.cpp \
+  BitSet.cpp \
+  Partition.cpp
+
+all: dvm
+
+clean:
+	@rm dvm
+
+install:
+	@sudo cp dvm /usr/bin/dvm
+
+dvm: $(SOURCES) $(HEADERS)
+	@echo Building $@
+	@g++ -std=c++11 -msse4.1 -o $@ $(SOURCES) -lcrypto
