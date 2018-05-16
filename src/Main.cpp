@@ -68,7 +68,7 @@ void ProcessFile(const char * path)
 
   if (Options::Action == Action::Mount)
   {
-    uint64_t blockCount = 256*1024*1024ul;
+    uint64_t blockCount = 256;//*1024*1024ul;
     size_t blockSize = 1*1024*1024;
     std::string volumeId = path;
 
