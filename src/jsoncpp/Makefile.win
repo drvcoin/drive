@@ -1,0 +1,6 @@
+# Copyright 2016 FileGear - All Rights Reserved
+
+VCPROJS = jsoncpp.vcxproj
+
+!include $(DEVROOT)/k2bld/Makefile.win
+

@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(DEVROOT)\k2bld\msbuild\Config.props" Condition="'$(DEVROOT)'!=''" />
+  <Import Project="..\..\k2bld\msbuild\Config.props" Condition="'$(DEVROOT)'==''" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B951FCE6-405D-487D-A84E-5462512E9F89}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>jsoncpp</RootNamespace>
+    <ProjectName>jsoncpp</ProjectName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <SrcRoot>$(ROOT_K2LIB)</SrcRoot>
+    <IncludeRoot>$(SrcRoot)\out\include</IncludeRoot>
+  </PropertyGroup>
+  <Import Project="$(ROOT_K2BLD)\msbuild\Cpp.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SrcRoot)\src\external\jsoncpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command><![CDATA[
+mkdir $(IncludeRoot)
+xcopy /e /y $(SrcRoot)\src\external\jsoncpp\include\*.h $(IncludeRoot)
+]]>   </Command>
+      <Message>Copy header files</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="$(SrcRoot)\src\external\jsoncpp\json_reader.cpp" />
+    <ClCompile Include="$(SrcRoot)\src\external\jsoncpp\json_value.cpp" />
+    <ClCompile Include="$(SrcRoot)\src\external\jsoncpp\json_writer.cpp" />
+  </ItemGroup>
+  <Import Project="$(ROOT_K2BLD)\msbuild\Cpp.targets" />
+</Project>

@@ -24,6 +24,10 @@
 #include <sys/stat.h>
 #include <cmath>
 
+#include "BdTypes.h"
+#include "HttpConfig.h"
+#include "BdSession.h"
+
 #include "Options.h"
 #include "cm256.h"
 #include "gf256.h"
@@ -62,6 +66,8 @@ static int xmp_trim(size_t from, size_t len, void * context)
   return 0;
 }
 
+static bdfs::HttpConfig defaultConfig;
+
 void ProcessFile(const char * path)
 {
   printf("Processing: %s\n", path);
@@ -73,6 +79,31 @@ void ProcessFile(const char * path)
     std::string volumeId = path;
 
     Volume volume(volumeId.c_str(), 4, 4, blockCount, blockSize, "HelloWorld");
+
+    // TODO: remove these hard coded partitions
+
+    std::shared_ptr<bdfs::BdSession> sessions[8];
+    std::shared_ptr<bdfs::BdPartition> refs[8];
+
+    for (int i = 0; i < 8; ++i)
+    {
+      char url[256];
+      sprintf(url, "http://localhost:%d", 3000 + i);
+
+      sessions[i] = bdfs::BdSession::CreateSession(url, &defaultConfig);
+
+      char name[256];
+      sprintf(name, "part%d", i);
+
+      char path[256];
+      sprintf(path, "host://Partitions/%s", name);
+
+      refs[i] = std::static_pointer_cast<bdfs::BdPartition>(sessions[i]->CreateObject("Partition", path, name));
+
+      volume.SetPartition(i, new Partition(refs[i], blockCount, blockSize));
+    }
+
+/*
     volume.SetPartition(0, new Partition("part0", blockCount, blockSize));
     volume.SetPartition(1, new Partition("part1", blockCount, blockSize));
     volume.SetPartition(2, new Partition("part2", blockCount, blockSize));
@@ -83,7 +114,7 @@ void ProcessFile(const char * path)
     volume.SetPartition(7, new Partition("part7", blockCount, blockSize));
     //volume.SetPartition(8, new Partition("part8", blockCount, blockSize));
     //volume.SetPartition(9, new Partition("part9", blockCount, blockSize));
-
+*/
     static struct ubd_operations ops = {
       .read = xmp_read,
       .write = xmp_write,
@@ -103,6 +134,9 @@ int main(int argc, char * * argv)
   if (cm256_init()) {
     exit(1);
   }
+
+  defaultConfig.ConnectTimeout(5);
+  defaultConfig.RequestTimeout(5);
 
   for (std::vector<std::string>::iterator itr = Options::Paths.begin(); itr != Options::Paths.end(); itr++)
   {

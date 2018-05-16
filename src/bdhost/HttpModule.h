@@ -22,37 +22,31 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-#include <string>
-#include "BitSet.h"
-#include "Util.h"
+#include "HttpHandler.h"
+#include "HttpContext.h"
 
-namespace dfs
+namespace bdhost
 {
-  class Partition
+  class HttpModule
   {
-  private:
-    std::string partitionId;
-    uint64_t blockCount;
-    size_t blockSize;
-    std::string partitionFolder;
-    std::string partitionMapFile;
-    BitSet partitionMap;
+  public:
+    struct HandlerEntry
+    {
+      std::string verb;
+      HttpHandler* handler;
+    };
 
-    bool FlushMap();
+  private:
+    static std::map<std::string, HandlerEntry>* handlers;
+
+    HttpModule(void)
+    {
+    }
 
   public:
-    Partition(const char * partitionId, uint64_t blockCount, size_t blockSize);
-    Partition(std::string & partitionId, uint64_t blockCount, size_t blockSize);
-    ~Partition();
-
-    const uint64_t BlockCount() const { return blockCount; }
-    const size_t BlockSize() const { return blockSize; }
-
-    bool VerifyBlock(uint64_t index);
-    bool InitBlock(uint64_t index);
-    bool ReadBlock(uint64_t index, void * buffer, size_t size, size_t offset);
-    bool WriteBlock(uint64_t index, const void * buffer, size_t size, size_t offset);
+    static void RegisterHandler(std::string path, std::string verb, HttpHandler* handler);
+    static void Initialize();
+    static void Stop();
+    static bool Dispatch(HttpContext& context);
   };
 }

@@ -25,7 +25,7 @@
 #include <memory.h>
 #include <sys/stat.h>
 
-namespace dfs
+namespace bdhost
 {
   Partition::Partition(const char * partitionId, uint64_t blockCount, size_t blockSize) :
     partitionId(partitionId),
@@ -72,7 +72,7 @@ namespace dfs
       snprintf(fileName, sizeof(fileName), "%s/block-%lx", partitionId.c_str(), index);
       struct stat st;
       return_false_if(stat(fileName, &st) == -1);
-      return_false_if(st.st_size != blockSize);
+      return_false_if((size_t)st.st_size != blockSize);
     }
     return true;
   }
