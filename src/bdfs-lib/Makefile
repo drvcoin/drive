@@ -34,7 +34,6 @@ SRCS = \
 	BdSession.cpp \
 	BdTypes.cpp \
 	Buffer.cpp \
-	HttpClient.cpp \
 	HttpCookies.cpp \
 	HttpRequest.cpp \
 

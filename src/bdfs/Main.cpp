@@ -37,8 +37,6 @@
 
 using namespace dfs;
 
-static int xmpl_debug = 1;
-
 static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
 {
   return ((Volume*)context)->ReadDecrypt(buf, size, offset) ? 0 : -1;

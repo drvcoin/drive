@@ -32,9 +32,9 @@ namespace dfs
   Volume::Volume(const char * volumeId, uint64_t dataCount, uint64_t codeCount, uint64_t blockCount, size_t blockSize, const char * password) :
     zeroBuffer(NULL),
     volumeId(volumeId),
+    blockCount(blockCount),
     dataCount(dataCount),
     codeCount(codeCount),
-    blockCount(blockCount),
     blockSize(blockSize),
     partitions(dataCount+codeCount)
   {

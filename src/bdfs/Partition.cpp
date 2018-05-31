@@ -26,9 +26,9 @@
 namespace dfs
 {
   Partition::Partition(std::shared_ptr<bdfs::BdPartition> obj, uint64_t blockCount, size_t blockSize)
-    : ref(obj)
-    , blockCount(blockCount)
+    : blockCount(blockCount)
     , blockSize(blockSize)
+    , ref(obj)
   {
   }
 
@@ -67,7 +67,7 @@ namespace dfs
     auto result = ref->Write(index, offset, buffer, size);
     if (result->Wait(5000))
     {
-      return result->GetResult() == size;
+      return result->GetResult() == static_cast<ssize_t>(size);
     }
 
     return false;
