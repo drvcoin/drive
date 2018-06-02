@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <chrono>
 #include <string>
 #include <assert.h>
 #include "Global.h"
@@ -225,15 +226,8 @@ namespace bdhost
     
     if (partition.ReadBlock(blockId, buffer, size, offset))
     {
-      std::string encoded;
-      size_t encodedSize = Base64Encoder::GetEncodedLength(size);
-      encoded.resize(encodedSize + 2);
-      encoded[0] = '"';
-
-      encodedSize = Base64Encoder::Encode(buffer, size, &encoded[1], encodedSize);
-      encoded[encodedSize + 1] = '"';
-
-      context.writeResponse(encoded);
+      context.addResponseHeader("Content-Type", "application/octet-stream");
+      context.writeResponse(buffer, size);
     }
     else
     {
@@ -249,25 +243,21 @@ namespace bdhost
   {
     uint64_t blockId = static_cast<uint64_t>(strtoull(context.parameter("block"), nullptr, 10));
     uint32_t offset = static_cast<uint32_t>(strtoul(context.parameter("offset"), nullptr, 10));
-    std::string encoded = context.parameter("data");
+    size_t size = context.bodylen();
+    const void * data = context.body();
 
-    uint32_t size = static_cast<uint32_t>(Base64Encoder::GetDecodedLength(encoded.size()));
-
-    if (blockId >= blockCount || offset >= blockSize)
+    if (blockId >= blockCount || offset >= blockSize || !data || size == 0)
     {
       context.setResponseCode(500);
       context.writeError("Failed", "Invalid arguments", ErrorCode::ARGUMENT_INVALID);
       return;
     }
 
-    uint8_t * buffer = new uint8_t[size];
-    size = Base64Encoder::Decode(encoded.c_str(), encoded.size(), buffer, size);
-
     Partition partition{name.c_str(), blockCount, blockSize};
-    if (partition.WriteBlock(blockId, buffer, size, offset))
+    if (partition.WriteBlock(blockId, data, size, offset))
     {
       char sizeStr[64];
-      sprintf(sizeStr, "%d", size);
+      sprintf(sizeStr, "%llu", (unsigned long long)size);
       context.writeResponse(sizeStr);
     }
     else
@@ -275,8 +265,6 @@ namespace bdhost
       context.setResponseCode(500);
       context.writeError("Failed", "Failed to write block", ErrorCode::GENERIC_ERROR);
     }
-
-    delete[] buffer;
   }
 
 

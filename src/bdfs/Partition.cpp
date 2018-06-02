@@ -51,9 +51,9 @@ namespace dfs
     if (result->Wait(5000))
     {
       auto & buf = result->GetResult();
-      if (buf.Size() == size)
+      if (buf.size() == size)
       {
-        memcpy(buffer, buf.Buf(), size);
+        memcpy(buffer, &buf[0], size);
         return true;
       }
     }

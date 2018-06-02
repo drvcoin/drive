@@ -42,4 +42,17 @@ namespace bdfs
     return session->Call(this->path, method, args, callback);
   }
 
+  bool BdObject::Call(const char * method, CArgs & args, RawCallback callback)
+  { 
+    std::shared_ptr<BdSession> session = BdSession::GetSession(base);
+    if (session.get() == NULL) { return false; }
+    return session->Call(this->path, method, args, callback);
+  }
+
+  bool BdObject::Call(const char * method, CArgs & args, const void * body, size_t len, Callback callback)
+  { 
+    std::shared_ptr<BdSession> session = BdSession::GetSession(base);
+    if (session.get() == NULL) { return false; }
+    return session->Call(this->path, method, args, body, len, callback);
+  }
 }

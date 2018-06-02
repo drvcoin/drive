@@ -32,6 +32,7 @@
 namespace bdfs
 {
   typedef std::function<void(Json::Value&,bool)> JsonCallback;
+  typedef std::function<void(std::string &&, bool)> RawCallback;
 
   class HttpRequest
   {
@@ -42,6 +43,7 @@ namespace bdfs
     std::string domain;
     std::string path;
 
+    std::string contentType;
     std::string postdata;
 
     std::string range;
@@ -66,7 +68,11 @@ namespace bdfs
     void Body(Json::Value & value);
 
     void Get(JsonCallback callback);
+    void Get(RawCallback callback);
     void Post(const Json::Value & data, JsonCallback callback);
+    void Post(const Json::Value & data, RawCallback callback);
+    void Post(const char * type, const void * buf, size_t len, JsonCallback callback);
+    void Post(const char * type, const void * buf, size_t len, RawCallback callback);
 
     static char * EncodeStr(const char* str);
     static void FreeEncodedStr(char * str);

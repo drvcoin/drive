@@ -34,6 +34,7 @@ namespace bdfs
   public:
     typedef std::map<std::string, Json::Value> CArgs;
     typedef std::function<void(Json::Value&, bool)> Callback;
+    typedef std::function<void(std::string &&, bool)> RawCallback;
 
   private:
     std::string base;
@@ -55,5 +56,7 @@ namespace bdfs
     std::string & Type() { return type; }
 
     bool Call(const char * method, CArgs & args, Callback callback);
+    bool Call(const char * method, CArgs & args, RawCallback callback);
+    bool Call(const char * method, CArgs & args, const void * body, size_t len, Callback callback);
   };
 }

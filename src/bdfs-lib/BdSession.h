@@ -25,9 +25,12 @@
 #include "HttpConfig.h"
 #include "BdObject.h"
 #include <string.h>
+#include <json/json.h>
 
 namespace bdfs
 {
+  class HttpRequest;
+
   class BdSession
   {
   private:
@@ -42,6 +45,8 @@ namespace bdfs
 
     BdSession(const char * base, HttpConfig * config);
 
+    HttpRequest * CreateRequest(std::string & path, const char * method, BdObject::CArgs & args, Json::Value & data);
+
   public:
     static std::shared_ptr<BdSession> GetSession(const char * base);
     static std::shared_ptr<BdSession> GetSession(const std::string & base);
@@ -50,6 +55,8 @@ namespace bdfs
     std::string & Base() { return base; }
 
     bool Call(std::string & path, const char * method, BdObject::CArgs & args, BdObject::Callback callback);
+    bool Call(std::string & path, const char * method, BdObject::CArgs & args, BdObject::RawCallback callback);
+    bool Call(std::string & path, const char * method, BdObject::CArgs & args, const void * body, size_t bodyLen, BdObject::Callback callback);
 
     std::shared_ptr<BdObject> CreateObject(const char * name, const char * path, const char * type);
   };

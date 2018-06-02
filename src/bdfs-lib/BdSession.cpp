@@ -99,7 +99,61 @@ namespace bdfs
     return res.str();
   }
 
+
+  HttpRequest * BdSession::CreateRequest(std::string & path, const char * method, BdObject::CArgs & args, Json::Value & data)
+  {
+    std::string pathCopy = path;
+    std::stringstream ss;
+    ss << base;
+    ss << "/api/";
+    std::size_t css = path.find("://");
+    if (css == std::string::npos) { return nullptr; }
+    ss << pathCopy.replace(css, 2, "", 0);
+    ss << '/';
+    ss << method;
+    //ss << this->__EncodeArgs(args);
+    std::string url = ss.str();
+
+    for (auto it = args.begin(); it != args.end(); ++it)
+    {
+      data[it->first] = it->second;
+    }
+
+    return new HttpRequest(url.c_str(), config);
+  }
+
+
   bool BdSession::Call(std::string & path, const char * method, BdObject::CArgs & args, BdObject::Callback callback)
+  {
+    Json::Value data;
+    auto req = CreateRequest(path, method, args, data);
+    if (!req)
+    {
+      return false;
+    }
+    
+    req->Post(data, callback);
+    queue.Enqueue(req);
+    return true;
+  }
+
+
+  bool BdSession::Call(std::string & path, const char * method, BdObject::CArgs & args, BdObject::RawCallback callback)
+  {
+    Json::Value data;
+    auto req = CreateRequest(path, method, args, data);
+    if (!req)
+    {
+      return false;
+    }
+    
+    req->Post(data, callback);
+    queue.Enqueue(req);
+    return true;
+  }
+
+
+  bool BdSession::Call(std::string & path, const char * method, BdObject::CArgs & args, const void * body, size_t bodyLen, BdObject::Callback callback)
   {
     std::string pathCopy = path;
     std::stringstream ss;
@@ -110,23 +164,18 @@ namespace bdfs
     ss << pathCopy.replace(css, 2, "", 0);
     ss << '/';
     ss << method;
-    //ss << this->__EncodeArgs(args);
+    ss << this->__EncodeArgs(args);
     std::string url = ss.str();
-
-    Json::Value data;
-    for (auto it = args.begin(); it != args.end(); ++it)
-    {
-      data[it->first] = it->second;
-    }
 
     HttpRequest * req = new HttpRequest(url.c_str(), config);
     if (req != NULL)
     {
-      req->Post(data, callback);
+      req->Post("application/octet-stream", body, bodyLen, callback);
       queue.Enqueue(req);
     }
     return true;
   }
+
 
   std::shared_ptr<BdObject> BdSession::CreateObject(const char * name, const char * path, const char * type)
   {

@@ -39,6 +39,9 @@ namespace bdhost
     std::map<std::string, std::string>* parameters;
     bool owns_connection;
 
+    const char * _body;
+    size_t _bodylen;
+
     void ParseParameters(char * buf, size_t len);
 
   public:
@@ -51,6 +54,8 @@ namespace bdhost
     virtual const char* parameter(const char* name);
     virtual const char* header(const char* name);
     virtual const char* cookie(const char* name);
+    virtual const void * body();
+    virtual size_t bodylen();
 
     virtual bool isSsl();
     virtual int readRequest(void* data, unsigned int size);

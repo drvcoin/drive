@@ -42,7 +42,9 @@ namespace bdhost
     _path(request_info->uri),
     cookies(NULL),
     parameters(NULL),
-    owns_connection(owns_connection)
+    owns_connection(owns_connection),
+    _body(nullptr),
+    _bodylen(0)
   {
   }
 
@@ -55,6 +57,10 @@ namespace bdhost
     }
     delete cookies;
     delete parameters;
+    if (_body)
+    {
+      delete[] _body;
+    }
   }
 
   const char* MGHttpContext::querystring()
@@ -154,6 +160,48 @@ namespace bdhost
       return (*parameters)[name].c_str();
     else
       return "";
+  }
+
+
+  const void * MGHttpContext::body()
+  {
+    if (!_body && _request_info->request_method &&
+        strcmp(_request_info->request_method, "POST") == 0 &&
+        strcmp(this->header("Content-Type"), "application/octet-stream") == 0)
+    {
+      const char * contentLength = this->header("Content-Length");
+      if (contentLength)
+      {
+        int len = atoi(contentLength);
+        if (len > 0)
+        {
+          char * buf = new char[len];
+          int nread = mg_read(_connection, buf, len);
+          if (nread > 0)
+          {
+            _bodylen = nread;
+            _body = buf;
+          }
+          else
+          {
+            delete[] buf;
+          }
+        }
+      }
+    }
+
+    return _body;
+  }
+
+
+  size_t MGHttpContext::bodylen()
+  {
+    if (this->body())
+    {
+      return _bodylen;
+    }
+
+    return 0;
   }
 
   std::string MGHttpContext::dumpParameters()
