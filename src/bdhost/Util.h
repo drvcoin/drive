@@ -23,6 +23,7 @@
 #pragma once
 
 #include <arpa/inet.h>
+#include <string>
 
 namespace bdhost
 {
@@ -34,4 +35,6 @@ namespace bdhost
 
   uint64_t htonll(uint64_t val);
   uint64_t ntohll(uint64_t val);
+
+  std::string uuidgen();
 }

@@ -41,6 +41,10 @@ namespace bdfs
     std::string name;
     std::string type;
 
+  protected:
+
+    const std::string & Base() const  { return base; }
+
   public:
     BdObject(const char * base, const char * name, const char * path, const char * type);
 

@@ -25,6 +25,9 @@
 #include <unistd.h>
 
 #include <string>
+#include <assert.h>
+#include "Global.h"
+#include "Util.h"
 #include "HttpHandlerRegister.h"
 #include "Partition.h"
 #include "Base64Encoder.h"
@@ -57,19 +60,95 @@ namespace bdhost
     auto pos = path.find('/', sizeof(PATH));
     if (pos == std::string::npos)
     {
-      context.setResponseCode(404);
-      context.writeError("Failed", "Object not found", ErrorCode::OBJECT_NOT_FOUND);
-      return;
+      auto action = path.substr(sizeof(PATH));
+
+      this->OnFolderRequest(context, action);
     }
+    else
+    {
+      auto name = path.substr(sizeof(PATH), pos - sizeof(PATH));
+      auto action = pos < path.size() - 1 ? path.substr(pos + 1) : std::string();
 
-    auto name = path.substr(sizeof(PATH), pos - sizeof(PATH));
-    auto action = pos < path.size() - 1 ? path.substr(pos + 1) : std::string();
-
-    this->OnRequest(context, name, action);
+      this->OnPartitionRequest(context, name, action);
+    }
   }
 
 
-  void PartitionHandler::OnRequest(HttpContext & context, const std::string & name, const std::string & action)
+  void PartitionHandler::OnFolderRequest(HttpContext & context, const std::string & action)
+  {
+    if (action == "NewPartition")
+    {
+      this->OnCreatePartition(context);
+    }
+    else
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Action not supported", ErrorCode::NOT_SUPPORTED);
+    }
+  }
+
+
+  void PartitionHandler::OnCreatePartition(HttpContext & context)
+  {
+    // TODO: add reference to contract and prevent creation on executed contract
+    // TODO: validate consumer and provider identity from contract
+
+    assert(g_contracts);
+
+    auto contract = g_contracts->LoadContract(context.parameter("contract"));
+    if (!contract)
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Contract not found", ErrorCode::CONTRACT_NOT_FOUND);
+      return;
+    }
+
+    uint64_t blockSize = static_cast<uint64_t>(strtoull(context.parameter("block"), nullptr, 10));
+    if (blockSize == 0)
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Block size should not be 0", ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    uint64_t blockCount = contract->Size() / blockSize;
+
+    if (blockCount == 0)
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Block size is too large", ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    std::string uuid = uuidgen();
+
+    mkdir(uuid.c_str(), 0755);
+
+    FILE * config = fopen((uuid + "/.config").c_str(), "w");
+    if (!config)
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Failed to initialize partition", ErrorCode::GENERIC_ERROR);
+      return;
+    }
+
+    fwrite(&blockCount, 1, sizeof(blockCount), config);
+    fwrite(&blockSize, 1, sizeof(blockSize), config);
+
+    fclose(config);
+
+    std::stringstream res;
+    res << "{"
+        << "\"Name\":\"" << uuid << "\","
+        << "\"Path\":\"host://Partitions/" << uuid << "\","
+        << "\"Type\":\"Partition\""
+        << "}";
+
+    context.writeResponse(res.str());
+  }
+
+
+  void PartitionHandler::OnPartitionRequest(HttpContext & context, const std::string & name, const std::string & action)
   {
     bool found = false;
     struct stat st = {0};
@@ -103,7 +182,7 @@ namespace bdhost
     if (action.empty())
     {
       std::stringstream res;
-      res << "{\"Name\":\"" << name << "\",\"Path\":\"host://Partitions/" << name << "\",\"Type\":\"Partition\"";
+      res << "{\"Name\":\"" << name << "\",\"Path\":\"host://Partitions/" << name << "\",\"Type\":\"Partition\"}";
       context.writeResponse(res.str());
     }
     else if (action == "ReadBlock")
@@ -113,6 +192,15 @@ namespace bdhost
     else if (action == "WriteBlock")
     {
       this->OnWriteBlock(context, name, blockCount, blockSize);
+    }
+    else if (action == "Delete")
+    {
+      this->OnDelete(context, name);
+    }
+    else
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Action not supported", ErrorCode::NOT_SUPPORTED);
     }
   }
 
@@ -189,6 +277,19 @@ namespace bdhost
     }
 
     delete[] buffer;
+  }
 
+
+  void PartitionHandler::OnDelete(HttpContext & context, const std::string & name)
+  {
+    // TODO: release the reference to contract
+
+    std::stringstream cmd;
+    cmd << "rm -rf " << name;
+
+    system(cmd.str().c_str());
+
+    context.writeResponse("true");
   }
 }
+

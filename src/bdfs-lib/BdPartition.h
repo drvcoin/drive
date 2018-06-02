@@ -40,5 +40,7 @@ namespace bdfs
     AsyncResultPtr<ssize_t> Write(uint64_t blockId, uint32_t offset, const void * data, uint32_t size);
 
     AsyncResultPtr<Buffer> Read(uint64_t blockId, uint32_t offset, uint32_t size);
+
+    AsyncResultPtr<bool> Delete();
   };
 }

@@ -22,23 +22,19 @@
 
 #pragma once
 
-#include "Action.h"
+#include <memory>
+#include "AsyncResult.h"
+#include "BdPartition.h"
+#include "BdObject.h"
 
-#include <string>
-#include <vector>
-
-namespace dfs
+namespace bdfs
 {
-  class Options
+  class BdPartitionFolder : public BdObject
   {
   public:
-    static Action::T Action;
-    static std::string Name;
-    static uint16_t DataBlocks;
-    static uint16_t CodeBlocks;
-    static std::string Repo;
-    static std::vector<std::string> Paths;
+    
+    BdPartitionFolder(const char * base, const char * name, const char * path, const char * type);
 
-    static void Init(int argc, char ** argv);
+    AsyncResultPtr<std::shared_ptr<BdPartition>> CreatePartition(const char * contract, uint32_t blockSize);
   };
 }

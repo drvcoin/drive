@@ -29,6 +29,7 @@ include $(ROOT)/Config.mk
 SRCS = \
 	Base64Encoder.cpp \
 	BitSet.cpp \
+	Global.cpp \
 	HttpModule.cpp \
 	HttpServer.cpp \
 	Main.cpp \
@@ -41,11 +42,12 @@ SRCS = \
 VPATH = $(BINDIR)
 
 LIBS = \
+	libbdcontract.a \
 	libmongoose.a \
   libjson.a \
 
-SYSLIBS = -lcurl -ldl -pthread
+SYSLIBS = -lcurl -luuid -ldl -pthread
 
-CCFLAGS = -I../jsoncpp/include -I../mongoose -fPIC -std=c++17
+CCFLAGS = -I../jsoncpp/include -I../mongoose -I../bdcontract-lib -fPIC -std=c++17
 
 include $(ROOT)/Cpp.mk

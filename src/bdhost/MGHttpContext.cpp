@@ -29,6 +29,7 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <json/json.h>
 
 namespace bdhost
 {
@@ -90,6 +91,18 @@ namespace bdhost
       const char* value = strtok_r(NULL, "&", &pairLast);
       if (!value) continue;
       mg_url_decode(value, strlen(value), buffer, len + 1, 1);
+
+      if (buffer[0] == '"')
+      {
+        Json::Value json;
+        Json::Reader reader;
+        if (reader.parse(buffer, strlen(buffer), json, false) && json.isString() && !json.isNull())
+        {
+          (*parameters)[name] = json.asString();
+          continue;
+        }
+      }
+
       (*parameters)[name] = buffer;
     }
 

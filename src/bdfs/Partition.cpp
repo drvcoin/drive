@@ -72,5 +72,17 @@ namespace dfs
 
     return false;
   }
+
+
+  bool Partition::Delete()
+  {
+    auto result = ref->Delete();
+    if (result->Wait(5000))
+    {
+      return result->GetResult();
+    }
+
+    return false;
+  }
 }
 

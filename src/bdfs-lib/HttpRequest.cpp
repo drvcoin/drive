@@ -129,6 +129,9 @@ namespace bdfs
 
     if (!this->postdata.empty())
     {
+#ifdef DEBUG_HTTP
+      printf("POST: %s\n", this->postdata.c_str());
+#endif
       curl_easy_setopt(curl, CURLOPT_POSTFIELDS, this->postdata.c_str());
       curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, this->postdata.length());
     }
@@ -193,6 +196,9 @@ namespace bdfs
       {
         Json::Reader reader;
         std::string contents = body->str();
+#ifdef DEBUG_HTTP
+        printf("RESPONSE: %s\n", contents.c_str());
+#endif
         if (reader.parse(contents.c_str(), contents.size(), value, false))
         {
           isError = value.type() == Json::objectValue &&

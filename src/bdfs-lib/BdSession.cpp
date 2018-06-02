@@ -57,7 +57,7 @@ namespace bdfs
     return GetSession(strBase);
   }
 
-  std::shared_ptr<BdSession> BdSession::GetSession(std::string & base)
+  std::shared_ptr<BdSession> BdSession::GetSession(const std::string & base)
   {
     ReadLock _(mutex);
     return sessions[base];

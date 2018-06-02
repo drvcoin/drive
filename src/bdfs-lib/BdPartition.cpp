@@ -51,7 +51,7 @@ namespace bdfs
 
     args["data"] = std::string(static_cast<const char *>(buf.Buf()), len);
 
-    AsyncResultPtr<ssize_t> result = std::make_shared<AsyncResult<ssize_t>>();
+    auto result = std::make_shared<AsyncResult<ssize_t>>();
 
     bool rtn = this->Call("WriteBlock", args,
       [result](Json::Value & response, bool error)
@@ -78,7 +78,7 @@ namespace bdfs
     args["offset"] = Json::Value::UInt(offset);
     args["size"] = Json::Value::UInt(size);
 
-    AsyncResultPtr<Buffer> result = std::make_shared<AsyncResult<Buffer>>();
+    auto result = std::make_shared<AsyncResult<Buffer>>();
 
     bool rtn = this->Call("ReadBlock", args,
       [result, size](Json::Value & response, bool error)
@@ -99,6 +99,30 @@ namespace bdfs
           buf.Resize(std::min<uint32_t>(len, size));
 
           result->Complete(std::move(buf));
+        }
+      }
+    );
+
+    return rtn ? result : nullptr;
+  }
+
+
+  AsyncResultPtr<bool> BdPartition::Delete()
+  {
+    BdObject::CArgs args;
+
+    auto result = std::make_shared<AsyncResult<bool>>();
+
+    bool rtn = this->Call("Delete", args,
+      [result](Json::Value & response, bool error)
+      {
+        if (error || !response.isBool())
+        {
+          result->Complete(false);
+        }
+        else
+        {
+          result->Complete(response.asBool());
         }
       }
     );

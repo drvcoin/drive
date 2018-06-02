@@ -20,25 +20,9 @@
   SOFTWARE.
 */
 
-#pragma once
+#include "Global.h"
 
-#include "Action.h"
-
-#include <string>
-#include <vector>
-
-namespace dfs
+namespace bdhost
 {
-  class Options
-  {
-  public:
-    static Action::T Action;
-    static std::string Name;
-    static uint16_t DataBlocks;
-    static uint16_t CodeBlocks;
-    static std::string Repo;
-    static std::vector<std::string> Paths;
-
-    static void Init(int argc, char ** argv);
-  };
+  bdcontract::ContractRepository * g_contracts = nullptr;
 }

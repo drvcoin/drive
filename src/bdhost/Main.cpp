@@ -28,30 +28,9 @@
 #include "Options.h"
 #include "HttpModule.h"
 #include "HttpServer.h"
+#include "Global.h"
 
-static int Listen()
-{
-  bdhost::HttpModule::Initialize();
-
-  bdhost::HttpServer server;
-
-  if (!server.Start(bdhost::Options::port, nullptr))
-  {
-    printf("[Main]: failed to start http server on port %u.\n", bdhost::Options::port);
-    return -1;
-  }
-
-  while (server.IsRunning())
-  {
-    sleep(1);
-  }
-
-  bdhost::HttpModule::Stop();
-
-  return 0;
-}
-
-
+/*
 static int Init(const std::string & name)
 {
   mkdir(name.c_str(), 0755);
@@ -72,18 +51,30 @@ static int Init(const std::string & name)
 
   return 0;
 }
-
+*/
 
 int main(int argc, const char ** argv)
 {
   bdhost::Options::Init(argc, argv);
 
-  if (bdhost::Options::action == "init")
+  bdhost::g_contracts = new bdcontract::ContractRepository(bdhost::Options::repo.c_str());
+
+  bdhost::HttpModule::Initialize();
+
+  bdhost::HttpServer server;
+
+  if (!server.Start(bdhost::Options::port, nullptr))
   {
-    return Init(bdhost::Options::name);
+    printf("[Main]: failed to start http server on port %u.\n", bdhost::Options::port);
+    return -1;
   }
-  else if (bdhost::Options::action == "listen")
+
+  while (server.IsRunning())
   {
-    return Listen();
+    sleep(1);
   }
+
+  bdhost::HttpModule::Stop();
+
+  return 0;
 }

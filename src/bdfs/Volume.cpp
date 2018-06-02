@@ -289,6 +289,19 @@ namespace dfs
     return true;
   }
 
+
+  bool Volume::Delete()
+  {
+    bool success = true;
+    for (auto partition : this->partitions)
+    {
+      success &= partition->Delete();
+    }
+
+    return success;
+  }
+
+
   bool Volume::__VerifyCell(uint64_t row, uint64_t column)
   {
     return_false_if_msg(column >= partitions.size(), "Error: param 'column' is out of range: %ld >= %ld\n", column, partitions.size());
