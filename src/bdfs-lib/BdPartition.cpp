@@ -42,18 +42,9 @@ namespace bdfs
     args["block"] = Json::Value::UInt(blockId);
     args["offset"] = Json::Value::UInt(offset);
 
-    size_t len = Base64Encoder::GetEncodedLength(size);
+    auto result = std::make_shared<AsyncResult<ssize_t>>();
 
-    Buffer buf;
-    buf.Resize(len);
-
-    len = Base64Encoder::Encode(static_cast<const uint8_t *>(data), size, static_cast<char *>(buf.Buf()), len);
-
-    args["data"] = std::string(static_cast<const char *>(buf.Buf()), len);
-
-    AsyncResultPtr<ssize_t> result = std::make_shared<AsyncResult<ssize_t>>();
-
-    bool rtn = this->Call("WriteBlock", args,
+    bool rtn = this->Call("WriteBlock", args, data, size,
       [result](Json::Value & response, bool error)
       {
         if (error || !response.isInt())
@@ -71,34 +62,49 @@ namespace bdfs
   }
 
 
-  AsyncResultPtr<Buffer> BdPartition::Read(uint64_t blockId, uint32_t offset, uint32_t size)
+  AsyncResultPtr<std::string> BdPartition::Read(uint64_t blockId, uint32_t offset, uint32_t size)
   {
     BdObject::CArgs args;
     args["block"] = Json::Value::UInt(blockId);
     args["offset"] = Json::Value::UInt(offset);
     args["size"] = Json::Value::UInt(size);
 
-    AsyncResultPtr<Buffer> result = std::make_shared<AsyncResult<Buffer>>();
+    auto result = std::make_shared<AsyncResult<std::string>>();
 
     bool rtn = this->Call("ReadBlock", args,
-      [result, size](Json::Value & response, bool error)
+      [result, size](std::string && data, bool error)
       {
-        if (error || !response.isString())
+        if (error)
         {
-          result->Complete(Buffer());
+          result->Complete(std::string());
         }
         else
         {
-          const std::string & data = response.asString();
+          result->Complete(std::move(data));
+        }
+      }
+    );
 
-          size_t len = Base64Encoder::GetDecodedLength(data.size());
-          Buffer buf;
-          buf.Resize(len);
+    return rtn ? result : nullptr;
+  }
 
-          len = Base64Encoder::Decode(data.c_str(), data.size(), static_cast<uint8_t *>(buf.Buf()), len);
-          buf.Resize(std::min<uint32_t>(len, size));
 
-          result->Complete(std::move(buf));
+  AsyncResultPtr<bool> BdPartition::Delete()
+  {
+    BdObject::CArgs args;
+
+    auto result = std::make_shared<AsyncResult<bool>>();
+
+    bool rtn = this->Call("Delete", args,
+      [result](Json::Value & response, bool error)
+      {
+        if (error || !response.isBool())
+        {
+          result->Complete(false);
+        }
+        else
+        {
+          result->Complete(response.asBool());
         }
       }
     );

@@ -22,42 +22,22 @@
 
 ROOT = $(realpath ../..)
 
-TARGETEXE = drive
+TARGETEXE = bdcontract
 
 include $(ROOT)/Config.mk
 
-HEADERS = \
-  Action.h \
-  BitSet.h \
-  Util.h \
-  Options.h \
-  Partition.h \
-  Volume.h
-
 SRCS = \
-  Action.cpp \
-  Util.cpp \
   Main.cpp \
   Options.cpp \
-  Volume.cpp \
-  VolumeCell.cpp \
-  VolumeColumn.cpp \
-  VolumeRow.cpp \
-  BitSet.cpp \
-  Partition.cpp
 
 VPATH = $(BINDIR)
 
 LIBS = \
-	libbdfs.a \
 	libbdcontract.a \
 	libjson.a \
-  $(ROOT)/../ubd/out/lib/ubd.a \
-  $(ROOT)/../cm256/out/lib/cm256.a
-
 
 TARGET = drive
-CCFLAGS = -std=c++17 -msse4.1 -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib
+CCFLAGS = -std=c++17 -msse4.1 -I../jsoncpp/include -I../bdcontract-lib
 
 SYSLIBS = -lcrypto -lcurl -ldl -pthread
 

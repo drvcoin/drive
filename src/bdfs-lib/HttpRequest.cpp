@@ -129,8 +129,20 @@ namespace bdfs
 
     if (!this->postdata.empty())
     {
+#ifdef DEBUG_HTTP
+      printf("POST: %s\n", this->postdata.c_str());
+#endif
       curl_easy_setopt(curl, CURLOPT_POSTFIELDS, this->postdata.c_str());
       curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, this->postdata.length());
+    }
+
+    if (!this->contentType.empty())
+    {
+      struct curl_slist * headers = nullptr;
+      char typeBuf[256];
+      sprintf(typeBuf, "Content-Type:%s", this->contentType.c_str());
+      headers = curl_slist_append(headers, typeBuf);
+      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     }
 
     std::string cookie;
@@ -193,6 +205,9 @@ namespace bdfs
       {
         Json::Reader reader;
         std::string contents = body->str();
+#ifdef DEBUG_HTTP
+        printf("RESPONSE: %s\n", contents.c_str());
+#endif
         if (reader.parse(contents.c_str(), contents.size(), value, false))
         {
           isError = value.type() == Json::objectValue &&
@@ -208,7 +223,30 @@ namespace bdfs
     };
   }
 
-  void HttpRequest::Post(const Json::Value & data, JsonCallback callback)
+  void HttpRequest::Get(RawCallback callback)
+  {
+    std::stringstream * body = new std::stringstream();
+
+    bodyCallback = [=](char* ptr, size_t size){
+      body->write(ptr, size);
+    };
+
+    completeCallback = [=](bool isError) {
+      std::string contents;
+      if (!isError)
+      {
+        contents = body->str();
+#ifdef DEBUG_HTTP
+        printf("RESPONSE: %s\n", contents.c_str());
+#endif
+      }
+      delete body;
+      callback(std::move(contents), isError);
+    };
+  }
+
+
+  static std::string postImpl(const Json::Value & data)
   {
     std::stringstream rs;
     if (!data.empty())
@@ -218,25 +256,73 @@ namespace bdfs
         Json::FastWriter writer;
         for (auto it = data.begin(); it != data.end(); ++it)
         {
-          char * value = this->EncodeStr(writer.write(*it).c_str());
+          char * value = HttpRequest::EncodeStr(writer.write(*it).c_str());
           if (rs.tellp() > 0)
           {
             rs << "&";
           }
           rs << it.key().asString() << "=" << value;
-          this->FreeEncodedStr(value);
+          HttpRequest::FreeEncodedStr(value);
         }
 
-        this->postdata = rs.str();
+        return rs.str();
       }
       else
       {
-        this->postdata = data.toStyledString();
+        return data.toStyledString();
       }
     }
 
+    return std::string();
+  }
+
+  void HttpRequest::Post(const Json::Value & data, JsonCallback callback)
+  {
+    this->postdata = postImpl(data);
     this->Get(callback);
   }
+
+
+  void HttpRequest::Post(const Json::Value & data, RawCallback callback)
+  {
+    this->postdata = postImpl(data);
+    this->Get(callback);
+  }
+
+
+  void HttpRequest::Post(const char * type, const void * buf, size_t len, JsonCallback callback)
+  {
+    if (!buf || len == 0)
+    {
+      return;
+    }
+
+    if (type)
+    {
+      this->contentType = type;
+    }
+
+    this->postdata = std::string(static_cast<const char *>(buf), len);
+    this->Get(callback);
+  }
+
+
+  void HttpRequest::Post(const char * type, const void * buf, size_t len, RawCallback callback)
+  {
+    if (!buf || len == 0)
+    {
+      return;
+    }
+
+    if (type)
+    {
+      this->contentType = type;
+    }
+
+    this->postdata = std::string(static_cast<const char *>(buf), len);
+    this->Get(callback);
+  }
+
 
   char * HttpRequest::EncodeStr(const char* str)
   {

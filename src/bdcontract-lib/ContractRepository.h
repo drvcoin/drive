@@ -20,27 +20,29 @@
   SOFTWARE.
 */
 
-#pragma once
-
-#include <stdint.h>
-#include <stdlib.h>
-#include <memory>
 #include <string>
-#include "BdObject.h"
-#include "AsyncResult.h"
+#include <memory>
+#include <vector>
+#include "Contract.h"
 
-namespace bdfs
+namespace bdcontract
 {
-  class BdPartition : public BdObject
+  class ContractRepository
   {
   public:
 
-    BdPartition(const char * base, const char * name, const char * path, const char * type);
+    explicit ContractRepository(const char * rootPath);
 
-    AsyncResultPtr<ssize_t> Write(uint64_t blockId, uint32_t offset, const void * data, uint32_t size);
+    bool SaveContract(const Contract & contract) const;
 
-    AsyncResultPtr<std::string> Read(uint64_t blockId, uint32_t offset, uint32_t size);
+    std::unique_ptr<Contract> LoadContract(const char * name) const;
 
-    AsyncResultPtr<bool> Delete();
+    void DeleteContract(const char * name) const;
+
+    std::vector<std::string> GetContractNames() const;
+
+  private:
+
+    std::string root;
   };
 }

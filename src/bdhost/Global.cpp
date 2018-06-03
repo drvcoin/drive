@@ -20,27 +20,9 @@
   SOFTWARE.
 */
 
-#pragma once
+#include "Global.h"
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <memory>
-#include <string>
-#include "BdObject.h"
-#include "AsyncResult.h"
-
-namespace bdfs
+namespace bdhost
 {
-  class BdPartition : public BdObject
-  {
-  public:
-
-    BdPartition(const char * base, const char * name, const char * path, const char * type);
-
-    AsyncResultPtr<ssize_t> Write(uint64_t blockId, uint32_t offset, const void * data, uint32_t size);
-
-    AsyncResultPtr<std::string> Read(uint64_t blockId, uint32_t offset, uint32_t size);
-
-    AsyncResultPtr<bool> Delete();
-  };
+  bdcontract::ContractRepository * g_contracts = nullptr;
 }

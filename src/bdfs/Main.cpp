@@ -23,6 +23,9 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <cmath>
+#include <limits>
+#include <unistd.h>
+#include <json/json.h>
 
 #include "BdTypes.h"
 #include "HttpConfig.h"
@@ -34,6 +37,9 @@
 #include "ubd.h"
 
 #include "Volume.h"
+#include "BdPartitionFolder.h"
+#include "Buffer.h"
+#include "ContractRepository.h"
 
 using namespace dfs;
 
@@ -66,53 +72,87 @@ static int xmp_trim(size_t from, size_t len, void * context)
 
 static bdfs::HttpConfig defaultConfig;
 
-void ProcessFile(const char * path)
+
+std::unique_ptr<Volume> LoadVolume(const std::string & name)
+{
+  FILE * file = fopen((name + ".config").c_str(), "r");
+  if (!file)
+  {
+    return nullptr;
+  }
+
+  bdfs::Buffer buffer;
+  buffer.Resize(BUFSIZ);
+  size_t offset = 0;
+
+  size_t bytes;
+  while ((bytes = fread(static_cast<char *>(buffer.Buf()) + offset, 1, BUFSIZ, file)) == BUFSIZ)
+  {
+    offset = buffer.Size();
+    buffer.Resize(buffer.Size() + BUFSIZ);
+  }
+
+  fclose(file);
+
+  Json::Reader reader;
+  Json::Value json;
+  if (!reader.parse(static_cast<const char *>(buffer.Buf()), offset + bytes, json, false) ||
+      !json.isObject() ||
+      !json["blockSize"].isIntegral() ||
+      !json["blockCount"].isIntegral() ||
+      !json["dataBlocks"].isIntegral() ||
+      !json["codeBlocks"].isIntegral() ||
+      !json["partitions"].isArray())
+  {
+    return nullptr;
+  }
+
+  size_t blockSize = json["blockSize"].asUInt();
+  uint64_t blockCount = json["blockCount"].asUInt();
+  uint64_t dataBlocks = json["dataBlocks"].asUInt();
+  uint64_t codeBlocks = json["codeBlocks"].asUInt();
+ 
+  if (json["partitions"].size() < dataBlocks + codeBlocks)
+  {
+    return nullptr;
+  }
+
+  auto volume = std::make_unique<Volume>(name.c_str(), dataBlocks, codeBlocks, blockCount, blockSize, "HelloWorld");
+
+  for (size_t i = 0; i < json["partitions"].size(); ++i)
+  {
+    auto & config = json["partitions"][i];
+    if (!config["name"].isString() || !config["provider"].isString())
+    {
+      return nullptr;
+    }
+
+    auto session = bdfs::BdSession::CreateSession(config["provider"].asCString(), &defaultConfig);
+    auto name = config["name"].asString();
+    auto path = "host://Partitions/" + name;
+    auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
+
+    volume->SetPartition(i, new Partition(partition, blockCount, blockSize));
+  }
+
+  return volume;
+}
+
+
+void ProcessFile(const std::string & name, const char * path)
 {
   printf("Processing: %s\n", path);
 
   if (Options::Action == Action::Mount)
   {
+#if 0
     uint64_t blockCount = 256;//*1024*1024ul;
     size_t blockSize = 1*1024*1024;
     std::string volumeId = path;
+#endif
 
-    Volume volume(volumeId.c_str(), 4, 4, blockCount, blockSize, "HelloWorld");
+    auto volume = LoadVolume(name);
 
-    // TODO: remove these hard coded partitions
-
-    std::shared_ptr<bdfs::BdSession> sessions[8];
-    std::shared_ptr<bdfs::BdPartition> refs[8];
-
-    for (int i = 0; i < 8; ++i)
-    {
-      char url[256];
-      sprintf(url, "http://localhost:%d", 3000 + i);
-
-      sessions[i] = bdfs::BdSession::CreateSession(url, &defaultConfig);
-
-      char name[256];
-      sprintf(name, "part%d", i);
-
-      char path[256];
-      sprintf(path, "host://Partitions/%s", name);
-
-      refs[i] = std::static_pointer_cast<bdfs::BdPartition>(sessions[i]->CreateObject("Partition", path, name));
-
-      volume.SetPartition(i, new Partition(refs[i], blockCount, blockSize));
-    }
-
-/*
-    volume.SetPartition(0, new Partition("part0", blockCount, blockSize));
-    volume.SetPartition(1, new Partition("part1", blockCount, blockSize));
-    volume.SetPartition(2, new Partition("part2", blockCount, blockSize));
-    volume.SetPartition(3, new Partition("part3", blockCount, blockSize));
-    volume.SetPartition(4, new Partition("part4", blockCount, blockSize));
-    volume.SetPartition(5, new Partition("part5", blockCount, blockSize));
-    volume.SetPartition(6, new Partition("part6", blockCount, blockSize));
-    volume.SetPartition(7, new Partition("part7", blockCount, blockSize));
-    //volume.SetPartition(8, new Partition("part8", blockCount, blockSize));
-    //volume.SetPartition(9, new Partition("part9", blockCount, blockSize));
-*/
     static struct ubd_operations ops = {
       .read = xmp_read,
       .write = xmp_write,
@@ -121,9 +161,100 @@ void ProcessFile(const char * path)
       .trim = xmp_trim
     };
 
-    ubd_register(path, volume.DataSize(), &ops, (void *)&volume);
+    ubd_register(path, volume->DataSize(), &ops, (void *)volume.get());
   }
 }
+
+
+static void CreateVolume(const std::string & volumeName)
+{
+  std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
+
+  uint64_t size = std::numeric_limits<uint64_t>::max();
+
+  size_t blockSize = 1*1024*1024;
+  
+  bdcontract::ContractRepository repo{Options::Repo.c_str()};
+
+  for (const auto & name : repo.GetContractNames())
+  {
+    auto ptr = repo.LoadContract(name.c_str());
+    if (ptr && ptr->Size() > blockSize)
+    {
+      size = std::min(ptr->Size(), size);
+      contracts.emplace_back(std::move(ptr));
+    }
+  }
+
+  if (contracts.size() < Options::DataBlocks + Options::CodeBlocks)
+  {
+    printf("Not enough contract.\n");
+    return;
+  }
+
+  Json::Value arr;
+
+  for (size_t i = 0; i < Options::DataBlocks + Options::CodeBlocks; ++i)
+  {
+    auto session = bdfs::BdSession::CreateSession(contracts[i]->Provider().c_str(), &defaultConfig);
+    auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
+      session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
+    auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
+    if (!result->Wait(5000) || !result->GetResult())
+    {
+      printf("Failed to create on partition from contract '%s'\n", contracts[i]->Name().c_str());
+      return;
+    }
+
+    auto obj = result->GetResult();
+
+    Json::Value partition;
+    partition["name"] = obj->Name();
+    partition["provider"] = contracts[i]->Provider();
+    
+    arr.append(partition);
+  }
+
+  Json::Value volume;
+  volume["blockSize"] = Json::Value::UInt(blockSize);
+  volume["blockCount"] = Json::Value::UInt(size / blockSize);
+  volume["dataBlocks"] = Json::Value::UInt(Options::DataBlocks);
+  volume["codeBlocks"] = Json::Value::UInt(Options::CodeBlocks);
+  volume["partitions"] = arr;
+
+  std::string result = volume.toStyledString();
+
+  FILE * file = fopen((volumeName + ".config").c_str(), "w");
+  if (!file)
+  {
+    printf("Failed to create volume config file.\n");
+    return;
+  }
+
+  fwrite(result.c_str(), 1, result.size(), file);
+
+  fclose(file);
+}
+
+
+static void DeleteVolume(const std::string & name)
+{
+  auto volume = LoadVolume(name);
+  if (!volume)
+  {
+    printf("Failed to load volume.\n");
+    return;
+  }
+
+  if (!volume->Delete())
+  {
+    printf("Failed to delete volume.\n");
+    return;
+  }
+
+  unlink((name + ".config").c_str());
+}
+
 
 int main(int argc, char * * argv)
 {
@@ -136,9 +267,20 @@ int main(int argc, char * * argv)
   defaultConfig.ConnectTimeout(5);
   defaultConfig.RequestTimeout(5);
 
-  for (std::vector<std::string>::iterator itr = Options::Paths.begin(); itr != Options::Paths.end(); itr++)
+  if (Options::Action == Action::Mount)
   {
-    ProcessFile((*itr).c_str());
+    for (std::vector<std::string>::iterator itr = Options::Paths.begin(); itr != Options::Paths.end(); itr++)
+    {
+      ProcessFile(Options::Name, (*itr).c_str());
+    }
+  }
+  else if (Options::Action == Action::Create)
+  {
+    CreateVolume(Options::Name);
+  }
+  else if (Options::Action == Action::Delete)
+  {
+    DeleteVolume(Options::Name);
   }
 
   return 0;

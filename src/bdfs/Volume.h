@@ -117,6 +117,8 @@ namespace dfs
     bool Write(const void * buffer, size_t size, size_t offset);
     bool Read(void * buffer, size_t size, size_t offset);
 
+    bool Delete();
+
     bool __VerifyCell(uint64_t row, uint64_t column);
     bool __WriteCell(uint64_t row, uint64_t column, const void * buffer, size_t size, size_t offset);
     bool __ReadCell(uint64_t row, uint64_t column, void * buffer, size_t size, size_t offset);

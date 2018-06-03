@@ -28,8 +28,10 @@
 namespace dfs
 {
   Action::T Options::Action = Action::Unknown;
-  uint16_t Options::DataBlocks = 6;
-  uint16_t Options::CodeBlocks = 2;
+  std::string Options::Name;
+  uint16_t Options::DataBlocks = 4;
+  uint16_t Options::CodeBlocks = 4;
+  std::string Options::Repo;
   std::vector<std::string> Options::Paths;
 
   extern void Exit(const char * format, ...);
@@ -47,16 +49,27 @@ namespace dfs
 
     printf("Usage: drive {action} [options] [files]\n");
     printf("\n");
-    printf("Actions: create,delete,verify,resize,mount,unmount,daemon\n");
+//    printf("Actions: create,delete,verify,resize,mount,unmount,daemon\n");
+    printf("Actions: create,delete,mount\n");
     printf("\n");
     printf("Options: create\n");
     printf("\n");
-    printf("  -p {path}      Path\n");
+    printf("  -n {name}      Volume name\n");
+    printf("  -r {path}      Contract repository\n");
     printf("  -d {blocks}    Data blocks (1 .. 255)\n");
     printf("  -c {blocks}    Code blocks (1 .. 255)\n");
     printf("  -?|h           Show this help screen\n");
     printf("\n");
-
+    printf("Options: delete\n");
+    printf("\n");
+    printf("  -n {name}      Volume name\n");
+    printf("  -?|h           Show this help screen\n");
+    printf("\n");
+    printf("Options: mount\n");
+    printf("\n");
+    printf("  -n {name}      Volume name\n");
+    printf("  -?|h           Show this help screen\n");
+    printf("\n");
     exit(format == NULL ? 0 : 1);
   }
 
@@ -69,6 +82,10 @@ namespace dfs
       if (strcmp(arg, "-?") == 0 || strcmp(arg, "-h") == 0)
       {
         Usage();
+      }
+      else if (strcmp(arg, "-n") == 0)
+      {
+        Options::Name = argv[++i];
       }
       else if (strcmp(arg, "-d") == 0)
       {
@@ -88,6 +105,10 @@ namespace dfs
         }
         Options::CodeBlocks = (uint16_t)val;
       }
+      else if (strcmp(arg, "-r") == 0)
+      {
+        Options::Repo = argv[++i];
+      }
       else if (arg[0] == '-')
       {
         Usage("\nError: Unrecognized option: %s\n", arg);
@@ -102,7 +123,7 @@ namespace dfs
             Usage("\nError: Unknown action: %s\n", argv[i]);
           }
         }
-        else
+        else if (Options::Action == Action::Mount)
         {
           Options::Paths.push_back(arg);
         }
@@ -114,13 +135,16 @@ namespace dfs
       Usage("\nError: No action specified\n");
     }
 
-    uint16_t totalBlocks = Options::DataBlocks + Options::CodeBlocks;
-    if (totalBlocks > 256)
+    if (Options::Action == Action::Create)
     {
-      Usage("\nError: Too many blocks specified: %d (valid: datablocks+codeblocks <= 256)\n", totalBlocks);
+      uint16_t totalBlocks = Options::DataBlocks + Options::CodeBlocks;
+      if (totalBlocks > 256)
+      {
+        Usage("\nError: Too many blocks specified: %d (valid: datablocks+codeblocks <= 256)\n", totalBlocks);
+      }
     }
 
-    if (Paths.size() == 0)
+    if (Options::Action == Action::Mount && Paths.size() == 0)
     {
       Usage("\nError: No files specified\n");
     }

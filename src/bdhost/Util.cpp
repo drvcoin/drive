@@ -20,6 +20,7 @@
   SOFTWARE.
 */
 
+#include <uuid/uuid.h>
 #include "Util.h"
 
 namespace bdhost
@@ -40,5 +41,15 @@ namespace bdhost
 #else
     return val;
 #endif
+  }
+
+
+  std::string uuidgen()
+  {
+    uuid_t obj;
+    uuid_generate(obj);
+    char str[36];
+    uuid_unparse(obj, str);
+    return str;
   }
 }

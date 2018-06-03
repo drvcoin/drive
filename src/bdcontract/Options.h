@@ -22,25 +22,24 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <memory>
 #include <string>
-#include "BdObject.h"
-#include "AsyncResult.h"
+#include <stdint.h>
 
-namespace bdfs
+namespace bdcontract
 {
-  class BdPartition : public BdObject
+  class Options
   {
   public:
+    static std::string action;
 
-    BdPartition(const char * base, const char * name, const char * path, const char * type);
+    static std::string repo;
 
-    AsyncResultPtr<ssize_t> Write(uint64_t blockId, uint32_t offset, const void * data, uint32_t size);
+    static std::string name;
+    static std::string consumer;
+    static std::string provider;
+    static uint64_t size;
 
-    AsyncResultPtr<std::string> Read(uint64_t blockId, uint32_t offset, uint32_t size);
-
-    AsyncResultPtr<bool> Delete();
+    static bool Usage(const char * message = nullptr, ...);
+    static bool Init(int argc, const char ** argv);
   };
 }

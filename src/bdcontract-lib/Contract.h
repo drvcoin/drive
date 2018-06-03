@@ -22,25 +22,38 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdlib.h>
 #include <memory>
 #include <string>
-#include "BdObject.h"
-#include "AsyncResult.h"
 
-namespace bdfs
+namespace bdcontract
 {
-  class BdPartition : public BdObject
+  class Contract
   {
   public:
 
-    BdPartition(const char * base, const char * name, const char * path, const char * type);
+    const std::string & Name() const        { return this->name; }
+    const std::string & Consumer() const    { return this->consumer; }
+    const std::string & Provider() const    { return this->provider; }
+    uint64_t Size() const                   { return this->size; }
 
-    AsyncResultPtr<ssize_t> Write(uint64_t blockId, uint32_t offset, const void * data, uint32_t size);
+    void SetName(std::string val)           { this->name = std::move(val); }
+    void SetConsumer(std::string val)       { this->consumer = std::move(val); }
+    void SetProvider(std::string val)       { this->provider = std::move(val); }
+    void SetSize(uint64_t val)              { this->size = val; }
 
-    AsyncResultPtr<std::string> Read(uint64_t blockId, uint32_t offset, uint32_t size);
+    std::string ToString() const;
 
-    AsyncResultPtr<bool> Delete();
+    static std::unique_ptr<Contract> FromString(const char * str, size_t len);
+    static std::unique_ptr<Contract> FromString(const std::string & str);
+
+  private:
+
+    std::string name;
+
+    std::string consumer;
+
+    std::string provider;
+
+    uint64_t size;
   };
 }

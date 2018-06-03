@@ -34,10 +34,16 @@ namespace bdhost
 
   private:
 
-    void OnRequest(HttpContext & context, const std::string & name, const std::string & action);
+    void OnFolderRequest(HttpContext & context, const std::string & action);
+
+    void OnPartitionRequest(HttpContext & context, const std::string & name, const std::string & action);
 
     void OnReadBlock(HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize);
 
     void OnWriteBlock(HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize);
+
+    void OnDelete(HttpContext & context, const std::string & name);
+
+    void OnCreatePartition(HttpContext & context);
   };
 }

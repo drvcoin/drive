@@ -20,61 +20,49 @@
   SOFTWARE.
 */
 
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <stdio.h>
-#include <mongoose.h>
-#include <unistd.h>
-#include "Options.h"
-#include "HttpModule.h"
-#include "HttpServer.h"
-#include "Global.h"
+#include <json/json.h>
+#include "Contract.h"
 
-/*
-static int Init(const std::string & name)
+namespace bdcontract
 {
-  mkdir(name.c_str(), 0755);
-
-  FILE * config = fopen((name + "/.config").c_str(), "w");
-  if (!config)
+  std::string Contract::ToString() const
   {
-    return -1;
+    Json::Value json;
+    json["name"] = this->name;
+    json["consumer"] = this->consumer;
+    json["provider"] = this->provider;
+    json["size"] = Json::Value::UInt(this->size);
+
+    return json.toStyledString();
   }
 
-  uint64_t blockCount = 256;
-  uint64_t blockSize = 1*1024*1024;
 
-  fwrite(&blockCount, 1, sizeof(blockCount), config);
-  fwrite(&blockSize, 1, sizeof(blockSize), config);
-
-  fclose(config);
-
-  return 0;
-}
-*/
-
-int main(int argc, const char ** argv)
-{
-  bdhost::Options::Init(argc, argv);
-
-  bdhost::g_contracts = new bdcontract::ContractRepository(bdhost::Options::repo.c_str());
-
-  bdhost::HttpModule::Initialize();
-
-  bdhost::HttpServer server;
-
-  if (!server.Start(bdhost::Options::port, nullptr))
+  std::unique_ptr<Contract> Contract::FromString(const char * str, size_t len)
   {
-    printf("[Main]: failed to start http server on port %u.\n", bdhost::Options::port);
-    return -1;
+    Json::Reader reader;
+    Json::Value json;
+    if (!reader.parse(str, len, json, false) ||
+        !json.isObject() ||
+        !json["name"].isString() ||
+        !json["consumer"].isString() ||
+        !json["provider"].isString() ||
+        !json["size"].isIntegral())
+    {
+      return nullptr;
+    }
+
+    auto contract = std::make_unique<Contract>();
+    contract->SetName(json["name"].asString());
+    contract->SetConsumer(json["consumer"].asString());
+    contract->SetProvider(json["provider"].asString());
+    contract->SetSize(json["size"].asUInt());
+
+    return std::move(contract);
   }
 
-  while (server.IsRunning())
+
+  std::unique_ptr<Contract> Contract::FromString(const std::string & str)
   {
-    sleep(1);
+    return FromString(str.c_str(), str.size());
   }
-
-  bdhost::HttpModule::Stop();
-
-  return 0;
 }

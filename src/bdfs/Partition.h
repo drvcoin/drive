@@ -40,6 +40,8 @@ namespace dfs
     bool ReadBlock(uint64_t index, void * buffer, size_t size, size_t offset);
     bool WriteBlock(uint64_t index, const void * buffer, size_t size, size_t offset);
 
+    bool Delete();
+
   private:
 
     uint64_t blockCount;

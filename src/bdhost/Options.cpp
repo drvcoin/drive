@@ -28,11 +28,9 @@
 
 namespace bdhost
 {
-  std::string Options::action;
+  uint16_t Options::port = 80;
 
-  std::string Options::name;
-
-  uint16_t Options::port;
+  std::string Options::repo = ".";
 
 
   bool Options::Usage(const char * message, ...)
@@ -46,12 +44,11 @@ namespace bdhost
       printf("\n");
     }
 
-    printf("Usage: bdhost {action}\n");
+    printf("Usage: bdhost [option]\n");
     printf("\n");
-    printf("Actions:\n");
-    printf("\n");
-    printf("  init <name>     Initialize partition with blockCount=256 and blockSize=1024*1024\n");
-    printf("  listen <port>   Listen on the specified port\n");
+    printf("Options:\n");
+    printf("  -p <port>       port to listen on (default:80)\n");
+    printf("  -r <path>       root path of contract repository (default:.)\n");
     printf("\n");
     exit(message == NULL ? 0 : 1);
   }
@@ -59,34 +56,25 @@ namespace bdhost
 
   bool Options::Init(int argc, const char ** argv)
   {
-    if (argc < 2)
-    {
-      Usage("Error: missing action\n");
-    }
+    #define assert_argument_index(_idx, _name) \
+      if ((_idx) >= argc) { Usage("Missing argument '%s'.\n", _name); }
 
-    action = argv[1];
-
-    if (action == "listen")
+    for (int i = 1; i < argc; ++i)
     {
-      if (argc < 3)
+      if (strcmp(argv[i], "-r") == 0)
       {
-        Usage("Error: missing port\n");
+        assert_argument_index(++i, "path");
+        repo = argv[i];
       }
-
-      port = static_cast<uint16_t>(atoi(argv[2]));
-    }
-    else if (action == "init")
-    {
-      if (argc < 3)
+      else if (strcmp(argv[i], "-p") == 0)
       {
-        Usage("Error: missing name\n");
+        assert_argument_index(++i, "port");
+        port = static_cast<uint16_t>(atoi(argv[i]));
       }
-
-      name = argv[2];
-    }
-    else
-    {
-      Usage("Error: unknown action\n");
+      else
+      {
+        Usage("Error: unknown argument '%s'.\n", argv[i]);
+      }
     }
 
     return true;

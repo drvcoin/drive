@@ -86,6 +86,10 @@ namespace bdhost
 
     virtual const char* cookie(const char* name) = 0;
 
+    virtual const void * body() = 0;
+
+    virtual size_t bodylen() = 0;
+
     virtual std::string dumpParameters() = 0;
 
     virtual bool isSsl() = 0;

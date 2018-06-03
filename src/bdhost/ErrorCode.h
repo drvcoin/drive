@@ -30,8 +30,11 @@ namespace bdhost
 
     GENERIC_ERROR = 1,
 
+    NOT_SUPPORTED = 2,
+
     ARGUMENT_INVALID = 0x101,
     
-    OBJECT_NOT_FOUND = 0x201
+    OBJECT_NOT_FOUND = 0x201,
+    CONTRACT_NOT_FOUND = 0x202
   };
 }

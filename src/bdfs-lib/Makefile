@@ -31,6 +31,7 @@ SRCS = \
 	Base64Encoder.cpp \
 	BdObject.cpp \
 	BdPartition.cpp \
+	BdPartitionFolder.cpp \
 	BdSession.cpp \
 	BdTypes.cpp \
 	Buffer.cpp \
@@ -40,5 +41,9 @@ SRCS = \
   Event.cpp
 
 CCFLAGS = -I../jsoncpp/include -I../mongoose -fPIC -std=c++17
+
+ifneq ($(DEBUG_HTTP),)
+CCFLAGS += -DDEBUG_HTTP
+endif
 
 include $(ROOT)/Cpp.mk

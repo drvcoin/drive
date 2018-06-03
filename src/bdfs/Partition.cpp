@@ -51,9 +51,9 @@ namespace dfs
     if (result->Wait(5000))
     {
       auto & buf = result->GetResult();
-      if (buf.Size() == size)
+      if (buf.size() == size)
       {
-        memcpy(buffer, buf.Buf(), size);
+        memcpy(buffer, &buf[0], size);
         return true;
       }
     }
@@ -68,6 +68,18 @@ namespace dfs
     if (result->Wait(5000))
     {
       return result->GetResult() == static_cast<ssize_t>(size);
+    }
+
+    return false;
+  }
+
+
+  bool Partition::Delete()
+  {
+    auto result = ref->Delete();
+    if (result->Wait(5000))
+    {
+      return result->GetResult();
     }
 
     return false;
