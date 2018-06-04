@@ -127,6 +127,7 @@ namespace bdfs
       curl_easy_setopt(curl, CURLOPT_RANGE, range.c_str());
     }
 
+    struct curl_slist * headers = nullptr;
     if (!this->postdata.empty())
     {
 #ifdef DEBUG_HTTP
@@ -134,14 +135,20 @@ namespace bdfs
 #endif
       curl_easy_setopt(curl, CURLOPT_POSTFIELDS, this->postdata.c_str());
       curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, this->postdata.length());
+
+      // Disable the Expect header which may cause 1 second delay when trying to post data larger than 1K
+      headers = curl_slist_append(headers, "Expect:");
     }
 
     if (!this->contentType.empty())
     {
-      struct curl_slist * headers = nullptr;
       char typeBuf[256];
       sprintf(typeBuf, "Content-Type:%s", this->contentType.c_str());
       headers = curl_slist_append(headers, typeBuf);
+    }
+
+    if (headers)
+    {
       curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     }
 
