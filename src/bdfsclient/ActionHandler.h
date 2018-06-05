@@ -20,71 +20,34 @@
   SOFTWARE.
 */
 
-#pragma once
-#include <stdint.h>
-#pragma pack(push,1)
-namespace bdfs
+#include <map>
+#include "HttpConfig.h"
+#include "Volume.h"
+
+namespace dfs
 {
-  // Block Drive Client Protocol
-  namespace bdcp
+  struct VolumeMeta 
   {
-    enum T : uint8_t
-    {
-      Mount = 0,
-      Unmount,
-      Create,
-      Delete,
-      RequestNBD,
-      Response
-    };
+    std::string volumeName;
+    std::string nbdPath;
+    std::string mountPath;
+    bool isFormatted;
+    bool isMounted;
+  };
 
-    typedef struct
-    {
-      uint32_t length;
-      T type;
-    }BdHdr;
+  class ActionHandler
+  {
+    static std::map<std::string,VolumeMeta*> volumeInfo;
+    static std::map<std::string, bool> nbdInfo;
 
-    typedef struct
-    {
-      BdHdr hdr;
-      uint8_t success;
-      char message[128];
-    }BdResponse;
+    static std::string GetNextNBD();
 
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-      char path[128];
-    }BdMount;
-
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-    }BdUnmount;
-
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-      char repoName[128];
-      uint16_t dataBlocks;
-      uint16_t codeBlocks;
-    }BdCreate;
-  
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-    }BdDelete;
+  public:
+    static std::unique_ptr<Volume> LoadVolume(const std::string &name);
+    static bool CreateVolume(const std::string &volumeName, const std::string &repoName, const uint16_t dataBlocks, const uint16_t codeBlocks);
+    static bool DeleteVolume(const std::string &name);
+    static bool MountVolume(const std::string &name, const std::string &path);
     
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-    }BdRequestNBD;
-
-  }
+    static bdfs::HttpConfig defaultConfig;
+  };
 }
-#pragma pack(pop)

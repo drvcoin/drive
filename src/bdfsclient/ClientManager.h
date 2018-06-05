@@ -21,70 +21,31 @@
 */
 
 #pragma once
+
 #include <stdint.h>
-#pragma pack(push,1)
-namespace bdfs
+#include "EventLoop.h"
+#include "UnixDomainSocket.h"
+#include "BdProtocol.h"
+
+namespace dfs
 {
-  // Block Drive Client Protocol
-  namespace bdcp
+  using namespace bdfs;
+
+  class ClientManager
   {
-    enum T : uint8_t
-    {
-      Mount = 0,
-      Unmount,
-      Create,
-      Delete,
-      RequestNBD,
-      Response
-    };
+  private:
+    UnixDomainSocket unixSocket;
+    bool isUnixSocketListening;
+    EventLoop<UnixDomainSocket *> requestLoop;
 
-    typedef struct
-    {
-      uint32_t length;
-      T type;
-    }BdHdr;
+    bool ProcessRequest(const bdcp::BdHdr *);
+    static bool HandleRequest(void *sender, UnixDomainSocket *socket);
+    void Listen();
 
-    typedef struct
-    {
-      BdHdr hdr;
-      uint8_t success;
-      char message[128];
-    }BdResponse;
-
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-      char path[128];
-    }BdMount;
-
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-    }BdUnmount;
-
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-      char repoName[128];
-      uint16_t dataBlocks;
-      uint16_t codeBlocks;
-    }BdCreate;
-  
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-    }BdDelete;
-    
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-    }BdRequestNBD;
-
-  }
+  public:
+    ClientManager();
+    bool Start();
+    bool Stop();
+  };
 }
-#pragma pack(pop)
+
