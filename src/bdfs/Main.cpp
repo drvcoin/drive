@@ -68,6 +68,7 @@ void HandleOptions()
       else
       {
         bdcp::BdMount mnt;
+        memset(&mnt,0,sizeof(bdcp::BdMount));
         mnt.hdr.length = sizeof(bdcp::BdMount);
         mnt.hdr.type = bdcp::Mount;
         strncpy(mnt.volumeName,Options::Name.c_str(),Options::Name.length());
@@ -88,6 +89,7 @@ void HandleOptions()
       {
         printf("Creating volume '%s'...\n",Options::Name.c_str());
         bdcp::BdCreate create;
+        memset(&create,0,sizeof(bdcp::BdCreate));
         create.hdr.length = sizeof(bdcp::BdCreate);
         create.hdr.type = bdcp::Create;
         strncpy(create.volumeName, Options::Name.c_str(), Options::Name.length());
@@ -112,6 +114,7 @@ void HandleOptions()
       else 
       {
         bdcp::BdDelete del;
+        memset(&del,0,sizeof(bdcp::BdDelete));
         del.hdr.length = sizeof(bdcp::BdDelete);
         del.hdr.type = bdcp::Delete;
         strncpy(del.volumeName, Options::Name.c_str(), Options::Name.length());
