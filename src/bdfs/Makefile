@@ -26,16 +26,9 @@ TARGETEXE = drive
 
 include $(ROOT)/Config.mk
 
-HEADERS = \
-  Action.h \
-  BitSet.h \
-  Util.h \
-  Options.h \
-  Partition.h \
-  Volume.h
-
 SRCS = \
   Action.cpp \
+	Cache.cpp \
   Util.cpp \
   Main.cpp \
   Options.cpp \

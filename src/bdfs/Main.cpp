@@ -40,6 +40,7 @@
 #include "BdPartitionFolder.h"
 #include "Buffer.h"
 #include "ContractRepository.h"
+#include "Cache.h"
 
 using namespace dfs;
 
@@ -153,6 +154,9 @@ void ProcessFile(const std::string & name, const char * path)
 
     auto volume = LoadVolume(name);
 
+    // Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
+    volume->EnableCache(std::make_unique<Cache>("cache", volume.get(), 200, 10));
+
     static struct ubd_operations ops = {
       .read = xmp_read,
       .write = xmp_write,
@@ -172,7 +176,7 @@ static void CreateVolume(const std::string & volumeName)
 
   uint64_t size = std::numeric_limits<uint64_t>::max();
 
-  size_t blockSize = 1*1024*1024;
+  size_t blockSize = 64*1024;
   
   bdcontract::ContractRepository repo{Options::Repo.c_str()};
 
