@@ -27,7 +27,6 @@ TARGETEXE = bdhost
 include $(ROOT)/Config.mk
 
 SRCS = \
-	Base64Encoder.cpp \
 	BitSet.cpp \
 	Global.cpp \
 	Main.cpp \

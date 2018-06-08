@@ -31,7 +31,6 @@
 #include "Util.h"
 #include "HttpHandlerRegister.h"
 #include "Partition.h"
-#include "Base64Encoder.h"
 #include "PartitionHandler.h"
 
 namespace bdhost
