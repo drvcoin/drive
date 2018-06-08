@@ -22,22 +22,31 @@
 
 #pragma once
 
-#include "HttpModule.h"
 #include "HttpHandler.h"
-#include <stdio.h>
+#include "HttpContext.h"
 
-namespace bdhost
+namespace bdhttp
 {
-  // TODO: convert to template to ensure type safe
-  class HttpHandlerRegister
+  class HttpModule
   {
   public:
-    HttpHandlerRegister(const char* path, const char* verb, HttpHandler* handler)
+    struct HandlerEntry
     {
-      HttpModule::RegisterHandler(path, verb, handler);
+      std::string verb;
+      HttpHandler* handler;
     };
-  };
 
-#define REGISTER_HTTP_HANDLER_VERB(name, path, verb, handler) HttpHandlerRegister __HanderREG__##name(path, verb, handler)
-#define REGISTER_HTTP_HANDLER(name, path, handler) HttpHandlerRegister __HanderREG__##name(path, "*", handler)
+  private:
+    static std::map<std::string, HandlerEntry>* handlers;
+
+    HttpModule(void)
+    {
+    }
+
+  public:
+    static void RegisterHandler(std::string path, std::string verb, HttpHandler* handler);
+    static void Initialize();
+    static void Stop();
+    static bool Dispatch(HttpContext& context);
+  };
 }

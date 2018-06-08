@@ -31,7 +31,7 @@
 
 #include "ErrorCode.h"
 
-namespace bdhost
+namespace bdhttp
 {
   class HttpContext
   {

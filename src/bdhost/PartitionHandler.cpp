@@ -40,7 +40,7 @@ namespace bdhost
 
   REGISTER_HTTP_HANDLER(Partition, PATH, new PartitionHandler());
 
-  void PartitionHandler::ProcessRequest(HttpContext & context)
+  void PartitionHandler::ProcessRequest(bdhttp::HttpContext & context)
   {
     std::string path = context.path();
     if (path.size() <= sizeof(PATH) || path[sizeof(PATH) - 1] != '/')
@@ -52,7 +52,7 @@ namespace bdhost
       else
       {
         context.setResponseCode(404);
-        context.writeError("Failed", "Object not found", ErrorCode::OBJECT_NOT_FOUND);
+        context.writeError("Failed", "Object not found", bdhttp::ErrorCode::OBJECT_NOT_FOUND);
       }
 
       return;
@@ -75,7 +75,7 @@ namespace bdhost
   }
 
 
-  void PartitionHandler::OnFolderRequest(HttpContext & context, const std::string & action)
+  void PartitionHandler::OnFolderRequest(bdhttp::HttpContext & context, const std::string & action)
   {
     if (action == "NewPartition")
     {
@@ -84,12 +84,12 @@ namespace bdhost
     else
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Action not supported", ErrorCode::NOT_SUPPORTED);
+      context.writeError("Failed", "Action not supported", bdhttp::ErrorCode::NOT_SUPPORTED);
     }
   }
 
 
-  void PartitionHandler::OnCreatePartition(HttpContext & context)
+  void PartitionHandler::OnCreatePartition(bdhttp::HttpContext & context)
   {
     // TODO: add reference to contract and prevent creation on executed contract
     // TODO: validate consumer and provider identity from contract
@@ -100,7 +100,7 @@ namespace bdhost
     if (!contract)
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Contract not found", ErrorCode::CONTRACT_NOT_FOUND);
+      context.writeError("Failed", "Contract not found", bdhttp::ErrorCode::CONTRACT_NOT_FOUND);
       return;
     }
 
@@ -108,7 +108,7 @@ namespace bdhost
     if (blockSize == 0)
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Block size should not be 0", ErrorCode::ARGUMENT_INVALID);
+      context.writeError("Failed", "Block size should not be 0", bdhttp::ErrorCode::ARGUMENT_INVALID);
       return;
     }
 
@@ -117,7 +117,7 @@ namespace bdhost
     if (blockCount == 0)
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Block size is too large", ErrorCode::ARGUMENT_INVALID);
+      context.writeError("Failed", "Block size is too large", bdhttp::ErrorCode::ARGUMENT_INVALID);
       return;
     }
 
@@ -129,7 +129,7 @@ namespace bdhost
     if (!config)
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Failed to initialize partition", ErrorCode::GENERIC_ERROR);
+      context.writeError("Failed", "Failed to initialize partition", bdhttp::ErrorCode::GENERIC_ERROR);
       return;
     }
 
@@ -149,7 +149,7 @@ namespace bdhost
   }
 
 
-  void PartitionHandler::OnPartitionRequest(HttpContext & context, const std::string & name, const std::string & action)
+  void PartitionHandler::OnPartitionRequest(bdhttp::HttpContext & context, const std::string & name, const std::string & action)
   {
     bool found = false;
     struct stat st = {0};
@@ -176,7 +176,7 @@ namespace bdhost
     if (!found)
     {
       context.setResponseCode(404);
-      context.writeError("Failed", "Object not found", ErrorCode::OBJECT_NOT_FOUND);
+      context.writeError("Failed", "Object not found", bdhttp::ErrorCode::OBJECT_NOT_FOUND);
       return;
     }
 
@@ -201,12 +201,12 @@ namespace bdhost
     else
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Action not supported", ErrorCode::NOT_SUPPORTED);
+      context.writeError("Failed", "Action not supported", bdhttp::ErrorCode::NOT_SUPPORTED);
     }
   }
 
 
-  void PartitionHandler::OnReadBlock(HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize)
+  void PartitionHandler::OnReadBlock(bdhttp::HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize)
   {
     uint64_t blockId = static_cast<uint64_t>(strtoull(context.parameter("block"), nullptr, 10));
     uint32_t offset = static_cast<uint32_t>(strtoul(context.parameter("offset"), nullptr, 10));
@@ -215,7 +215,7 @@ namespace bdhost
     if (blockId >= blockCount || offset >= blockSize || size > blockSize - offset)
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Invalid arguments", ErrorCode::ARGUMENT_INVALID);
+      context.writeError("Failed", "Invalid arguments", bdhttp::ErrorCode::ARGUMENT_INVALID);
       return;
     }
 
@@ -232,14 +232,14 @@ namespace bdhost
     else
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Failed to read block", ErrorCode::GENERIC_ERROR);
+      context.writeError("Failed", "Failed to read block", bdhttp::ErrorCode::GENERIC_ERROR);
     }
 
     delete[] buffer;
   }
 
 
-  void PartitionHandler::OnWriteBlock(HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize)
+  void PartitionHandler::OnWriteBlock(bdhttp::HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize)
   {
     uint64_t blockId = static_cast<uint64_t>(strtoull(context.parameter("block"), nullptr, 10));
     uint32_t offset = static_cast<uint32_t>(strtoul(context.parameter("offset"), nullptr, 10));
@@ -249,7 +249,7 @@ namespace bdhost
     if (blockId >= blockCount || offset >= blockSize || !data || size == 0)
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Invalid arguments", ErrorCode::ARGUMENT_INVALID);
+      context.writeError("Failed", "Invalid arguments", bdhttp::ErrorCode::ARGUMENT_INVALID);
       return;
     }
 
@@ -263,12 +263,12 @@ namespace bdhost
     else
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Failed to write block", ErrorCode::GENERIC_ERROR);
+      context.writeError("Failed", "Failed to write block", bdhttp::ErrorCode::GENERIC_ERROR);
     }
   }
 
 
-  void PartitionHandler::OnDelete(HttpContext & context, const std::string & name)
+  void PartitionHandler::OnDelete(bdhttp::HttpContext & context, const std::string & name)
   {
     // TODO: release the reference to contract
 

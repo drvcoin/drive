@@ -26,24 +26,24 @@
 
 namespace bdhost
 {
-  class PartitionHandler : public HttpHandler
+  class PartitionHandler : public bdhttp::HttpHandler
   {
   public:
 
-    void ProcessRequest(HttpContext & context) override;
+    void ProcessRequest(bdhttp::HttpContext & context) override;
 
   private:
 
-    void OnFolderRequest(HttpContext & context, const std::string & action);
+    void OnFolderRequest(bdhttp::HttpContext & context, const std::string & action);
 
-    void OnPartitionRequest(HttpContext & context, const std::string & name, const std::string & action);
+    void OnPartitionRequest(bdhttp::HttpContext & context, const std::string & name, const std::string & action);
 
-    void OnReadBlock(HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize);
+    void OnReadBlock(bdhttp::HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize);
 
-    void OnWriteBlock(HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize);
+    void OnWriteBlock(bdhttp::HttpContext & context, const std::string & name, uint64_t blockCount, uint64_t blockSize);
 
-    void OnDelete(HttpContext & context, const std::string & name);
+    void OnDelete(bdhttp::HttpContext & context, const std::string & name);
 
-    void OnCreatePartition(HttpContext & context);
+    void OnCreatePartition(bdhttp::HttpContext & context);
   };
 }

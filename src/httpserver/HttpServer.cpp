@@ -30,8 +30,8 @@
 #define CALLBACK_RESULT_HANDLED 1
 
 
-namespace bdhost {
-
+namespace bdhttp
+{
   HttpServer::HttpServer()
     : context(nullptr) {
   }

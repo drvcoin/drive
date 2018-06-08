@@ -22,7 +22,7 @@
 
 #pragma once
 
-namespace bdhost
+namespace bdhttp
 {
   enum class ErrorCode
   {

@@ -31,7 +31,7 @@
 #include <map>
 #include <json/json.h>
 
-namespace bdhost
+namespace bdhttp
 {
   using namespace std;
 

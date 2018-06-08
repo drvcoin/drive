@@ -22,23 +22,33 @@
 
 #pragma once
 
-#include "HttpContext.h"
+#include <string>
+#include <mongoose.h>
 
-namespace bdhost
+namespace bdhttp
 {
-  class HttpHandler
+  class HttpServer
   {
   public:
-    virtual ~HttpHandler() = default;
 
-    virtual void ProcessRequest(HttpContext& context) = 0;
+    HttpServer();
 
-    virtual void Initialize()
-    {
-    }
+    virtual ~HttpServer();
 
-    virtual void Stop()
-    {
-    }
+    bool Start(uint16_t port, const char * certificate);
+
+    void Stop();
+
+    bool IsRunning();
+
+  private:
+
+    static int OnRequest(mg_connection * connection);
+
+  private:
+
+    mg_context * context;
   };
+
 }
+

@@ -22,30 +22,17 @@
 
 ROOT = $(realpath ../..)
 
-TARGETEXE = bdhost
+TARGETLIB = libbdhttp
 
 include $(ROOT)/Config.mk
 
 SRCS = \
-	Base64Encoder.cpp \
-	BitSet.cpp \
-	Global.cpp \
-	Main.cpp \
-	Options.cpp \
-	Partition.cpp \
-	PartitionHandler.cpp \
-	Util.cpp \
+	HttpModule.cpp \
+	HttpServer.cpp \
+	MGHttpContext.cpp \
 
 VPATH = $(BINDIR)
 
-LIBS = \
-	libbdcontract.a \
-	libbdhttp.a \
-	libmongoose.a \
-  libjson.a \
-
-SYSLIBS = -lcurl -luuid -ldl -pthread
-
-CCFLAGS = -I../jsoncpp/include -I../mongoose -I../bdcontract-lib -I../httpserver -fPIC -std=c++17
+CCFLAGS = -I../jsoncpp/include -I../mongoose -fPIC -std=c++17
 
 include $(ROOT)/Cpp.mk

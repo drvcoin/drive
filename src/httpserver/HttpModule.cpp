@@ -33,7 +33,7 @@
 #include <map>
 #include <string>
 
-namespace bdhost
+namespace bdhttp
 {
   std::map<std::string,HttpModule::HandlerEntry>* HttpModule::handlers = NULL;
 

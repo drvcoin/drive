@@ -26,7 +26,7 @@
 #include "mongoose.h"
 #include <map>
 
-namespace bdhost
+namespace bdhttp
 {
   class MGHttpContext : public HttpContext
   {

@@ -59,9 +59,9 @@ int main(int argc, const char ** argv)
 
   bdhost::g_contracts = new bdcontract::ContractRepository(bdhost::Options::repo.c_str());
 
-  bdhost::HttpModule::Initialize();
+  bdhttp::HttpModule::Initialize();
 
-  bdhost::HttpServer server;
+  bdhttp::HttpServer server;
 
   if (!server.Start(bdhost::Options::port, nullptr))
   {
@@ -74,7 +74,7 @@ int main(int argc, const char ** argv)
     sleep(1);
   }
 
-  bdhost::HttpModule::Stop();
+  bdhttp::HttpModule::Stop();
 
   return 0;
 }

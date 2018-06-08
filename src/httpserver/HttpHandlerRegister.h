@@ -22,33 +22,22 @@
 
 #pragma once
 
-#include <string>
-#include <mongoose.h>
+#include "HttpModule.h"
+#include "HttpHandler.h"
+#include <stdio.h>
 
-namespace bdhost {
-
-  class HttpServer {
-
+namespace bdhttp
+{
+  // TODO: convert to template to ensure type safe
+  class HttpHandlerRegister
+  {
   public:
-
-    HttpServer();
-
-    virtual ~HttpServer();
-
-    bool Start(uint16_t port, const char * certificate);
-
-    void Stop();
-
-    bool IsRunning();
-
-  private:
-
-    static int OnRequest(mg_connection * connection);
-
-  private:
-
-    mg_context * context;
+    HttpHandlerRegister(const char* path, const char* verb, HttpHandler* handler)
+    {
+      HttpModule::RegisterHandler(path, verb, handler);
+    };
   };
 
+#define REGISTER_HTTP_HANDLER_VERB(name, path, verb, handler) bdhttp::HttpHandlerRegister __HanderREG__##name(path, verb, handler)
+#define REGISTER_HTTP_HANDLER(name, path, handler) bdhttp::HttpHandlerRegister __HanderREG__##name(path, "*", handler)
 }
-

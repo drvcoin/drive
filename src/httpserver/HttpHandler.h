@@ -22,31 +22,23 @@
 
 #pragma once
 
-#include "HttpHandler.h"
 #include "HttpContext.h"
 
-namespace bdhost
+namespace bdhttp
 {
-  class HttpModule
+  class HttpHandler
   {
   public:
-    struct HandlerEntry
-    {
-      std::string verb;
-      HttpHandler* handler;
-    };
+    virtual ~HttpHandler() = default;
 
-  private:
-    static std::map<std::string, HandlerEntry>* handlers;
+    virtual void ProcessRequest(HttpContext& context) = 0;
 
-    HttpModule(void)
+    virtual void Initialize()
     {
     }
 
-  public:
-    static void RegisterHandler(std::string path, std::string verb, HttpHandler* handler);
-    static void Initialize();
-    static void Stop();
-    static bool Dispatch(HttpContext& context);
+    virtual void Stop()
+    {
+    }
   };
 }
