@@ -60,8 +60,6 @@ static int Init(const std::string & name)
 
 static void init_kad()
 {
-#ifdef SUPPORT_KAD
-
   auto thread = std::thread(
     []()
     {
@@ -97,10 +95,6 @@ static void init_kad()
   );
 
   thread.detach();
-
-#else
-  printf("WARNING: kademlia support is disabled.\n");
-#endif
 }
 
 

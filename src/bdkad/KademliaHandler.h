@@ -29,7 +29,7 @@
 
 namespace bdhost
 {
-  class PartitionHandler : public bdhttp::HttpHandler
+  class KademliaHandler : public bdhttp::HttpHandler
   {
   public:
 

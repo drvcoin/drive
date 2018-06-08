@@ -31,17 +31,23 @@ SRCS = \
 	Main.cpp \
 	Options.cpp \
 	KademliaModule.cpp \
-	PartitionHandler.cpp \
+	KademliaHandler.cpp \
 
 
 VPATH = $(BINDIR)
+
+ifneq ($(BUILDTYPE),debug)
+VPATH += $(ROOT)/../kademlia/out/linux.x86_64/release/bin
+else
+VPATH += $(ROOT)/../kademlia/out/linux.x86_64/debug/bin
+endif
 
 LIBS = \
 	libbdcontract.a \
 	libbdhttp.a \
 	libmongoose.a \
-        libjson.a \
-        $(ROOT)/../kademlia/out/linux.x86_64/debug/bin/kad.a
+	libjson.a \
+	kad.a
 
 SYSLIBS = -lcrypto -lcurl -luuid -ldl -pthread
 

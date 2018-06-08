@@ -32,7 +32,8 @@ DIRS = \
 	bdfs \
 	bdfsclient \
 	httpserver \
-	bdhost
+	bdhost \
+	bdkad
 
 .PHONY: all clean $(DIRS)
 

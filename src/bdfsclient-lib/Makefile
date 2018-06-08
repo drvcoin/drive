@@ -35,16 +35,12 @@ SRCS = \
   VolumeRow.cpp \
   BitSet.cpp \
   Partition.cpp \
-  VolumeManager.cpp 
+  VolumeManager.cpp
 
 CCFLAGS =  -std=c++17 -fPIC -I../jsoncpp/include -I../mongoose -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../bdcontract-lib -I../bdfs-lib
 
 ifneq ($(DEBUG_HTTP),)
 CCFLAGS += -DDEBUG_HTTP
-endif
-
-ifneq ($(SUPPORT_KAD),)
-CCFLAGS += -DSUPPORT_KAD
 endif
 
 include $(ROOT)/Cpp.mk

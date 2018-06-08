@@ -106,7 +106,7 @@ namespace dfs
         return nullptr;
       }
 
-			auto session = bdfs::BdSession::CreateSession(config["provider"].asCString(), &defaultConfig);
+			auto session = bdfs::BdSession::CreateSession(ep.c_str(), &defaultConfig);
 			auto name = config["name"].asString();
 			auto path = "host://Partitions/" + name;
 			auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
@@ -120,7 +120,6 @@ namespace dfs
 
   std::string VolumeManager::GetProviderEndpoint(const std::string & name)
   {
-#ifdef SUPPORT_KAD
     if (kademliaUrl.empty())
     {
       return std::string();
@@ -145,9 +144,6 @@ namespace dfs
     }
 
     return std::string(static_cast<const char *>(buffer.Buf()), buffer.Size());    
-#else
-    return name;
-#endif
   }
 
 

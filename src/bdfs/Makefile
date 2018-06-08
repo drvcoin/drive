@@ -41,14 +41,9 @@ LIBS = \
   $(ROOT)/../ubd/out/lib/ubd.a \
   $(ROOT)/../cm256/out/lib/cm256.a
 
-
 TARGET = drive
 CCFLAGS = -std=c++17  -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib
 
 SYSLIBS = -lcrypto -lcurl -ldl -pthread
-
-ifneq ($(SUPPORT_KAD),)
-CCFLAGS += -DSUPPORT_KAD
-endif
 
 include $(ROOT)/Cpp.mk

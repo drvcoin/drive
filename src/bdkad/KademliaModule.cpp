@@ -53,7 +53,7 @@
 #include "Global.h"
 
 
-#include "PartitionHandler.h"
+#include "KademliaHandler.h"
 
 
 using namespace kad;
@@ -184,12 +184,12 @@ static void InitBuckets(const char * rootPath, const Contact & bootContact)
 
 //    Kademlia controller;
 
-    PartitionHandler::controller = new Kademlia();
-    PartitionHandler::controller->Initialize();
+    KademliaHandler::controller = new Kademlia();
+    KademliaHandler::controller->Initialize();
 
     printf("[KAD] Ready?\n");
 
-    while(!PartitionHandler::controller->IsReady())
+    while(!KademliaHandler::controller->IsReady())
     {
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }

@@ -27,9 +27,10 @@
 #include <chrono>
 #include <string>
 #include <assert.h>
+#include <json/json.h>
 #include "Global.h"
 #include "HttpHandlerRegister.h"
-#include "PartitionHandler.h"
+#include "KademliaHandler.h"
 
 
 
@@ -66,18 +67,18 @@ namespace bdhost
 {
   static const char PATH[] = "/api/host/Kademlia";
 
-  Kademlia * PartitionHandler::controller = nullptr;
+  Kademlia * KademliaHandler::controller = nullptr;
 
-  REGISTER_HTTP_HANDLER(Partition, PATH, new PartitionHandler());
+  REGISTER_HTTP_HANDLER(Kademlia, PATH, new KademliaHandler());
 
-  void PartitionHandler::ProcessRequest(bdhttp::HttpContext & context)
+  void KademliaHandler::ProcessRequest(bdhttp::HttpContext & context)
   {
     std::string path = context.path();
     if (path.size() <= sizeof(PATH) || path[sizeof(PATH) - 1] != '/')
     {
       if (path.size() == sizeof(PATH) && path == std::string(PATH) + '/')
       {
-        context.writeResponse("{\"Name\":\"Partitions\",\"Path\":\"host://Partitions\",\"Type\":\"PartitionFolder\"}");
+        context.writeResponse("{\"Name\":\"Kademlia\",\"Path\":\"host://Kademlia\",\"Type\":\"Kademlia\"}");
       }
       else
       {
@@ -97,12 +98,13 @@ namespace bdhost
     }
     else
     {
-      printf("else\n");
+      context.setResponseCode(404);
+      context.writeError("Failed", "Object not found", bdhttp::ErrorCode::OBJECT_NOT_FOUND);
     }
   }
 
 
-  void PartitionHandler::OnKademliaRequest(bdhttp::HttpContext & context, const std::string & action)
+  void KademliaHandler::OnKademliaRequest(bdhttp::HttpContext & context, const std::string & action)
   {
     if (action == "SetValue")
     {
@@ -120,16 +122,27 @@ namespace bdhost
   }
 
 
-  void PartitionHandler::OnSetValue(bdhttp::HttpContext & context)
+  void KademliaHandler::OnSetValue(bdhttp::HttpContext & context)
   {
     printf("Kademlia::SetValue\n");
 
     std::string key(context.parameter("key"));
     std::string value(context.parameter("value"));
 
+    Json::Value json;
+    Json::Reader reader;
+    if (reader.parse(key.c_str(), key.size(), json, false) && json.isString())
+    {
+      key = json.asString();
+    }
+
+    if (reader.parse(value.c_str(), value.size(), json, false) && json.isString())
+    {
+      value = json.asString();
+    }
+
     uint64_t version = static_cast<uint64_t>(strtoull(context.parameter("version"), nullptr, 10));
     uint32_t ttl = static_cast<uint32_t>(strtoul(context.parameter("ttl"), nullptr, 10));
-
 
     printf("%s %s %lu %u\n",key.c_str(), value.c_str(), version, ttl);
 
@@ -137,7 +150,6 @@ namespace bdhost
     Digest::Compute(key.c_str(), key.size(), digest);
 
     KeyPtr keyptr = std::make_shared<Key>(digest);
-
 
     uint8_t * buffer = nullptr;
 
@@ -147,17 +159,13 @@ namespace bdhost
 
     memcpy(buffer, value.c_str(), size);
 
-
     auto data = std::make_shared<Buffer>(buffer, size, false, true);
     
     auto result = AsyncResultPtr(new AsyncResult<bool>());
     
-    PartitionHandler::controller->Store(keyptr, data, ttl, version, result);
-
+    KademliaHandler::controller->Store(keyptr, data, ttl, version, result);
     
-    result->Wait();
-    
-    if (!AsyncResultHelper::GetResult<bool>(result.get()))
+    if (!result->Wait(60000) || !AsyncResultHelper::GetResult<bool>(result.get()))
     {
       printf("ERROR: failed to set value.\n");
       context.setResponseCode(500);
@@ -167,29 +175,43 @@ namespace bdhost
     context.writeResponse("true");
   }
 
-  void PartitionHandler::OnGetValue(bdhttp::HttpContext & context)
+  void KademliaHandler::OnGetValue(bdhttp::HttpContext & context)
   {
     printf("Kademlia::GetValue\n");
 
     std::string key(context.parameter("key"));
+
+    Json::Value json;
+    Json::Reader reader;
+    if (reader.parse(key.c_str(), key.size(), json, false) && json.isString())
+    {
+      key = json.asString();
+    }
 
     sha1_t digest;
     Digest::Compute(key.c_str(), key.size(), digest);
 
     KeyPtr keyptr = std::make_shared<Key>(digest);
 
-    auto result = AsyncResultPtr(new  AsyncResult<BufferPtr>());
+    auto result = AsyncResultPtr(new AsyncResult<BufferPtr>());
 
-    PartitionHandler::controller->FindValue(keyptr, result);
+    KademliaHandler::controller->FindValue(keyptr, result);
 
-    result->Wait();
+    if (!result->Wait(60000))
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Internal Error", bdhttp::ErrorCode::GENERIC_ERROR);
+      return;
+    }
 
     auto buffer = AsyncResultHelper::GetResult<BufferPtr>(result.get());
 
     if (buffer && buffer->Size() > 0)
     {
       printf("%s\n", std::string(reinterpret_cast<const char *>(buffer->Data()), buffer->Size()).c_str());
-      context.writeResponse(buffer->Data(), buffer->Size());
+      json = std::string(static_cast<const char *>(buffer->Data()), buffer->Size());
+      auto resp = json.toStyledString();
+      context.writeResponse(resp.c_str(), resp.size());
     }
     else
     {
