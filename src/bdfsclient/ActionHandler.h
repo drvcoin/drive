@@ -20,26 +20,28 @@
   SOFTWARE.
 */
 
-#pragma once
+#include <map>
 
 namespace dfs
 {
-  namespace Action
+  struct VolumeMeta 
   {
-    enum T
-    {
-      Unknown = 0,
-      Create,
-      Delete,
-      Verify,
-      List,
-      Mount,
-      Unmount,
-      Show,
-      Format
-    };
+    std::string volumeName;
+    std::string nbdPath;
+    std::string mountPath;
+    bool isFormatted;
+    bool isMounted;
+  };
 
-    const char * ToString(T value);
-    T FromString(const char * value);
-  }
+  class ActionHandler
+  {
+    static std::map<std::string,VolumeMeta*> volumeInfo;
+    static std::map<std::string, bool> nbdInfo;
+
+    static std::string GetNextNBD();
+
+  public:
+    static int BindVolume(const std::string name);
+    static std::string GetNbdForVolume(const std::string name);
+  };
 }

@@ -37,6 +37,8 @@ SRCS = \
 	Buffer.cpp \
 	HttpCookies.cpp \
 	HttpRequest.cpp \
+  UnixDomainSocket.cpp \
+  Event.cpp
 
 CCFLAGS = -I../jsoncpp/include -I../mongoose -fPIC -std=c++17
 

@@ -20,26 +20,46 @@
   SOFTWARE.
 */
 
-#pragma once
+#include <stdio.h>
+#include <signal.h>
 
-namespace dfs
+#include "cm256.h"
+#include "UnixDomainSocket.h"
+#include "ClientManager.h"
+
+using namespace dfs;
+using namespace bdfs;
+
+ClientManager client;
+
+void signalHandler(int signum)
 {
-  namespace Action
-  {
-    enum T
-    {
-      Unknown = 0,
-      Create,
-      Delete,
-      Verify,
-      List,
-      Mount,
-      Unmount,
-      Show,
-      Format
-    };
+  printf("Interrupt received by signal ( %d ).\n",signum);
+  client.Stop();
+  exit(signum);
+}
 
-    const char * ToString(T value);
-    T FromString(const char * value);
+int main(int argc, char * * argv)
+{
+  signal(SIGINT, signalHandler);
+  signal(SIGTERM, signalHandler);
+  
+  if (cm256_init()) {
+    exit(1);
   }
+  
+  
+  if(!client.Start())
+  {
+    printf("Error: Failed to start processing thread.\n");
+  }
+
+  while(true)
+  {
+    sleep(1);
+  }
+
+  client.Stop();
+
+  return 0;
 }

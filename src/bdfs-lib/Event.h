@@ -22,24 +22,28 @@
 
 #pragma once
 
-namespace dfs
-{
-  namespace Action
-  {
-    enum T
-    {
-      Unknown = 0,
-      Create,
-      Delete,
-      Verify,
-      List,
-      Mount,
-      Unmount,
-      Show,
-      Format
-    };
+#include <string.h>
+#include <sys/time.h>
+#include <pthread.h>
+#include <time.h>
+#include <errno.h>
 
-    const char * ToString(T value);
-    T FromString(const char * value);
-  }
+namespace bdfs 
+{
+  class Event
+  {
+  private:
+    pthread_cond_t cond;
+    pthread_mutex_t mutex;
+    struct timespec ts;
+    struct timeval tp;
+    bool isSet;
+
+  public:
+    Event();
+    ~Event();
+    bool Initialize();
+    bool Wait(unsigned int milliseconds);
+    bool Signal();
+  };
 }

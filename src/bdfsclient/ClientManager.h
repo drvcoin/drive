@@ -22,24 +22,30 @@
 
 #pragma once
 
+#include <stdint.h>
+#include "EventLoop.h"
+#include "UnixDomainSocket.h"
+#include "BdProtocol.h"
+
 namespace dfs
 {
-  namespace Action
-  {
-    enum T
-    {
-      Unknown = 0,
-      Create,
-      Delete,
-      Verify,
-      List,
-      Mount,
-      Unmount,
-      Show,
-      Format
-    };
+  using namespace bdfs;
 
-    const char * ToString(T value);
-    T FromString(const char * value);
-  }
+  class ClientManager
+  {
+  private:
+    UnixDomainSocket unixSocket;
+    bool isUnixSocketListening;
+    EventLoop<UnixDomainSocket *> requestLoop;
+
+    bdcp::BdResponse ProcessRequest(const bdcp::BdHdr *);
+    static bool HandleRequest(void *sender, UnixDomainSocket *socket);
+    void Listen();
+
+  public:
+    ClientManager();
+    bool Start();
+    bool Stop();
+  };
 }
+
