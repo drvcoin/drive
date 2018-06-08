@@ -24,7 +24,6 @@
 #include <sys/stat.h>
 #include <cmath>
 #include <limits>
-#include <unistd.h>
 #include <json/json.h>
 
 #include "BdTypes.h"
@@ -32,260 +31,206 @@
 #include "BdSession.h"
 
 #include "Options.h"
-#include "cm256.h"
-#include "gf256.h"
-#include "ubd.h"
-
+#include "Util.h"
+#include "VolumeManager.h"
 #include "Volume.h"
 #include "BdPartitionFolder.h"
 #include "Buffer.h"
 #include "ContractRepository.h"
 #include "Cache.h"
 
+#include "UnixDomainSocket.h"
+#include "BdProtocol.h"
+
 using namespace dfs;
-
-static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
-{
-  return ((Volume*)context)->ReadDecrypt(buf, size, offset) ? 0 : -1;
-}
-
-static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
-{
-  return ((Volume*)context)->WriteEncrypt(buf, size, offset) ? 0 : -1;
-}
-
-static void xmp_disc(void * context)
-{
-  (void)(context);
-}
-
-static int xmp_flush(void * context)
-{
-  (void)(context);
-  return 0;
-}
-
-static int xmp_trim(size_t from, size_t len, void * context)
-{
-  (void)(context);
-  return 0;
-}
+using namespace bdfs;
 
 static bdfs::HttpConfig defaultConfig;
 
+#define SENDRECV_TIMEOUT 30
 
-std::unique_ptr<Volume> LoadVolume(const std::string & name)
+bdcp::BdResponse SendReceive(const uint8_t *buff, uint32_t length)
 {
-  FILE * file = fopen((name + ".config").c_str(), "r");
-  if (!file)
+  UnixDomainSocket socket;
+  bdcp::BdResponse resp;
+  resp.status = false;
+
+  if(!socket.Connect("bdfsclient"))
   {
-    return nullptr;
+    sprintf(&resp.data[0],"Error: Unable to connect to bdfsclient daemon.\n");
+  }
+  else if (socket.SendMessage(buff, length,SENDRECV_TIMEOUT) != length)
+  {
+    sprintf(&resp.data[0],"Error: Unable to sendmessage to bdfsclient daemon.\n");
+  }
+  else if(socket.RecvMessage(&resp,sizeof(bdcp::BdResponse),SENDRECV_TIMEOUT) != resp.hdr.length)
+  {
+    sprintf(&resp.data[0],"Error: Unable to readresponse from bdfsclient daemon.\n");
   }
 
-  bdfs::Buffer buffer;
-  buffer.Resize(BUFSIZ);
-  size_t offset = 0;
+  return resp;
+}
 
-  size_t bytes;
-  while ((bytes = fread(static_cast<char *>(buffer.Buf()) + offset, 1, BUFSIZ, file)) == BUFSIZ)
+void HandleOptions()
+{
+  bdcp::BdRequest request;
+  memset(&request,0,sizeof(bdcp::BdRequest));
+  request.hdr.length = sizeof(bdcp::BdRequest);
+
+  switch(Options::Action)
   {
-    offset = buffer.Size();
-    buffer.Resize(buffer.Size() + BUFSIZ);
-  }
-
-  fclose(file);
-
-  Json::Reader reader;
-  Json::Value json;
-  if (!reader.parse(static_cast<const char *>(buffer.Buf()), offset + bytes, json, false) ||
-      !json.isObject() ||
-      !json["blockSize"].isIntegral() ||
-      !json["blockCount"].isIntegral() ||
-      !json["dataBlocks"].isIntegral() ||
-      !json["codeBlocks"].isIntegral() ||
-      !json["partitions"].isArray())
-  {
-    return nullptr;
-  }
-
-  size_t blockSize = json["blockSize"].asUInt();
-  uint64_t blockCount = json["blockCount"].asUInt();
-  uint64_t dataBlocks = json["dataBlocks"].asUInt();
-  uint64_t codeBlocks = json["codeBlocks"].asUInt();
- 
-  if (json["partitions"].size() < dataBlocks + codeBlocks)
-  {
-    return nullptr;
-  }
-
-  auto volume = std::make_unique<Volume>(name.c_str(), dataBlocks, codeBlocks, blockCount, blockSize, "HelloWorld");
-
-  for (size_t i = 0; i < json["partitions"].size(); ++i)
-  {
-    auto & config = json["partitions"][i];
-    if (!config["name"].isString() || !config["provider"].isString())
+    case Action::Mount:
     {
-      return nullptr;
+      if(Options::Paths.size() != 1)
+      {
+        printf("Missing <volumename> or <path>\n");
+      }
+      else
+      {
+        request.hdr.type = bdcp::BIND;
+        strncpy(request.data,Options::Name.c_str(),Options::Name.length());
+        bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
+
+        if(!resp.status)
+        {
+          printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
+
+			  int timeout = 10;	
+				while(!nbd_ready(&resp.data[0]) && timeout--)
+        {
+          sleep(1);
+        }
+
+        if(timeout == 0)
+        {
+          printf("Bind timeout for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
+
+        printf("Mounting '%s' to '%s'\n",resp.data,Options::Paths[0].c_str());
+        
+        char *args[] = {"sudo", "mount", resp.data, (char*)Options::Paths[0].c_str(), NULL};
+        
+        execvp("sudo",args);
+      }
+      break;
     }
 
-    auto session = bdfs::BdSession::CreateSession(config["provider"].asCString(), &defaultConfig);
-    auto name = config["name"].asString();
-    auto path = "host://Partitions/" + name;
-    auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
+    case Action::Unmount:
+    {
+      if(Options::Name.empty())
+      {
+        printf("Missing <volumename>\n");
+      }
+      else
+      {
+        request.hdr.type = bdcp::QUERY_NBD;
+        strncpy(request.data,Options::Name.c_str(),Options::Name.length());
+        bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
 
-    volume->SetPartition(i, new Partition(partition, blockCount, blockSize));
-  }
+        if(!resp.status)
+        {
+          printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
 
-  return volume;
-}
+        printf("Unmounting '%s'...\n",resp.data);
+        
+        char *args[] = {"sudo", "umount", resp.data, NULL};
+        
+        execvp("sudo",args);
+      }
+      break;
+    }
 
+    case Action::Format:
+    {
+      if(Options::Name.empty() || Options::Paths.size() != 1)
+      {
+        printf("Missing <volumename> or <fstype>\n");
+      }
+      else
+      {
+        request.hdr.type = bdcp::BIND;
+        strncpy(request.data,Options::Name.c_str(),Options::Name.length());
+        bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
 
-void ProcessFile(const std::string & name, const char * path)
-{
-  printf("Processing: %s\n", path);
+        if(!resp.status)
+        {
+          printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
 
-  if (Options::Action == Action::Mount)
-  {
-#if 0
-    uint64_t blockCount = 256;//*1024*1024ul;
-    size_t blockSize = 1*1024*1024;
-    std::string volumeId = path;
-#endif
+			  int timeout = 10;	
+				while(!nbd_ready(&resp.data[0]) && timeout--)
+        {
+          sleep(1);
+        }
 
-    auto volume = LoadVolume(name);
+        if(timeout == 0)
+        {
+          printf("Bind timeout for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
 
-    // Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
-    volume->EnableCache(std::make_unique<Cache>("cache", volume.get(), 200, 10));
+        printf("Formatting '%s' to '%s'...\n",resp.data,Options::Paths[0].c_str());
+       
+        std::string mkfs = "mkfs." + Options::Paths[0];
+        char *args[] = {"sudo", (char*)mkfs.c_str(), resp.data, NULL};
+        
+        execvp("sudo",args);
+      }
+      break;
+    }
 
-    static struct ubd_operations ops = {
-      .read = xmp_read,
-      .write = xmp_write,
-      .disc = xmp_disc,
-      .flush = xmp_flush,
-      .trim = xmp_trim
-    };
+    case Action::Create:
+    {
+      if(Options::Name == "" || Options::Repo == "")
+      {
+        printf("Missing <volumeName> or <contractRepo>\n");
+      }
+      else 
+      {
+        printf("Creating volume '%s'...\n",Options::Name.c_str());
+        bool success = VolumeManager::CreateVolume(Options::Name, Options::Repo, Options::DataBlocks, Options::CodeBlocks);
+        if(success)
+          printf("Config file : %s.config\n",Options::Name.c_str());
+        else
+          printf("Error creating volume '%s'.\n", Options::Name.c_str());
+      }
+      break;
+    }
 
-    ubd_register(path, volume->DataSize(), &ops, (void *)volume.get());
-  }
-}
-
-
-static void CreateVolume(const std::string & volumeName)
-{
-  std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
-
-  uint64_t size = std::numeric_limits<uint64_t>::max();
-
-  size_t blockSize = 64*1024;
+    case Action::Delete:
+    {
+      if(Options::Name == "")
+      {
+        printf("Missing <volumeName>\n");
+      }
+      else 
+      {
+        bool success = VolumeManager::DeleteVolume(Options::Name);
+        if(success)
+          printf("Volume '%s' deleted.\n",Options::Name.c_str());
+      }
+      break;
+    }
   
-  bdcontract::ContractRepository repo{Options::Repo.c_str()};
-
-  for (const auto & name : repo.GetContractNames())
-  {
-    auto ptr = repo.LoadContract(name.c_str());
-    if (ptr && ptr->Size() > blockSize)
-    {
-      size = std::min(ptr->Size(), size);
-      contracts.emplace_back(std::move(ptr));
-    }
-  }
-
-  if (contracts.size() < Options::DataBlocks + Options::CodeBlocks)
-  {
-    printf("Not enough contract.\n");
-    return;
-  }
-
-  Json::Value arr;
-
-  for (size_t i = 0; i < Options::DataBlocks + Options::CodeBlocks; ++i)
-  {
-    auto session = bdfs::BdSession::CreateSession(contracts[i]->Provider().c_str(), &defaultConfig);
-    auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
-      session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
-    auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
-    if (!result->Wait(5000) || !result->GetResult())
-    {
-      printf("Failed to create on partition from contract '%s'\n", contracts[i]->Name().c_str());
-      return;
-    }
-
-    auto obj = result->GetResult();
-
-    Json::Value partition;
-    partition["name"] = obj->Name();
-    partition["provider"] = contracts[i]->Provider();
     
-    arr.append(partition);
+
+    default:
+      printf("Unhandled option : %s\n",Action::ToString(Options::Action));
   }
-
-  Json::Value volume;
-  volume["blockSize"] = Json::Value::UInt(blockSize);
-  volume["blockCount"] = Json::Value::UInt(size / blockSize);
-  volume["dataBlocks"] = Json::Value::UInt(Options::DataBlocks);
-  volume["codeBlocks"] = Json::Value::UInt(Options::CodeBlocks);
-  volume["partitions"] = arr;
-
-  std::string result = volume.toStyledString();
-
-  FILE * file = fopen((volumeName + ".config").c_str(), "w");
-  if (!file)
-  {
-    printf("Failed to create volume config file.\n");
-    return;
-  }
-
-  fwrite(result.c_str(), 1, result.size(), file);
-
-  fclose(file);
 }
-
-
-static void DeleteVolume(const std::string & name)
-{
-  auto volume = LoadVolume(name);
-  if (!volume)
-  {
-    printf("Failed to load volume.\n");
-    return;
-  }
-
-  if (!volume->Delete())
-  {
-    printf("Failed to delete volume.\n");
-    return;
-  }
-
-  unlink((name + ".config").c_str());
-}
-
 
 int main(int argc, char * * argv)
 {
+  VolumeManager::defaultConfig.ConnectTimeout(5);
+  VolumeManager::defaultConfig.RequestTimeout(5);
+
   Options::Init(argc, argv);
-
-  if (cm256_init()) {
-    exit(1);
-  }
-
-  defaultConfig.ConnectTimeout(5);
-  defaultConfig.RequestTimeout(5);
-
-  if (Options::Action == Action::Mount)
-  {
-    for (std::vector<std::string>::iterator itr = Options::Paths.begin(); itr != Options::Paths.end(); itr++)
-    {
-      ProcessFile(Options::Name, (*itr).c_str());
-    }
-  }
-  else if (Options::Action == Action::Create)
-  {
-    CreateVolume(Options::Name);
-  }
-  else if (Options::Action == Action::Delete)
-  {
-    DeleteVolume(Options::Name);
-  }
-
+  HandleOptions();
   return 0;
 }

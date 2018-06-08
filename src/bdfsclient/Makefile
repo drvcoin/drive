@@ -22,28 +22,32 @@
 
 ROOT = $(realpath ../..)
 
-TARGETEXE = drive
+TARGETEXE = bdfsclient
 
 include $(ROOT)/Config.mk
 
+HEADERS = \
+  ClientManager.h \
+  ActionHandler.h
+
 SRCS = \
-  Action.cpp \
   Main.cpp \
-  Options.cpp 
+  ClientManager.cpp \
+  ActionHandler.cpp
 
 VPATH = $(BINDIR)
 
 LIBS = \
   libbdfsclient.a \
 	libbdfs.a \
-	libbdcontract.a \
+  libbdcontract.a \
 	libjson.a \
   $(ROOT)/../ubd/out/lib/ubd.a \
   $(ROOT)/../cm256/out/lib/cm256.a
 
 
-TARGET = drive
-CCFLAGS = -std=c++17  -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib
+TARGET = bdfsclient
+CCFLAGS = -std=c++17 -msse4.1 -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib
 
 SYSLIBS = -lcrypto -lcurl -ldl -pthread
 

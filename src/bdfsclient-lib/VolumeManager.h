@@ -20,26 +20,20 @@
   SOFTWARE.
 */
 
-#pragma once
+#include <map>
+#include "HttpConfig.h"
+#include "Volume.h"
 
 namespace dfs
 {
-  namespace Action
+  class VolumeManager
   {
-    enum T
-    {
-      Unknown = 0,
-      Create,
-      Delete,
-      Verify,
-      List,
-      Mount,
-      Unmount,
-      Show,
-      Format
-    };
-
-    const char * ToString(T value);
-    T FromString(const char * value);
-  }
+  public:
+    static std::unique_ptr<Volume> LoadVolume(const std::string &name);
+    static bool CreateVolume(const std::string &volumeName, const std::string &repoName, const uint16_t dataBlocks, const uint16_t codeBlocks);
+    static bool DeleteVolume(const std::string &name);  
+  
+  
+    static bdfs::HttpConfig defaultConfig;
+  };
 }

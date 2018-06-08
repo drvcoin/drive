@@ -21,6 +21,11 @@
 */
 
 #include "Util.h"
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <cerrno>
 
 uint64_t htonll(uint64_t val)
 {
@@ -38,4 +43,38 @@ uint64_t ntohll(uint64_t val)
 #else
   return val;
 #endif
+}
+
+
+bool nbd_ready(const char* devname, bool do_print) {
+  char buf[256];
+  char* p;
+  int fd;
+  int len;
+
+  if( (p=strrchr((char*)devname, '/')) ) {
+    devname=p+1;
+  }
+  if((p=strchr((char*)devname, 'p'))) {
+    /* We can't do checks on partitions. */
+    *p='\0';
+  }
+  snprintf(buf, 256, "/sys/block/%s/pid", devname);
+  if((fd=open(buf, O_RDONLY))<0) {
+    if(errno==ENOENT) {
+      return false;
+    } else {
+      return false;
+    }
+  }
+  len=read(fd, buf, 256);
+  if(len < 0) {
+    perror("could not read from server");
+    close(fd);
+    return false;
+  }
+  buf[(len < 256) ? len : 255]='\0';
+  if(do_print) printf("%s\n", buf);
+  close(fd);
+  return true;
 }

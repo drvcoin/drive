@@ -32,3 +32,4 @@
 
 uint64_t htonll(uint64_t val);
 uint64_t ntohll(uint64_t val);
+bool nbd_ready(const char* devname, bool do_print = false);

@@ -21,25 +21,42 @@
 */
 
 #pragma once
-
-namespace dfs
+#include <stdint.h>
+#pragma pack(push,1)
+namespace bdfs
 {
-  namespace Action
+  // Block Drive Client Protocol
+  namespace bdcp
   {
-    enum T
+    enum T : uint8_t
     {
-      Unknown = 0,
-      Create,
-      Delete,
-      Verify,
-      List,
-      Mount,
-      Unmount,
-      Show,
-      Format
+      BIND = 0,
+      UNBIND,
+      RESPONSE,
+      QUERY_NBD
     };
 
-    const char * ToString(T value);
-    T FromString(const char * value);
+    typedef struct
+    {
+      uint32_t length;
+      T type;
+    }BdHdr;
+
+    typedef struct
+    {
+      BdHdr hdr;
+      char data[128];
+    }BdRequest;
+
+    // BdResponse for BIND
+    // status = 0: Fail, 1: Success, 2: Already Binded
+    // data = nbdpath or error message
+    typedef struct
+    {
+      BdHdr hdr;
+      uint8_t status;
+      char data[128];
+    }BdResponse;
   }
 }
+#pragma pack(pop)

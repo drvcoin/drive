@@ -123,7 +123,7 @@ namespace dfs
             Usage("\nError: Unknown action: %s\n", argv[i]);
           }
         }
-        else if (Options::Action == Action::Mount)
+        else //if (Options::Action == Action::Mount)
         {
           Options::Paths.push_back(arg);
         }

@@ -22,24 +22,44 @@
 
 #pragma once
 
-namespace dfs
-{
-  namespace Action
-  {
-    enum T
-    {
-      Unknown = 0,
-      Create,
-      Delete,
-      Verify,
-      List,
-      Mount,
-      Unmount,
-      Show,
-      Format
-    };
+#include <arpa/inet.h>
+#include <unistd.h>
 
-    const char * ToString(T value);
-    T FromString(const char * value);
-  }
+
+#define UNIX_SOC_PREFIX "\0/blocdrive/usp/"
+
+namespace bdfs
+{
+  class UnixDomainSocket
+  {
+  private:
+    int socketFd;
+
+    static bool SetNonBlock(int fd, bool nonBlock);
+
+    static bool WaitSendReady(int fd, int timeout);
+
+    static bool WaitRecvReady(int fd, int timeout);
+
+  public:
+    UnixDomainSocket();
+    ~UnixDomainSocket();
+
+    bool Connect(const char *uuid, int timeout = 5);
+    bool Listen(const char *uuid, int listenLength);
+    UnixDomainSocket * Accept();
+    void Shutdown(int flag);
+    void Close();
+
+    bool SendFd(int sendFd, int timeout = 5);
+    bool RecvFd(int * recvFd, int timeout = 5);
+
+    ssize_t Send(const void * buf, size_t nbytes, int timeout = 5);
+    ssize_t Recv(void * buf, size_t nbytes, int timeout = 5);
+
+    ssize_t SendMessage(const void * message, size_t messageLength, int timeout = 5);
+    ssize_t RecvMessage(void * messageBuf, size_t messageLength, int timeout = 5);
+    
+    int GetSocket() { return socketFd; }
+  };
 }
