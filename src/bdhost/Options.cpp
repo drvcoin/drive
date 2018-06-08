@@ -30,6 +30,12 @@ namespace bdhost
 {
   uint16_t Options::port = 80;
 
+  std::string Options::name;
+
+  std::string Options::endpoint;
+
+  std::string Options::kademlia = "http://localhost:7800";
+
   std::string Options::repo = ".";
 
 
@@ -48,6 +54,8 @@ namespace bdhost
     printf("\n");
     printf("Options:\n");
     printf("  -p <port>       port to listen on (default:80)\n");
+    printf("  -e <url>        endpoint url to register (default:http://localhost)\n");
+    printf("  -k <kad>        kademlia service url (default:http://localhost:7800)\n");
     printf("  -r <path>       root path of contract repository (default:.)\n");
     printf("\n");
     exit(message == NULL ? 0 : 1);
@@ -65,6 +73,16 @@ namespace bdhost
       {
         assert_argument_index(++i, "path");
         repo = argv[i];
+      }
+      else if (strcmp(argv[i], "-e") == 0)
+      {
+        assert_argument_index(++i, "url");
+        endpoint = argv[i];
+      }
+      else if (strcmp(argv[i], "-k") == 0)
+      {
+        assert_argument_index(++i, "kad");
+        kademlia = argv[i];
       }
       else if (strcmp(argv[i], "-p") == 0)
       {

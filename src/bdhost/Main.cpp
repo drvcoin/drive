@@ -23,11 +23,15 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <thread>
 #include <mongoose.h>
 #include <unistd.h>
 #include "Options.h"
 #include "HttpModule.h"
 #include "HttpServer.h"
+#include "HttpConfig.h"
+#include "BdSession.h"
+#include "BdKademlia.h"
 #include "Global.h"
 
 /*
@@ -53,9 +57,58 @@ static int Init(const std::string & name)
 }
 */
 
+
+static void init_kad()
+{
+#ifdef SUPPORT_KAD
+
+  auto thread = std::thread(
+    []()
+    {
+      auto key = "ep:" + bdhost::Options::name;
+
+      auto endpoint = bdhost::Options::endpoint;
+      if (endpoint.empty())
+      {
+        char buf[128];
+        sprintf(buf, "http://localhost:%u", bdhost::Options::port);
+        endpoint = buf;
+      }
+
+      while (true)
+      {
+        bdfs::HttpConfig config;
+        config.ConnectTimeout(5);
+        config.RequestTimeout(5);
+
+        auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config);
+        auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
+
+        auto result = kademlia->SetValue(key.c_str(), endpoint.c_str(), endpoint.size(), time(nullptr), 7 * 24 * 60 * 60);
+
+        if (!result->Wait() || !result->GetResult())
+        {
+          printf("WARNING: failed to publish endpoints to kademlia\n");
+        }
+
+        sleep(24 * 60 * 60);
+      }
+    }
+  );
+
+  thread.detach();
+
+#else
+  printf("WARNING: kademlia support is disabled.\n");
+#endif
+}
+
+
 int main(int argc, const char ** argv)
 {
   bdhost::Options::Init(argc, argv);
+
+  init_kad();
 
   bdhost::g_contracts = new bdcontract::ContractRepository(bdhost::Options::repo.c_str());
 

@@ -29,6 +29,7 @@ include $(ROOT)/Config.mk
 SRCS = \
 	AsyncResult.cpp \
 	Base64Encoder.cpp \
+	BdKademlia.cpp \
 	BdObject.cpp \
 	BdPartition.cpp \
 	BdPartitionFolder.cpp \

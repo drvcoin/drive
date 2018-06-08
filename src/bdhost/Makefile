@@ -41,10 +41,15 @@ LIBS = \
 	libbdcontract.a \
 	libbdhttp.a \
 	libmongoose.a \
-  libjson.a \
+	libjson.a \
 
 SYSLIBS = -lcurl -luuid -ldl -pthread
 
-CCFLAGS = -I../jsoncpp/include -I../mongoose -I../bdcontract-lib -I../httpserver -fPIC -std=c++17
+CCFLAGS = -I../jsoncpp/include -I../mongoose -I../bdcontract-lib -I../httpserver -I../bdfs-lib -fPIC -std=c++17
+
+ifneq ($(SUPPORT_KAD),)
+CCFLAGS += -DSUPPORT_KAD
+LIBS += libbdfs.a
+endif
 
 include $(ROOT)/Cpp.mk

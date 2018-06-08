@@ -20,27 +20,27 @@
   SOFTWARE.
 */
 
+
 #pragma once
 
-#include <string>
 #include <stdint.h>
+#include <stdlib.h>
+#include <memory>
+#include <string>
+#include "BdObject.h"
+#include "Buffer.h"
+#include "AsyncResult.h"
 
-namespace bdhost
+namespace bdfs
 {
-  class Options
+  class BdKademlia : public BdObject
   {
   public:
-    static std::string name;
 
-    static uint16_t port;
+    BdKademlia(const char * base, const char * name, const char * path, const char * type);
 
-    static std::string endpoint;
+    AsyncResultPtr<bool> SetValue(const char * key, const void * value, size_t size, uint64_t version, uint32_t ttl);
 
-    static std::string kademlia;
-
-    static std::string repo;
-
-    static bool Usage(const char * message = nullptr, ...);
-    static bool Init(int argc, const char ** argv);
+    AsyncResultPtr<Buffer> GetValue(const char * key);
   };
 }
