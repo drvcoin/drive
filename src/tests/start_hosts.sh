@@ -10,7 +10,7 @@ while [[ $id -lt 8 ]]; do
 
   pushd host-$id > /dev/null
 
-  ../bdhost -n host-$id -p $port -r ../contracts &
+  ../bdhost -p $port -n host-$id -e "http://localhost:$port" -k "http://localhost:7800" -r ../contracts &
 
   popd > /dev/null
 
