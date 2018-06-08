@@ -44,8 +44,6 @@ namespace bdhost
     static uint32_t k_bootaddr;
     static uint16_t k_bootport;
 
-    static std::string repo;
-
     static bool Usage(const char * message = nullptr, ...);
     static bool Init(int argc, const char ** argv);
   };
