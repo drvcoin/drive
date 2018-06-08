@@ -32,6 +32,7 @@ namespace dfs
   uint16_t Options::DataBlocks = 4;
   uint16_t Options::CodeBlocks = 4;
   std::string Options::Repo;
+  std::string Options::KademliaUrl;
   std::vector<std::string> Options::Paths;
 
   extern void Exit(const char * format, ...);
@@ -108,6 +109,10 @@ namespace dfs
       else if (strcmp(arg, "-r") == 0)
       {
         Options::Repo = argv[++i];
+      }
+      else if (strcmp(arg, "-k") == 0)
+      {
+        Options::KademliaUrl = argv[++i];
       }
       else if (arg[0] == '-')
       {

@@ -43,4 +43,8 @@ ifneq ($(DEBUG_HTTP),)
 CCFLAGS += -DDEBUG_HTTP
 endif
 
+ifneq ($(SUPPORT_KAD),)
+CCFLAGS += -DSUPPORT_KAD
+endif
+
 include $(ROOT)/Cpp.mk

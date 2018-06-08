@@ -35,5 +35,11 @@ namespace dfs
   
   
     static bdfs::HttpConfig defaultConfig;
+
+    static std::string kademliaUrl;
+
+  private:
+
+    static std::string GetProviderEndpoint(const std::string & name);
   };
 }

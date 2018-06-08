@@ -227,10 +227,13 @@ void HandleOptions()
 
 int main(int argc, char * * argv)
 {
+  Options::Init(argc, argv);
+
   VolumeManager::defaultConfig.ConnectTimeout(5);
   VolumeManager::defaultConfig.RequestTimeout(5);
 
-  Options::Init(argc, argv);
+  VolumeManager::kademliaUrl = Options::KademliaUrl;
+
   HandleOptions();
   return 0;
 }

@@ -26,6 +26,7 @@
 #include "cm256.h"
 #include "UnixDomainSocket.h"
 #include "ClientManager.h"
+#include "VolumeManager.h"
 
 using namespace dfs;
 using namespace bdfs;
@@ -41,6 +42,11 @@ void signalHandler(int signum)
 
 int main(int argc, char * * argv)
 {
+  if (argc > 1)
+  {
+    VolumeManager::kademliaUrl = argv[1];
+  }
+
   signal(SIGINT, signalHandler);
   signal(SIGTERM, signalHandler);
   

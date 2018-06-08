@@ -53,6 +53,7 @@ namespace bdhost
     printf("Usage: bdhost [option]\n");
     printf("\n");
     printf("Options:\n");
+    printf("  -n <name>       name of the host\n");
     printf("  -p <port>       port to listen on (default:80)\n");
     printf("  -e <url>        endpoint url to register (default:http://localhost)\n");
     printf("  -k <kad>        kademlia service url (default:http://localhost:7800)\n");
@@ -73,6 +74,11 @@ namespace bdhost
       {
         assert_argument_index(++i, "path");
         repo = argv[i];
+      }
+      else if (strcmp(argv[i], "-n") == 0)
+      {
+        assert_argument_index(++i, "name");
+        name = argv[i];
       }
       else if (strcmp(argv[i], "-e") == 0)
       {
