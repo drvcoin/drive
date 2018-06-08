@@ -22,6 +22,7 @@
 
 #include "Volume.h"
 #include "Util.h"
+#include "Cache.h"
 
 #include <memory.h>
 #include <memory>
@@ -57,6 +58,13 @@ namespace dfs
       delete(*i);
     }
   }
+
+
+  void Volume::EnableCache(std::unique_ptr<Cache> val)
+  {
+    this->cache = std::move(val);
+  }
+
 
   bool Volume::SetPartition(uint64_t index, Partition * partition)
   {
@@ -132,14 +140,14 @@ namespace dfs
       size_t toWrite = (size>blockRemaining)?blockRemaining:size;
       if (toWrite < blockSize)
       {
-        return_false_if_msg(!partitions[col]->ReadBlock(row, cryptBuffer.get(), blockSize, 0), "Error: failed to write [%lx,%lx].\n", row, col);
+        return_false_if_msg(!__ReadCached(row, col, cryptBuffer.get(), blockSize, 0), "Error: failed to write [%lx,%lx].\n", row, col);
         memset(iv, row, AES_BLOCK_SIZE);
         AES_cbc_encrypt(cryptBuffer.get(), clearBuffer.get(), blockSize, &decryptKey, iv, AES_DECRYPT);
       }
       memcpy(clearBuffer.get() + blockOffset, byteBuffer, toWrite);
       memset(iv, row, AES_BLOCK_SIZE);
       AES_cbc_encrypt(clearBuffer.get(), cryptBuffer.get(), blockSize, &encryptKey, iv, AES_ENCRYPT);
-      return_false_if_msg(!partitions[col]->WriteBlock(row, cryptBuffer.get(), blockSize, 0), "Error: failed to write [%lx,%lx].\n", row, col);
+      return_false_if_msg(!__WriteCached(row, col, cryptBuffer.get(), blockSize, 0), "Error: failed to write [%lx,%lx].\n", row, col);
       byteBuffer += toWrite;
       size -= toWrite;
       blockRemaining = blockSize;
@@ -183,7 +191,7 @@ namespace dfs
     while (true)
     {
       size_t toWrite = (size>blockRemaining)?blockRemaining:size;
-      return_false_if_msg(!partitions[col]->WriteBlock(row, byteBuffer, toWrite, blockOffset), "Error: failed to write [%lx,%lx].\n", row, col);
+      return_false_if_msg(!__WriteCached(row, col, byteBuffer, toWrite, blockOffset), "Error: failed to write [%lx,%lx].\n", row, col);
       byteBuffer += toWrite;
       size -= toWrite;
       blockRemaining = blockSize;
@@ -231,7 +239,7 @@ namespace dfs
     while (true)
     {
       size_t toRead = (size>blockRemaining)?blockRemaining:size;
-      return_false_if_msg(!partitions[col]->ReadBlock(row, cryptBuffer.get(), blockSize, 0), "Error: failed to read [%lx,%lx].\n", row, col);
+      return_false_if_msg(!__ReadCached(row, col, cryptBuffer.get(), blockSize, 0), "Error: failed to read [%lx,%lx].\n", row, col);
       memset(iv, row, AES_BLOCK_SIZE);
       AES_cbc_encrypt(cryptBuffer.get(), clearBuffer.get(), blockSize, &decryptKey, iv, AES_DECRYPT);
       memcpy(byteBuffer, clearBuffer.get() + blockOffset, toRead);
@@ -272,7 +280,7 @@ namespace dfs
     while (true)
     {
       size_t toRead = (size>blockRemaining)?blockRemaining:size;
-      return_false_if_msg(!partitions[col]->ReadBlock(row, byteBuffer, toRead, blockOffset), "Error: failed to read [%lx,%lx].\n", row, col);
+      return_false_if_msg(!__ReadCached(row, col, byteBuffer, toRead, blockOffset), "Error: failed to read [%lx,%lx].\n", row, col);
       byteBuffer += toRead;
       size -= toRead;
       blockRemaining = blockSize;
@@ -319,7 +327,7 @@ namespace dfs
     {
       return_false_if(!GetRow(row).Verify());
     }
-    return_false_if(!partition->WriteBlock(row, buffer, size, offset));
+    return_false_if(!__WriteCached(row, column, buffer, size, offset));
     if (column < dataCount)
     {
       return GetRow(row).Encode();
@@ -332,12 +340,45 @@ namespace dfs
     return_false_if_msg(column >= partitions.size(), "Error: param 'column' is out of range: %ld >= %ld\n", column, partitions.size());
     Partition * partition = partitions[column];
     return_false_if_msg(partition == NULL, "Error: partition '%ld' is not set\n", column);
-    if (!partition->ReadBlock(row, buffer, size, offset))
+    if (!__ReadCached(row, column, buffer, size, offset))
     {
       return_false_if(!GetRow(row).Verify());
-      return_false_if_msg(!partition->ReadBlock(row, buffer, size, offset), "Error: failed to read block");
+      return_false_if_msg(!__ReadCached(row, column, buffer, size, offset), "Error: failed to read block");
     }
     return true;
+  }
+
+
+  bool Volume::__ReadCached(uint64_t row, uint64_t column, void * buffer, size_t size, size_t offset)
+  {
+    if (cache)
+    {
+      return cache->Read(row, column, buffer, size, offset);
+    }
+
+    return __ReadDirect(row, column, buffer, size, offset);
+  }
+
+
+  bool Volume::__WriteCached(uint64_t row, uint64_t column, const void * buffer, size_t size, size_t offset)
+  {
+    if (cache)
+    {
+      return cache->Write(row, column, buffer, size, offset);
+    }
+
+    return __WriteCached(row, column, buffer, size, offset);
+  }
+
+
+  bool Volume::__ReadDirect(uint64_t row, uint64_t column, void * buffer, size_t size, size_t offset)
+  {
+    return partitions[column]->ReadBlock(row, buffer, size, offset);
+  }
+
+  bool Volume::__WriteDirect(uint64_t row, uint64_t column, const void * buffer, size_t size, size_t offset)
+  {
+    return partitions[column]->WriteBlock(row, buffer, size, offset);
   }
 
   /*

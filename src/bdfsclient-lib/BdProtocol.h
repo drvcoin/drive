@@ -21,14 +21,42 @@
 */
 
 #pragma once
+#include <stdint.h>
+#pragma pack(push,1)
+namespace bdfs
+{
+  // Block Drive Client Protocol
+  namespace bdcp
+  {
+    enum T : uint8_t
+    {
+      BIND = 0,
+      UNBIND,
+      RESPONSE,
+      QUERY_NBD
+    };
 
-#include <arpa/inet.h>
+    typedef struct
+    {
+      uint32_t length;
+      T type;
+    }BdHdr;
 
-#define return_false_if(condition) \
-  if (condition) { return false; }
+    typedef struct
+    {
+      BdHdr hdr;
+      char data[128];
+    }BdRequest;
 
-#define return_false_if_msg(condition, ...) \
-  if (condition) { printf(__VA_ARGS__); return false; }
-
-uint64_t htonll(uint64_t val);
-uint64_t ntohll(uint64_t val);
+    // BdResponse for BIND
+    // status = 0: Fail, 1: Success, 2: Already Binded
+    // data = nbdpath or error message
+    typedef struct
+    {
+      BdHdr hdr;
+      uint8_t status;
+      char data[128];
+    }BdResponse;
+  }
+}
+#pragma pack(pop)

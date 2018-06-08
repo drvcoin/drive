@@ -22,29 +22,25 @@
 
 ROOT = $(realpath ../..)
 
-TARGETEXE = drive
+TARGETLIB = libbdfsclient
 
 include $(ROOT)/Config.mk
 
 SRCS = \
-  Action.cpp \
-  Main.cpp \
-  Options.cpp 
+	Cache.cpp \
+  Util.cpp \
+  Volume.cpp \
+  VolumeCell.cpp \
+  VolumeColumn.cpp \
+  VolumeRow.cpp \
+  BitSet.cpp \
+  Partition.cpp \
+  VolumeManager.cpp 
 
-VPATH = $(BINDIR)
+CCFLAGS =  -std=c++17 -fPIC -I../jsoncpp/include -I../mongoose -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../bdcontract-lib -I../bdfs-lib
 
-LIBS = \
-  libbdfsclient.a \
-	libbdfs.a \
-	libbdcontract.a \
-	libjson.a \
-  $(ROOT)/../ubd/out/lib/ubd.a \
-  $(ROOT)/../cm256/out/lib/cm256.a
-
-
-TARGET = drive
-CCFLAGS = -std=c++17  -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib
-
-SYSLIBS = -lcrypto -lcurl -ldl -pthread
+ifneq ($(DEBUG_HTTP),)
+CCFLAGS += -DDEBUG_HTTP
+endif
 
 include $(ROOT)/Cpp.mk

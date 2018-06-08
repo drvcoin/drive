@@ -32,10 +32,11 @@ namespace dfs
       Create,
       Delete,
       Verify,
-      Resize,
+      List,
       Mount,
       Unmount,
-      Daemon
+      Show,
+      Format
     };
 
     const char * ToString(T value);

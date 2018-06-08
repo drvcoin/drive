@@ -76,7 +76,7 @@ namespace dfs
       blocks[i].Block = dataCell;
       if (volume->__VerifyCell(row, i))
       {
-        return_false_if(!volume->partitions[i]->ReadBlock(row, dataCell, blockSize, 0));
+        return_false_if(!volume->__ReadCached(row, i, dataCell, blockSize, 0));
         blocks[i].Index = i;
       }
       else
@@ -93,7 +93,7 @@ namespace dfs
         if (volume->__VerifyCell(row, i+dataCount))
         {
           size_t oi = missingBlocks[mi++];
-          return_false_if(!volume->partitions[i+dataCount]->ReadBlock(row, blocks[oi].Block, blockSize, 0));
+          return_false_if(!volume->__ReadCached(row, i+dataCount, blocks[oi].Block, blockSize, 0));
           blocks[oi].Index = dataCount + i;
           if (mi == missingBlocks.size())
           {
@@ -102,7 +102,7 @@ namespace dfs
             {
               oi = missingBlocks[j];
               printf("Recovered [%lx,%lx]\n", row, oi);
-              volume->partitions[oi]->WriteBlock(row, blocks[oi].Block, blockSize, 0);
+              volume->__WriteCached(row, oi, blocks[oi].Block, blockSize, 0);
             }
             break;
           }
@@ -118,7 +118,7 @@ namespace dfs
     for (int i = 0; i < codeCount; ++i)
     {
       uint8_t * codeCell = codeBuffer.get() + (i * blockSize);
-      volume->partitions[i+dataCount]->WriteBlock(row, codeCell, blockSize, 0);
+      volume->__WriteCached(row, i+dataCount, codeCell, blockSize, 0);
     }
 
     return true;
@@ -144,7 +144,7 @@ namespace dfs
     for (int i = 0; i < dataCount; i++)
     {
       uint8_t * dataCell = dataBuffer.get() + (i * blockSize);
-      volume->partitions[i]->ReadBlock(row, dataCell, blockSize, 0);
+      volume->__ReadCached(row, i, dataCell, blockSize, 0);
       blocks[i].Block = dataCell;
     }
 
@@ -156,7 +156,7 @@ namespace dfs
     for (int i = 0; i < params.RecoveryCount; ++i)
     {
       uint8_t * codeCell = codeBuffer.get() + (i * blockSize);
-      volume->partitions[i+dataCount]->WriteBlock(row, codeCell, blockSize, 0);
+      volume->__WriteCached(row, i+dataCount, codeCell, blockSize, 0);
     }
 
     return true;

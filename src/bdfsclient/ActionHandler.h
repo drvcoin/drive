@@ -21,8 +21,6 @@
 */
 
 #include <map>
-#include "HttpConfig.h"
-#include "Volume.h"
 
 namespace dfs
 {
@@ -43,11 +41,7 @@ namespace dfs
     static std::string GetNextNBD();
 
   public:
-    static std::unique_ptr<Volume> LoadVolume(const std::string &name);
-    static bool CreateVolume(const std::string &volumeName, const std::string &repoName, const uint16_t dataBlocks, const uint16_t codeBlocks);
-    static bool DeleteVolume(const std::string &name);
-    static bool MountVolume(const std::string &name, const std::string &path);
-    
-    static bdfs::HttpConfig defaultConfig;
+    static int BindVolume(const std::string name);
+    static std::string GetNbdForVolume(const std::string name);
   };
 }

@@ -20,71 +20,61 @@
   SOFTWARE.
 */
 
-#pragma once
-#include <stdint.h>
-#pragma pack(push,1)
-namespace bdfs
+#include "Util.h"
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <cerrno>
+
+uint64_t htonll(uint64_t val)
 {
-  // Block Drive Client Protocol
-  namespace bdcp
-  {
-    enum T : uint8_t
-    {
-      Mount = 0,
-      Unmount,
-      Create,
-      Delete,
-      RequestNBD,
-      Response
-    };
-
-    typedef struct
-    {
-      uint32_t length;
-      T type;
-    }BdHdr;
-
-    typedef struct
-    {
-      BdHdr hdr;
-      uint8_t success;
-      char message[128];
-    }BdResponse;
-
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-      char path[128];
-    }BdMount;
-
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-    }BdUnmount;
-
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-      char repoName[128];
-      uint16_t dataBlocks;
-      uint16_t codeBlocks;
-    }BdCreate;
-  
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-    }BdDelete;
-    
-    typedef struct
-    {
-      BdHdr hdr;
-      char volumeName[128];
-    }BdRequestNBD;
-
-  }
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return (((uint64_t) htonl(val)) << 32) + htonl(val >> 32);
+#else
+  return val;
+#endif
 }
-#pragma pack(pop)
+
+uint64_t ntohll(uint64_t val)
+{
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return (((uint64_t) ntohl(val)) << 32) + ntohl(val >> 32);
+#else
+  return val;
+#endif
+}
+
+
+bool nbd_ready(const char* devname, bool do_print) {
+  char buf[256];
+  char* p;
+  int fd;
+  int len;
+
+  if( (p=strrchr((char*)devname, '/')) ) {
+    devname=p+1;
+  }
+  if((p=strchr((char*)devname, 'p'))) {
+    /* We can't do checks on partitions. */
+    *p='\0';
+  }
+  snprintf(buf, 256, "/sys/block/%s/pid", devname);
+  if((fd=open(buf, O_RDONLY))<0) {
+    if(errno==ENOENT) {
+      return false;
+    } else {
+      return false;
+    }
+  }
+  len=read(fd, buf, 256);
+  if(len < 0) {
+    perror("could not read from server");
+    close(fd);
+    return false;
+  }
+  buf[(len < 256) ? len : 255]='\0';
+  if(do_print) printf("%s\n", buf);
+  close(fd);
+  return true;
+}

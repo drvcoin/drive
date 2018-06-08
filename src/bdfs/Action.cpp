@@ -37,10 +37,11 @@ namespace dfs
         case Create:  return "Create";
         case Delete:  return "Delete";
         case Verify:  return "Verify";
-        case Resize:  return "Resize";
+        case List:  return "List";
         case Mount:   return "Mount";
         case Unmount: return "Unmount";
-        case Daemon:  return "Daemon";
+        case Show:  return "Show";
+        case Format:  return "Format";
       }
     }
 
@@ -51,10 +52,11 @@ namespace dfs
              if (strcasecmp("Create", value) == 0)  { return Create; }
         else if (strcasecmp("Delete", value) == 0)  { return Delete; }
         else if (strcasecmp("Verify", value) == 0)  { return Verify; }
-        else if (strcasecmp("Resize", value) == 0)  { return Resize; }
+        else if (strcasecmp("List", value) == 0)    { return List; }
         else if (strcasecmp("Mount", value) == 0)   { return Mount; }
         else if (strcasecmp("Unmount", value) == 0) { return Unmount; }
-        else if (strcasecmp("Daemon", value) == 0)  { return Daemon; }
+        else if (strcasecmp("Show", value) == 0)    { return Show; }
+        else if (strcasecmp("Format", value) == 0)    { return Format; }
       }
       return Unknown;
     }

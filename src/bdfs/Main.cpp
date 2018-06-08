@@ -21,42 +21,62 @@
 */
 
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
+#include <sys/stat.h>
+#include <cmath>
+#include <limits>
+#include <json/json.h>
+
+#include "BdTypes.h"
+#include "HttpConfig.h"
+#include "BdSession.h"
+
 #include "Options.h"
+#include "Util.h"
+#include "VolumeManager.h"
+#include "Volume.h"
+#include "BdPartitionFolder.h"
+#include "Buffer.h"
+#include "ContractRepository.h"
+#include "Cache.h"
+
 #include "UnixDomainSocket.h"
 #include "BdProtocol.h"
 
 using namespace dfs;
 using namespace bdfs;
 
-bool SendReceive(const uint8_t *buff, uint32_t length)
+static bdfs::HttpConfig defaultConfig;
+
+#define SENDRECV_TIMEOUT 30
+
+bdcp::BdResponse SendReceive(const uint8_t *buff, uint32_t length)
 {
   UnixDomainSocket socket;
+  bdcp::BdResponse resp;
+  resp.status = false;
+
   if(!socket.Connect("bdfsclient"))
   {
-    printf("Error: Unable to connect to bdfsclient daemon.\n");
-    return false;
+    sprintf(&resp.data[0],"Error: Unable to connect to bdfsclient daemon.\n");
   }
-
-  if (socket.SendMessage(buff, length) != length)
+  else if (socket.SendMessage(buff, length,SENDRECV_TIMEOUT) != length)
   {
-    printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
-    return false;
+    sprintf(&resp.data[0],"Error: Unable to sendmessage to bdfsclient daemon.\n");
   }
-
-  bdcp::BdResponse resp;
-  if(socket.RecvMessage(&resp,sizeof(bdcp::BdResponse)) != resp.hdr.length)
+  else if(socket.RecvMessage(&resp,sizeof(bdcp::BdResponse),SENDRECV_TIMEOUT) != resp.hdr.length)
   {
-    printf("Error: Unable to readresponse from bdfsclient daemon.\n");
-    return false;
+    sprintf(&resp.data[0],"Error: Unable to readresponse from bdfsclient daemon.\n");
   }
 
-  return resp.success;
+  return resp;
 }
 
 void HandleOptions()
 {
+  bdcp::BdRequest request;
+  memset(&request,0,sizeof(bdcp::BdRequest));
+  request.hdr.length = sizeof(bdcp::BdRequest);
+
   switch(Options::Action)
   {
     case Action::Mount:
@@ -67,14 +87,100 @@ void HandleOptions()
       }
       else
       {
-        bdcp::BdMount mnt;
-        memset(&mnt,0,sizeof(bdcp::BdMount));
-        mnt.hdr.length = sizeof(bdcp::BdMount);
-        mnt.hdr.type = bdcp::Mount;
-        strncpy(mnt.volumeName,Options::Name.c_str(),Options::Name.length());
-        strncpy(mnt.path,Options::Paths[0].c_str(),Options::Paths[0].length());
-        bool success = SendReceive((const uint8_t*)&mnt,mnt.hdr.length);
-        printf("Mounting: %d\n",success);
+        request.hdr.type = bdcp::BIND;
+        strncpy(request.data,Options::Name.c_str(),Options::Name.length());
+        bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
+
+        if(!resp.status)
+        {
+          printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
+
+			  int timeout = 10;	
+				while(!nbd_ready(&resp.data[0]) && timeout--)
+        {
+          sleep(1);
+        }
+
+        if(timeout == 0)
+        {
+          printf("Bind timeout for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
+
+        printf("Mounting '%s' to '%s'\n",resp.data,Options::Paths[0].c_str());
+        
+        char *args[] = {"sudo", "mount", resp.data, (char*)Options::Paths[0].c_str(), NULL};
+        
+        execvp("sudo",args);
+      }
+      break;
+    }
+
+    case Action::Unmount:
+    {
+      if(Options::Name.empty())
+      {
+        printf("Missing <volumename>\n");
+      }
+      else
+      {
+        request.hdr.type = bdcp::QUERY_NBD;
+        strncpy(request.data,Options::Name.c_str(),Options::Name.length());
+        bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
+
+        if(!resp.status)
+        {
+          printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
+
+        printf("Unmounting '%s'...\n",resp.data);
+        
+        char *args[] = {"sudo", "umount", resp.data, NULL};
+        
+        execvp("sudo",args);
+      }
+      break;
+    }
+
+    case Action::Format:
+    {
+      if(Options::Name.empty() || Options::Paths.size() != 1)
+      {
+        printf("Missing <volumename> or <fstype>\n");
+      }
+      else
+      {
+        request.hdr.type = bdcp::BIND;
+        strncpy(request.data,Options::Name.c_str(),Options::Name.length());
+        bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
+
+        if(!resp.status)
+        {
+          printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
+
+			  int timeout = 10;	
+				while(!nbd_ready(&resp.data[0]) && timeout--)
+        {
+          sleep(1);
+        }
+
+        if(timeout == 0)
+        {
+          printf("Bind timeout for volume '%s'.\n",Options::Name.c_str());
+          exit(0);
+        }
+
+        printf("Formatting '%s' to '%s'...\n",resp.data,Options::Paths[0].c_str());
+       
+        std::string mkfs = "mkfs." + Options::Paths[0];
+        char *args[] = {"sudo", (char*)mkfs.c_str(), resp.data, NULL};
+        
+        execvp("sudo",args);
       }
       break;
     }
@@ -88,19 +194,11 @@ void HandleOptions()
       else 
       {
         printf("Creating volume '%s'...\n",Options::Name.c_str());
-        bdcp::BdCreate create;
-        memset(&create,0,sizeof(bdcp::BdCreate));
-        create.hdr.length = sizeof(bdcp::BdCreate);
-        create.hdr.type = bdcp::Create;
-        strncpy(create.volumeName, Options::Name.c_str(), Options::Name.length());
-        strncpy(create.repoName, Options::Repo.c_str(), Options::Repo.length());
-        create.dataBlocks = Options::DataBlocks;
-        create.codeBlocks = Options::CodeBlocks;
-        bool success = SendReceive((const uint8_t*)&create,create.hdr.length);
+        bool success = VolumeManager::CreateVolume(Options::Name, Options::Repo, Options::DataBlocks, Options::CodeBlocks);
         if(success)
           printf("Config file : %s.config\n",Options::Name.c_str());
         else
-          printf("Error creating volume.\n");
+          printf("Error creating volume '%s'.\n", Options::Name.c_str());
       }
       break;
     }
@@ -113,17 +211,14 @@ void HandleOptions()
       }
       else 
       {
-        bdcp::BdDelete del;
-        memset(&del,0,sizeof(bdcp::BdDelete));
-        del.hdr.length = sizeof(bdcp::BdDelete);
-        del.hdr.type = bdcp::Delete;
-        strncpy(del.volumeName, Options::Name.c_str(), Options::Name.length());
-        bool success = SendReceive((const uint8_t*)&del,del.hdr.length);
-        printf("Deleting volume: %s, success:%d\n",Options::Name.c_str(),success);
+        bool success = VolumeManager::DeleteVolume(Options::Name);
+        if(success)
+          printf("Volume '%s' deleted.\n",Options::Name.c_str());
       }
       break;
     }
-
+  
+    
 
     default:
       printf("Unhandled option : %s\n",Action::ToString(Options::Action));
@@ -132,7 +227,10 @@ void HandleOptions()
 
 int main(int argc, char * * argv)
 {
+  VolumeManager::defaultConfig.ConnectTimeout(5);
+  VolumeManager::defaultConfig.RequestTimeout(5);
+
   Options::Init(argc, argv);
-	HandleOptions();
-	return 0;
+  HandleOptions();
+  return 0;
 }

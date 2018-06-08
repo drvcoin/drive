@@ -26,6 +26,7 @@
 #include <memory>
 #include <thread>
 #include "ActionHandler.h"
+#include "VolumeManager.h"
 
 namespace dfs
 {
@@ -35,8 +36,8 @@ namespace dfs
     isUnixSocketListening(false),
     requestLoop(&ClientManager::HandleRequest)
   {
-    ActionHandler::defaultConfig.ConnectTimeout(5);
-    ActionHandler::defaultConfig.RequestTimeout(5);
+    VolumeManager::defaultConfig.ConnectTimeout(5);
+    VolumeManager::defaultConfig.RequestTimeout(5);
   }
 
 	bool ClientManager::Start()
@@ -57,56 +58,56 @@ namespace dfs
 
     std::thread th(&ClientManager::Listen, this);
     th.detach();
-
+  
 		return true;
 	}
 
 	bool ClientManager::Stop()
 	{
-		isUnixSocketListening = false;
-		unixSocket.Shutdown(SHUT_RDWR);
-		unixSocket.Close();
-
+    if(isUnixSocketListening)
+    {
+		  unixSocket.Shutdown(SHUT_RDWR);
+		  unixSocket.Close();
+    }
+    
+    isUnixSocketListening = false;
 		this->requestLoop.Stop();
 
 		return true;
 	}
 
-  bool ClientManager::ProcessRequest(const bdcp::BdHdr *pHdr)
+  bdcp::BdResponse ClientManager::ProcessRequest(const bdcp::BdHdr *pHdr)
   {
-    bool success = true;
+    bdcp::BdResponse resp;
+    resp.hdr.length = sizeof(bdcp::BdResponse);
+    resp.hdr.type = bdcp::RESPONSE;
+    resp.status = 0;
+    
+    bdcp::BdRequest *pReq = (bdcp::BdRequest *)pHdr;
+
     switch(pHdr->type)
     {
-      case bdcp::Mount:
+      case bdcp::BIND:
       {
-        bdcp::BdMount *pMnt = (bdcp::BdMount *)pHdr;
-        success = ActionHandler::MountVolume(pMnt->volumeName, pMnt->path);
+        resp.status = ActionHandler::BindVolume(pReq->data);
+        if(resp.status)
+        {
+          std::string nbdPath = ActionHandler::GetNbdForVolume(pReq->data);
+          strncpy(resp.data,nbdPath.c_str(), std::min(nbdPath.length(),sizeof(resp.data)));
+        }
         break;
       }
 
-      case bdcp::Unmount:
+      case bdcp::UNBIND:
       {
-        break;
-      }
-
-      case bdcp::Create:
-      {
-        bdcp::BdCreate *pCreate = (bdcp::BdCreate *)pHdr;
-        success = ActionHandler::CreateVolume(pCreate->volumeName, pCreate->repoName, pCreate->dataBlocks, pCreate->codeBlocks);
-        break;
-      }
-
-      case bdcp::Delete:
-      {
-        bdcp::BdDelete *pDelete = (bdcp::BdDelete *)pHdr;
-        success = ActionHandler::DeleteVolume(pDelete->volumeName);
         break;
       }
 
       default:
         printf("Unhandled instruction of type : %d\n",pHdr->type);
     }
-    return success;
+   
+    return resp;
   }
 
 	bool ClientManager::HandleRequest(void * sender, UnixDomainSocket * socket)
@@ -114,11 +115,6 @@ namespace dfs
 		ClientManager *_this = (ClientManager *)sender;
 
     uint32_t length;
-
-    bdcp::BdResponse resp;
-    resp.hdr.length = sizeof(bdcp::BdResponse);
-    resp.hdr.type = bdcp::Response;
-    resp.success = 0;
 	 
 		if (socket->RecvMessage(&length, sizeof(uint32_t)) <= 0)
 		{
@@ -133,7 +129,8 @@ namespace dfs
 
 		if (socket->RecvMessage(buff+sizeof(uint32_t), length-sizeof(uint32_t)) > 0)
     {
-      resp.success = _this->ProcessRequest((bdcp::BdHdr *)buff);
+      bdcp::BdResponse resp = _this->ProcessRequest((bdcp::BdHdr *)buff);
+      socket->SendMessage(&resp,resp.hdr.length);
     }
     else
     {
@@ -141,14 +138,14 @@ namespace dfs
     }
   
     delete(buff);
-    socket->SendMessage(&resp,resp.hdr.length);
-    //socket->Close();
+    socket->Close();
     
     return true;
 	}
 
 	void ClientManager::Listen()
 	{
+    isUnixSocketListening = true;
 		for(;;)
 		{
 			UnixDomainSocket * socket = this->unixSocket.Accept();

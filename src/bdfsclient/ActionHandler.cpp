@@ -27,21 +27,21 @@
 #include <unistd.h>
 #include <json/json.h>
 #include <thread>
+
 #include "ActionHandler.h"
 #include "BdTypes.h"
 #include "BdSession.h"
+#include "Cache.h"
+#include "Util.h"
 
 #include "cm256.h"
 #include "gf256.h"
 #include "ubd.h"
 
-#include "BdPartitionFolder.h"
-#include "Buffer.h"
-#include "ContractRepository.h"
+#include "VolumeManager.cpp"
 
 namespace dfs
 {
-	bdfs::HttpConfig ActionHandler::defaultConfig;
   std::map<std::string, VolumeMeta *> ActionHandler::volumeInfo;
   std::map<std::string, bool> ActionHandler::nbdInfo = {
     {"/dev/nbd0",false},
@@ -78,91 +78,43 @@ namespace dfs
 		return 0;
 	}
 
-	std::unique_ptr<Volume> ActionHandler::LoadVolume(const std::string & name)
-	{
-		FILE * file = fopen((name + ".config").c_str(), "r");
-		if (!file)
-		{
-			return nullptr;
-		}
-
-		bdfs::Buffer buffer;
-		buffer.Resize(BUFSIZ);
-		size_t offset = 0;
-
-		size_t bytes;
-		while ((bytes = fread(static_cast<char *>(buffer.Buf()) + offset, 1, BUFSIZ, file)) == BUFSIZ)
-		{
-			offset = buffer.Size();
-			buffer.Resize(buffer.Size() + BUFSIZ);
-		}
-
-		fclose(file);
-
-		Json::Reader reader;
-		Json::Value json;
-		if (!reader.parse(static_cast<const char *>(buffer.Buf()), offset + bytes, json, false) ||
-				!json.isObject() ||
-				!json["blockSize"].isIntegral() ||
-				!json["blockCount"].isIntegral() ||
-				!json["dataBlocks"].isIntegral() ||
-				!json["codeBlocks"].isIntegral() ||
-				!json["partitions"].isArray())
-		{
-			return nullptr;
-		}
-
-		size_t blockSize = json["blockSize"].asUInt();
-		uint64_t blockCount = json["blockCount"].asUInt();
-		uint64_t dataBlocks = json["dataBlocks"].asUInt();
-		uint64_t codeBlocks = json["codeBlocks"].asUInt();
-
-		if (json["partitions"].size() < dataBlocks + codeBlocks)
-		{
-			return nullptr;
-		}
-
-		auto volume = std::make_unique<Volume>(name.c_str(), dataBlocks, codeBlocks, blockCount, blockSize, "HelloWorld");
-
-		for (size_t i = 0; i < json["partitions"].size(); ++i)
-		{
-			auto & config = json["partitions"][i];
-			if (!config["name"].isString() || !config["provider"].isString())
-			{
-				return nullptr;
-			}
-
-			auto session = bdfs::BdSession::CreateSession(config["provider"].asCString(), &defaultConfig);
-			auto name = config["name"].asString();
-			auto path = "host://Partitions/" + name;
-			auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
-
-			volume->SetPartition(i, new Partition(partition, blockCount, blockSize));
-		}
-
-		return volume;
-	}
-
-  bool ActionHandler::MountVolume(const std::string &name, const std::string &path)
+  // returns {0: fail, 1: success, 2: already binded}
+  int ActionHandler::BindVolume(const std::string name)
   {
     std::string nbdPath = ActionHandler::GetNextNBD();
     if(nbdPath == "") 
     {
       printf("No available block devices.\n");
-      return false;
+      return 0;
     }
 
-    std::thread th([=]{
+    if(volumeInfo.find(name) != volumeInfo.end())
+    {
+      printf("Volume is binded to '%s'.\n",volumeInfo[name]->nbdPath.c_str());
+      return 2;
+    }
+
+#if 0
+    uint64_t blockCount = 256;//*1024*1024ul;
+    size_t blockSize = 1*1024*1024;
+    std::string volumeId = path;
+#endif
+
+    auto volume = VolumeManager::LoadVolume(name);
+
+    if(volume == nullptr)
+    {
+      printf("Failed to load volume '%s'\n",name.c_str());
+      return 0;
+    }
+
+    // Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
+    volume->EnableCache(std::make_unique<dfs::Cache>("cache", volume.get(), 200, 10));
+    
+    std::thread th([nbdPath, volume = std::move(volume)]{
 
       printf("Processing: %s\n", nbdPath.c_str());
 
-#if 0
-      uint64_t blockCount = 256;//*1024*1024ul;
-      size_t blockSize = 1*1024*1024;
-      std::string volumeId = path;
-#endif
-
-      auto volume = ActionHandler::LoadVolume(name);
 
       static struct ubd_operations ops = {
         .read = xmp_read,
@@ -172,107 +124,36 @@ namespace dfs
         .trim = xmp_trim
       };
 
-
       ubd_register(nbdPath.c_str(), volume->DataSize(), &ops, (void *)volume.get());
     });
     th.detach();
-
-    return true;
-  }
-
-
-	bool ActionHandler::CreateVolume(const std::string & volumeName, const std::string & repoName, const uint16_t dataBlocks, const uint16_t codeBlocks)
-	{
-		std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
-
-		uint64_t size = std::numeric_limits<uint64_t>::max();
-
-		size_t blockSize = 1*1024*1024;
-
-		bdcontract::ContractRepository repo{repoName.c_str()};
-
-		for (const auto & name : repo.GetContractNames())
-		{
-			auto ptr = repo.LoadContract(name.c_str());
-			if (ptr && ptr->Size() > blockSize)
-			{
-				size = std::min(ptr->Size(), size);
-				contracts.emplace_back(std::move(ptr));
-			}
-		}
-
-		if (contracts.size() < dataBlocks + codeBlocks)
-		{
-			printf("Not enough contract.\n");
-			return false;
-		}
-
-		Json::Value arr;
-
-		for (size_t i = 0; i < dataBlocks + codeBlocks; ++i)
-		{
-			auto session = bdfs::BdSession::CreateSession(contracts[i]->Provider().c_str(), &defaultConfig);
-			auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
-				session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
-			auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
-			if (!result->Wait(5000) || !result->GetResult())
-			{
-				printf("Failed to create on partition from contract '%s'\n", contracts[i]->Name().c_str());
-				return false;
-			}
-
-			auto obj = result->GetResult();
-
-			Json::Value partition;
-			partition["name"] = obj->Name();
-			partition["provider"] = contracts[i]->Provider();
-
-			arr.append(partition);
-		}
-		
-		Json::Value volume;
-		volume["blockSize"] = Json::Value::UInt(blockSize);
-		volume["blockCount"] = Json::Value::UInt(size / blockSize);
-		volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
-		volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
-		volume["partitions"] = arr;
-
-		std::string result = volume.toStyledString();
-
-		FILE * file = fopen((volumeName + ".config").c_str(), "w");
-		if (!file)
-		{
-			printf("Failed to create volume config file.\n");
-			return false;
-		}
-
-		fwrite(result.c_str(), 1, result.size(), file);
-
-		fclose(file);
     
-    return true;
-	}
+    int counter = 10;
+    while(!nbd_ready(nbdPath.c_str()) && counter--)
+    {
+      sleep(1);
+    }
 
+    if(counter == 0)
+    {
+      return 0;
+    }
 
-	bool ActionHandler::DeleteVolume(const std::string & name)
-	{
-		auto volume = LoadVolume(name);
-		if (!volume)
-		{
-			printf("Failed to load volume.\n");
-			return false;
-		}
+    VolumeMeta *meta = new VolumeMeta;
+    meta->volumeName = name;
+    meta->nbdPath = nbdPath;
+    meta->isMounted = meta->isFormatted = false;
+    volumeInfo[name] = meta;
 
-		if (!volume->Delete())
-		{
-			printf("Failed to delete volume.\n");
-			return false;
-		}
+    nbdInfo[nbdPath] = true;
 
-		unlink((name + ".config").c_str());
-
-    return true;
-	}
+    return 1;
+  }
+  
+  std::string ActionHandler::GetNbdForVolume(const std::string name)
+  {
+    return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name]->nbdPath : "";
+  }
 
   std::string ActionHandler::GetNextNBD()
   {

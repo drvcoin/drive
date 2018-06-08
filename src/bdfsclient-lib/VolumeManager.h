@@ -20,32 +20,20 @@
   SOFTWARE.
 */
 
-#pragma once
-
-#include <stdint.h>
-#include "EventLoop.h"
-#include "UnixDomainSocket.h"
-#include "BdProtocol.h"
+#include <map>
+#include "HttpConfig.h"
+#include "Volume.h"
 
 namespace dfs
 {
-  using namespace bdfs;
-
-  class ClientManager
+  class VolumeManager
   {
-  private:
-    UnixDomainSocket unixSocket;
-    bool isUnixSocketListening;
-    EventLoop<UnixDomainSocket *> requestLoop;
-
-    bdcp::BdResponse ProcessRequest(const bdcp::BdHdr *);
-    static bool HandleRequest(void *sender, UnixDomainSocket *socket);
-    void Listen();
-
   public:
-    ClientManager();
-    bool Start();
-    bool Stop();
+    static std::unique_ptr<Volume> LoadVolume(const std::string &name);
+    static bool CreateVolume(const std::string &volumeName, const std::string &repoName, const uint16_t dataBlocks, const uint16_t codeBlocks);
+    static bool DeleteVolume(const std::string &name);  
+  
+  
+    static bdfs::HttpConfig defaultConfig;
   };
 }
-

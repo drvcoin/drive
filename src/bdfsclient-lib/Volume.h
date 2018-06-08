@@ -29,11 +29,14 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include <openssl/aes.h>
 
 namespace dfs
 {
+  class Cache;
+
   class Volume
   {
     class Cell
@@ -88,11 +91,15 @@ namespace dfs
     AES_KEY encryptKey;
     AES_KEY decryptKey;
 
+    std::unique_ptr<Cache> cache;
+
   public:
     Volume(const char * volumeId, uint64_t dataCount, uint64_t codeCount, uint64_t blockCount, size_t blockSize, const char * password);
     ~Volume();
 
     bool SetPartition(uint64_t index, Partition * partition);
+
+    void EnableCache(std::unique_ptr<Cache> cache);
 
     const uint64_t Rows() { return blockCount; }
     const uint64_t Columns() { return partitions.size(); }
@@ -122,5 +129,11 @@ namespace dfs
     bool __VerifyCell(uint64_t row, uint64_t column);
     bool __WriteCell(uint64_t row, uint64_t column, const void * buffer, size_t size, size_t offset);
     bool __ReadCell(uint64_t row, uint64_t column, void * buffer, size_t size, size_t offset);
+
+    bool __ReadCached(uint64_t row, uint64_t column, void * buffer, size_t size, size_t offset);
+    bool __WriteCached(uint64_t row, uint64_t column, const void * buffer, size_t size, size_t offset);
+
+    bool __ReadDirect(uint64_t row, uint64_t column, void * buffer, size_t size, size_t offset);
+    bool __WriteDirect(uint64_t row, uint64_t column, const void * buffer, size_t size, size_t offset);
   };
 }

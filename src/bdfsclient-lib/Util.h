@@ -20,22 +20,16 @@
   SOFTWARE.
 */
 
-#include "Util.h"
+#pragma once
 
-uint64_t htonll(uint64_t val)
-{
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return (((uint64_t) htonl(val)) << 32) + htonl(val >> 32);
-#else
-  return val;
-#endif
-}
+#include <arpa/inet.h>
 
-uint64_t ntohll(uint64_t val)
-{
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return (((uint64_t) ntohl(val)) << 32) + ntohl(val >> 32);
-#else
-  return val;
-#endif
-}
+#define return_false_if(condition) \
+  if (condition) { return false; }
+
+#define return_false_if_msg(condition, ...) \
+  if (condition) { printf(__VA_ARGS__); return false; }
+
+uint64_t htonll(uint64_t val);
+uint64_t ntohll(uint64_t val);
+bool nbd_ready(const char* devname, bool do_print = false);
