@@ -34,8 +34,6 @@ namespace bdhost
 {
   uint16_t Options::port = 80;
 
-  std::string Options::repo = ".";
-
   const char * Options::k_root;
 
   uint32_t Options::k_addr;
@@ -59,8 +57,10 @@ namespace bdhost
     printf("Usage: bdhost [option]\n");
     printf("\n");
     printf("Options:\n");
-    printf("  -p <port>       port to listen on (default:80)\n");
-    printf("  -r <path>       root path of contract repository (default:.)\n");
+    printf("  -p <port>             port to listen http request on (default:80)\n");
+    printf("  -k <path>             kademlia node name and path\n");
+    printf("  -n <addr> <port>      kademlia node address and port\n");
+    printf("  -b <addr> <port>      bootstrap node address and port\n");
     printf("\n");
     exit(message == NULL ? 0 : 1);
   }
@@ -73,25 +73,30 @@ namespace bdhost
 
     for (int i = 1; i < argc; ++i)
     {
-      if (strcmp(argv[i], "-r") == 0)
-      {
-        assert_argument_index(++i, "path");
-        repo = argv[i];
-      }
-      else if (strcmp(argv[i], "-p") == 0)
+      if (strcmp(argv[i], "-p") == 0)
       {
         assert_argument_index(++i, "port");
         port = static_cast<uint16_t>(atoi(argv[i]));
       }
       else if (strcmp(argv[i], "-k") == 0)
       {
-        k_root = argv[++i];
+        assert_argument_index(++i, "path");
+        k_root = argv[i];
+      }
+      else if (strcmp(argv[i], "-n") == 0)
+      {
+        assert_argument_index(++i, "node addr");
+        k_addr = static_cast<uint32_t>(inet_addr(argv[i]));
+        assert_argument_index(++i, "node port");
+        k_port = static_cast<uint16_t>(atoi(argv[i]));
 
-        k_addr = static_cast<uint32_t>(inet_addr(argv[++i]));
-        k_port = static_cast<uint16_t>(atoi(argv[++i]));
-
-        k_bootaddr = static_cast<uint32_t>(inet_addr(argv[++i]));
-        k_bootport = static_cast<uint16_t>(atoi(argv[++i]));
+      }
+      else if (strcmp(argv[i], "-b") == 0)
+      {
+        assert_argument_index(++i, "bootstrap addr");
+        k_bootaddr = static_cast<uint32_t>(inet_addr(argv[i]));
+        assert_argument_index(++i, "bootstrap port");
+        k_bootport = static_cast<uint16_t>(atoi(argv[i]));
       }
       else
       {
