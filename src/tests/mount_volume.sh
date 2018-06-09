@@ -2,4 +2,4 @@
 
 target=$1
 
-./drive mount -n volume /dev/$target
+./drive mount -n volume $target
