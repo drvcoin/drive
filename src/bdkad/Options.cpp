@@ -54,7 +54,7 @@ namespace bdhost
       printf("\n");
     }
 
-    printf("Usage: bdhost [option]\n");
+    printf("Usage: bdkad [option]\n");
     printf("\n");
     printf("Options:\n");
     printf("  -p <port>             port to listen http request on (default:80)\n");

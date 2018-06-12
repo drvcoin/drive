@@ -77,7 +77,7 @@ public:
 
   std::unique_ptr<ITransport> Create() override
   {
-    return std::unique_ptr<ITransport>(new TcpTransport(100));
+    return std::unique_ptr<ITransport>(new TcpTransport());
   }
 };
 
@@ -150,7 +150,6 @@ static void InitBuckets(const char * rootPath, const Contact & bootContact)
 
   void KademliaModule::Initialize()
   {
-
     printf("[KAD] Initialize\n");
 
     SetVerbose("on");
@@ -181,8 +180,6 @@ static void InitBuckets(const char * rootPath, const Contact & bootContact)
 
     TransportFactory::Reset(new TransportFactoryImpl());
 
-
-//    Kademlia controller;
 
     KademliaHandler::controller = new Kademlia();
     KademliaHandler::controller->Initialize();
