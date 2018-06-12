@@ -150,7 +150,6 @@ static void InitBuckets(const char * rootPath, const Contact & bootContact)
 
   void KademliaModule::Initialize()
   {
-
     printf("[KAD] Initialize\n");
 
     SetVerbose("on");
@@ -181,8 +180,6 @@ static void InitBuckets(const char * rootPath, const Contact & bootContact)
 
     TransportFactory::Reset(new TransportFactoryImpl());
 
-
-//    Kademlia controller;
 
     KademliaHandler::controller = new Kademlia();
     KademliaHandler::controller->Initialize();

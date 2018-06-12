@@ -24,6 +24,5 @@
 
 namespace bdhost
 {
-//  kad::Kademlia controller;
 
 }
