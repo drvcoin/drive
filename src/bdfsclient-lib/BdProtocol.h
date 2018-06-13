@@ -33,7 +33,7 @@ namespace bdfs
       BIND = 0,
       UNBIND,
       RESPONSE,
-      QUERY_NBD
+      QUERY_VOLUMEINFO
     };
 
     typedef struct
@@ -45,7 +45,9 @@ namespace bdfs
     typedef struct
     {
       BdHdr hdr;
-      char data[128];
+      char data1[128];
+      char data2[128];
+      char data3[128];
     }BdRequest;
 
     // BdResponse for BIND
@@ -55,7 +57,9 @@ namespace bdfs
     {
       BdHdr hdr;
       uint8_t status;
-      char data[128];
+      char data1[128];
+      char data2[128];
+      char data3[128];
     }BdResponse;
   }
 }

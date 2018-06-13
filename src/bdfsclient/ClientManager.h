@@ -23,6 +23,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <memory>
 #include "EventLoop.h"
 #include "UnixDomainSocket.h"
 #include "BdProtocol.h"
@@ -38,7 +39,7 @@ namespace dfs
     bool isUnixSocketListening;
     EventLoop<UnixDomainSocket *> requestLoop;
 
-    bdcp::BdResponse ProcessRequest(const bdcp::BdHdr *);
+    std::unique_ptr<bdcp::BdResponse> ProcessRequest(const bdcp::BdHdr *,UnixDomainSocket *s, bool &shouldReply);
     static bool HandleRequest(void *sender, UnixDomainSocket *socket);
     void Listen();
 

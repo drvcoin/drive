@@ -57,19 +57,50 @@ bdcp::BdResponse SendReceive(const uint8_t *buff, uint32_t length)
 
   if(!socket.Connect("bdfsclient"))
   {
-    sprintf(&resp.data[0],"Error: Unable to connect to bdfsclient daemon.\n");
+    sprintf(&resp.data1[0],"Error: Unable to connect to bdfsclient daemon.\n");
   }
   else if (socket.SendMessage(buff, length,SENDRECV_TIMEOUT) != length)
   {
-    sprintf(&resp.data[0],"Error: Unable to sendmessage to bdfsclient daemon.\n");
+    sprintf(&resp.data1[0],"Error: Unable to sendmessage to bdfsclient daemon.\n");
   }
   else if(socket.RecvMessage(&resp,sizeof(bdcp::BdResponse),SENDRECV_TIMEOUT) != resp.hdr.length)
   {
-    sprintf(&resp.data[0],"Error: Unable to readresponse from bdfsclient daemon.\n");
+    sprintf(&resp.data1[0],"Error: Unable to readresponse from bdfsclient daemon.\n");
   }
 
   return resp;
 }
+
+void ListVolumes()
+{
+  bdcp::BdRequest request;
+  memset(&request,0,sizeof(bdcp::BdRequest));
+  request.hdr.length = sizeof(bdcp::BdRequest);
+  request.hdr.type = bdcp::QUERY_VOLUMEINFO;
+
+  UnixDomainSocket socket;
+  bdcp::BdResponse resp;
+  resp.status = false;
+
+  if(!socket.Connect("bdfsclient"))
+  {
+    sprintf(&resp.data1[0],"Error: Unable to connect to bdfsclient daemon.\n");
+  }
+  else if (socket.SendMessage(&request, request.hdr.length,SENDRECV_TIMEOUT) != request.hdr.length)
+  {
+    sprintf(&resp.data1[0],"Error: Unable to sendmessage to bdfsclient daemon.\n");
+  }
+  else
+  {
+    printf("\n%-25s%-20s%-25s\n","VOLUME NAME", "NBD PATH", "MOUNT PATH");
+    memset(&resp,0,sizeof(bdcp::BdRequest));
+    while(socket.RecvMessage(&resp,sizeof(bdcp::BdResponse),SENDRECV_TIMEOUT) == resp.hdr.length && resp.status)
+    {
+      printf("%-25s%-20s%-25s\n", &resp.data1[0], &resp.data2[0], &resp.data3[0]);
+    }
+  }
+}
+
 
 void HandleOptions()
 {
@@ -88,7 +119,8 @@ void HandleOptions()
       else
       {
         request.hdr.type = bdcp::BIND;
-        strncpy(request.data,Options::Name.c_str(),Options::Name.length());
+        strncpy(request.data1,Options::Name.c_str(),Options::Name.length());
+        strncpy(request.data2,Options::Paths[0].c_str(),Options::Paths[0].length());
         bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
 
         if(!resp.status)
@@ -98,7 +130,7 @@ void HandleOptions()
         }
 
 			  int timeout = 10;	
-				while(!nbd_ready(&resp.data[0]) && timeout--)
+				while(!nbd_ready(&resp.data1[0]) && timeout--)
         {
           sleep(1);
         }
@@ -109,11 +141,16 @@ void HandleOptions()
           exit(0);
         }
 
-        printf("Mounting '%s' to '%s'\n",resp.data,Options::Paths[0].c_str());
+        printf("Mounting '%s' to '%s'\n",resp.data1,Options::Paths[0].c_str());
         
-        char *args[] = {"sudo", "mount", resp.data, (char*)Options::Paths[0].c_str(), NULL};
-        
-        execvp("sudo",args);
+        std::string cmd = "sudo mount";
+        for(auto arg : Options::ExternalArgs)
+        {
+          cmd += " " + arg;
+        }
+        cmd += " " + std::string(resp.data1);
+        cmd += " " + Options::Paths[0];
+        system(cmd.c_str());
       }
       break;
     }
@@ -126,21 +163,15 @@ void HandleOptions()
       }
       else
       {
-        request.hdr.type = bdcp::QUERY_NBD;
-        strncpy(request.data,Options::Name.c_str(),Options::Name.length());
+        request.hdr.type = bdcp::UNBIND;
+        strncpy(request.data1,Options::Name.c_str(),Options::Name.length());
         bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
-
         if(!resp.status)
         {
-          printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
+          printf("Mount path not found for volume '%s'.\n",Options::Name.c_str());
           exit(0);
         }
-
-        printf("Unmounting '%s'...\n",resp.data);
-        
-        char *args[] = {"sudo", "umount", resp.data, NULL};
-        
-        execvp("sudo",args);
+        printf("Unmounting complete.\n");
       }
       break;
     }
@@ -154,7 +185,7 @@ void HandleOptions()
       else
       {
         request.hdr.type = bdcp::BIND;
-        strncpy(request.data,Options::Name.c_str(),Options::Name.length());
+        strncpy(request.data1,Options::Name.c_str(),Options::Name.length());
         bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
 
         if(!resp.status)
@@ -164,7 +195,7 @@ void HandleOptions()
         }
 
 			  int timeout = 10;	
-				while(!nbd_ready(&resp.data[0]) && timeout--)
+				while(!nbd_ready(&resp.data1[0]) && timeout--)
         {
           sleep(1);
         }
@@ -175,12 +206,19 @@ void HandleOptions()
           exit(0);
         }
 
-        printf("Formatting '%s' to '%s'...\n",resp.data,Options::Paths[0].c_str());
+        printf("Formatting '%s' to '%s'...\n",resp.data1,Options::Paths[0].c_str());
        
         std::string mkfs = "mkfs." + Options::Paths[0];
-        char *args[] = {"sudo", (char*)mkfs.c_str(), resp.data, NULL};
+        char *args[] = {"sudo", (char*)mkfs.c_str(), resp.data1, NULL};
         
-        execvp("sudo",args);
+        std::string cmd = "sudo mkfs.";
+        cmd += Options::Paths[0];
+        for(auto arg : Options::ExternalArgs)
+        {
+          cmd += " " + arg;
+        }
+        cmd += " " + std::string(resp.data1);
+        system(cmd.c_str());
       }
       break;
     }
@@ -217,8 +255,12 @@ void HandleOptions()
       }
       break;
     }
-  
-    
+
+    case Action::List:
+    {
+      ListVolumes();
+      break;
+    }
 
     default:
       printf("Unhandled option : %s\n",Action::ToString(Options::Action));

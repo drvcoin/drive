@@ -27,6 +27,7 @@
 #include "UnixDomainSocket.h"
 #include "ClientManager.h"
 #include "VolumeManager.h"
+#include "ActionHandler.h"
 
 using namespace dfs;
 using namespace bdfs;
@@ -36,6 +37,7 @@ ClientManager client;
 void signalHandler(int signum)
 {
   printf("Interrupt received by signal ( %d ).\n",signum);
+  ActionHandler::Cleanup();
   client.Stop();
   exit(signum);
 }

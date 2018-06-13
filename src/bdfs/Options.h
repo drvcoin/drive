@@ -39,6 +39,7 @@ namespace dfs
     static std::string Repo;
     static std::string KademliaUrl;
     static std::vector<std::string> Paths;
+    static std::vector<std::string> ExternalArgs;
 
     static void Init(int argc, char ** argv);
   };
