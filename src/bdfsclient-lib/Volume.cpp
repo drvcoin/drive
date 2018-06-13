@@ -53,6 +53,7 @@ namespace dfs
 
   Volume::~Volume()
   {
+    this->cache.reset();
     for (std::vector<Partition*>::iterator i = partitions.begin(); i != partitions.end(); i++)
     {
       delete(*i);

@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <json/json.h>
 #include <thread>
+#include <fstream>
 
 #include "ActionHandler.h"
 #include "BdTypes.h"
@@ -47,7 +48,11 @@ namespace dfs
     {"/dev/nbd0",false},
     {"/dev/nbd1",false},
     {"/dev/nbd2",false},
-    {"/dev/nbd3",false}
+    {"/dev/nbd3",false},
+    {"/dev/nbd4",false},
+    {"/dev/nbd5",false},
+    {"/dev/nbd6",false},
+    {"/dev/nbd7",false}
   };	
 	
   // ubd callbacks	
@@ -66,6 +71,16 @@ namespace dfs
 		(void)(context);
 	}
 
+  static void xmp_cleanup(void * context)
+  {
+    if(context)
+    {
+      printf("Deleteing volume from xmp_cleanup\n");
+      delete ((Volume*)context);
+      printf("Deleteing volume from xmp_cleanup complete...\n");
+    }
+  }
+
 	static int xmp_flush(void * context)
 	{
 		(void)(context);
@@ -78,8 +93,38 @@ namespace dfs
 		return 0;
 	}
 
+  void ActionHandler::Unmount(std::string nbdPath, bool matchAll=false)
+  {
+    std::ifstream fp("/proc/mounts");
+    std::string line,s1,s2;
+    while(fp >> s1 >> s2 && std::getline(fp,line))
+    {
+      if((s1.compare(0,nbdPath.length(),nbdPath) == 0 && matchAll) 
+        || s1 == nbdPath)
+      {
+        printf("Unmounting %s\n",s2.c_str());
+        std::string cmd = "umount " + s2;
+        system(cmd.c_str());
+      }
+    }
+    fp.close();
+  }
+
+  void ActionHandler::Cleanup()
+  {
+    printf("Unmounting volumes...\n");
+    ActionHandler::Unmount("/dev/nbd",true);
+
+    for(auto &it : volumeInfo)
+    {
+      printf("Cleaning %s...\n",it.second->nbdPath.c_str());
+      ubd_disconnect(it.second->nbdPath.c_str());
+      delete it.second;
+    }
+  }
+
   // returns {0: fail, 1: success, 2: already binded}
-  int ActionHandler::BindVolume(const std::string name)
+  int ActionHandler::BindVolume(const std::string name, const std::string path)
   {
     std::string nbdPath = ActionHandler::GetNextNBD();
     if(nbdPath == "") 
@@ -91,6 +136,10 @@ namespace dfs
     if(volumeInfo.find(name) != volumeInfo.end())
     {
       printf("Volume is binded to '%s'.\n",volumeInfo[name]->nbdPath.c_str());
+      if(!path.empty())
+      {
+        volumeInfo[name]->mountPath = path;
+      }
       return 2;
     }
 
@@ -111,22 +160,19 @@ namespace dfs
     // Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
     volume->EnableCache(std::make_unique<dfs::Cache>("cache", volume.get(), 200, 10));
     
-    std::thread th([nbdPath, volume = std::move(volume)]{
+    printf("Processing: %s\n", nbdPath.c_str());
 
-      printf("Processing: %s\n", nbdPath.c_str());
-
-
-      static struct ubd_operations ops = {
-        .read = xmp_read,
-        .write = xmp_write,
-        .disc = xmp_disc,
-        .flush = xmp_flush,
-        .trim = xmp_trim
-      };
-
-      ubd_register(nbdPath.c_str(), volume->DataSize(), &ops, (void *)volume.get());
-    });
-    th.detach();
+    static struct ubd_operations ops = {
+      .read = xmp_read,
+      .write = xmp_write,
+      .disc = xmp_disc,
+      .flush = xmp_flush,
+      .trim = xmp_trim,
+      .cleanup = xmp_cleanup
+    };
+    
+    Volume *pVolume = volume.release();
+    ubd_register(nbdPath.c_str(), pVolume->DataSize(), &ops, (void *)pVolume);
     
     int counter = 10;
     while(!nbd_ready(nbdPath.c_str()) && counter--)
@@ -142,6 +188,7 @@ namespace dfs
     VolumeMeta *meta = new VolumeMeta;
     meta->volumeName = name;
     meta->nbdPath = nbdPath;
+    meta->mountPath = path;
     meta->isMounted = meta->isFormatted = false;
     volumeInfo[name] = meta;
 
@@ -149,12 +196,24 @@ namespace dfs
 
     return 1;
   }
-  
-  std::string ActionHandler::GetNbdForVolume(const std::string name)
-  {
-    return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name]->nbdPath : "";
-  }
 
+  
+  // returns {0: fail, 1: success, 2: already binded}
+  int ActionHandler::UnbindVolume(const std::string name)
+  {
+    auto it = volumeInfo.find(name);
+    if(it != volumeInfo.end())
+    {
+      printf("Unbinding volume: %s\n",name.c_str());
+      ActionHandler::Unmount(it->second->nbdPath);
+      nbdInfo[it->second->nbdPath] = false;
+      ubd_disconnect(it->second->nbdPath.c_str());
+      delete it->second;
+      volumeInfo.erase(name);
+    }
+    return 1;
+  }
+  
   std::string ActionHandler::GetNextNBD()
   {
     for(auto it : ActionHandler::nbdInfo)

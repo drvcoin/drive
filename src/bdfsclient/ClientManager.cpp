@@ -76,12 +76,14 @@ namespace dfs
 		return true;
 	}
 
-  bdcp::BdResponse ClientManager::ProcessRequest(const bdcp::BdHdr *pHdr)
+  std::unique_ptr<bdcp::BdResponse> ClientManager::ProcessRequest(const bdcp::BdHdr *pHdr, UnixDomainSocket *socket, bool &shouldReply)
   {
-    bdcp::BdResponse resp;
-    resp.hdr.length = sizeof(bdcp::BdResponse);
-    resp.hdr.type = bdcp::RESPONSE;
-    resp.status = 0;
+    shouldReply = true;
+
+    std::unique_ptr<bdcp::BdResponse> resp = std::make_unique<bdcp::BdResponse>();;
+    resp->hdr.length = sizeof(bdcp::BdResponse);
+    resp->hdr.type = bdcp::RESPONSE;
+    resp->status = 0;
     
     bdcp::BdRequest *pReq = (bdcp::BdRequest *)pHdr;
 
@@ -89,17 +91,39 @@ namespace dfs
     {
       case bdcp::BIND:
       {
-        resp.status = ActionHandler::BindVolume(pReq->data);
-        if(resp.status)
+        resp->status = ActionHandler::BindVolume(pReq->data1,pReq->data2);
+        if(resp->status)
         {
-          std::string nbdPath = ActionHandler::GetNbdForVolume(pReq->data);
-          strncpy(resp.data,nbdPath.c_str(), std::min(nbdPath.length(),sizeof(resp.data)));
+          std::string nbdPath = ActionHandler::GetNbdForVolume(pReq->data1);
+          strncpy(resp->data1,nbdPath.c_str(), std::min(nbdPath.length(),sizeof(resp->data1)));
         }
         break;
       }
 
       case bdcp::UNBIND:
       {
+        std::string mountPath = ActionHandler::GetMountPathForVolume(std::string(pReq->data1));
+        resp->status = ActionHandler::UnbindVolume(pReq->data1);
+        if(resp->status)
+        {
+          strncpy(resp->data1,mountPath.c_str(), std::min(mountPath.length(),sizeof(resp->data1)));
+        }
+        break;
+      }
+
+      case bdcp::QUERY_VOLUMEINFO:
+      {
+        shouldReply = false;
+        resp->status = 1;
+        
+        for(auto &it : ActionHandler::GetVolumeInfo())
+        {
+          printf("QUERY_%s,%s,%s\n",it.second->volumeName.c_str(),it.second->nbdPath.c_str(),it.second->mountPath.c_str());
+          strncpy(resp->data1,it.second->volumeName.c_str(), std::min(it.second->volumeName.length(),sizeof(resp->data1)));
+          strncpy(resp->data2,it.second->nbdPath.c_str(), std::min(it.second->nbdPath.length(),sizeof(resp->data2)));
+          strncpy(resp->data3,it.second->mountPath.c_str(), std::min(it.second->mountPath.length(),sizeof(resp->data3)));
+          socket->SendMessage(resp.get(),resp->hdr.length);
+        }
         break;
       }
 
@@ -129,8 +153,14 @@ namespace dfs
 
 		if (socket->RecvMessage(buff+sizeof(uint32_t), length-sizeof(uint32_t)) > 0)
     {
-      bdcp::BdResponse resp = _this->ProcessRequest((bdcp::BdHdr *)buff);
-      socket->SendMessage(&resp,resp.hdr.length);
+      bool shouldReply = true;
+      auto resp = _this->ProcessRequest((bdcp::BdHdr *)buff,socket,shouldReply);
+      
+      if(shouldReply)
+      {
+        socket->SendMessage(resp.get(),resp->hdr.length);
+      }
+      resp.reset();
     }
     else
     {

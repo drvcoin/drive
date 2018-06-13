@@ -34,6 +34,7 @@ namespace dfs
   std::string Options::Repo;
   std::string Options::KademliaUrl;
   std::vector<std::string> Options::Paths;
+  std::vector<std::string> Options::ExternalArgs;
 
   extern void Exit(const char * format, ...);
 
@@ -50,13 +51,13 @@ namespace dfs
 
     printf("Usage: drive {action} [options] [files]\n");
     printf("\n");
-//    printf("Actions: create,delete,verify,resize,mount,unmount,daemon\n");
-    printf("Actions: create,delete,mount\n");
+    printf("Actions: create,delete,mount,unmount,format,list\n");
     printf("\n");
     printf("Options: create\n");
     printf("\n");
     printf("  -n {name}      Volume name\n");
     printf("  -r {path}      Contract repository\n");
+    printf("  -k {url}       Kademlia server\n");
     printf("  -d {blocks}    Data blocks (1 .. 255)\n");
     printf("  -c {blocks}    Code blocks (1 .. 255)\n");
     printf("  -?|h           Show this help screen\n");
@@ -64,11 +65,28 @@ namespace dfs
     printf("Options: delete\n");
     printf("\n");
     printf("  -n {name}      Volume name\n");
+    printf("  -k {url}       Kademlia server\n");
     printf("  -?|h           Show this help screen\n");
     printf("\n");
     printf("Options: mount\n");
     printf("\n");
     printf("  -n {name}      Volume name\n");
+    printf("  --args {args}  Args for mount command\n");
+    printf("  -?|h           Show this help screen\n");
+    printf("\n");
+    printf("Options: unmount\n");
+    printf("\n");
+    printf("  -n {name}      Volume name\n");
+    printf("  -?|h           Show this help screen\n");
+    printf("\n");
+    printf("Options: format\n");
+    printf("\n");
+    printf("  -n {name}      Volume name\n");
+    printf("  --args {args}  Args for mkfs command\n");
+    printf("  -?|h           Show this help screen\n");
+    printf("\n");
+    printf("Options: list\n");
+    printf("\n");
     printf("  -?|h           Show this help screen\n");
     printf("\n");
     exit(format == NULL ? 0 : 1);
@@ -83,6 +101,14 @@ namespace dfs
       if (strcmp(arg, "-?") == 0 || strcmp(arg, "-h") == 0)
       {
         Usage();
+      }
+      else if (strcmp(arg, "--args") == 0)
+      {
+        while(++i < argc)
+        {
+          printf("External arg: %s\n",argv[i]);
+          Options::ExternalArgs.push_back(argv[i]);
+        }
       }
       else if (strcmp(arg, "-n") == 0)
       {
