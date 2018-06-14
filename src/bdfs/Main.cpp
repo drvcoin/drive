@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <cmath>
 #include <limits>
+#include <vector>
 #include <json/json.h>
 
 #include "BdTypes.h"
@@ -49,64 +50,96 @@ static bdfs::HttpConfig defaultConfig;
 
 #define SENDRECV_TIMEOUT 30
 
-bdcp::BdResponse SendReceive(const uint8_t *buff, uint32_t length)
+
+unique_ptr<char[]> ReceiveBdcp(UnixDomainSocket *socket)
+{
+  uint32_t length;
+ 
+  if (socket != nullptr && socket->RecvMessage(&length, sizeof(uint32_t)) <= 0)
+  {
+    socket->Close();
+    return nullptr;
+  }
+
+  std::unique_ptr<char[]>buff = std::make_unique<char[]>(length);
+  ((bdcp::BdHdr*)buff.get())->length = length;
+
+  socket->RecvMessage(buff.get()+sizeof(uint32_t), length-sizeof(uint32_t),SENDRECV_TIMEOUT);
+
+  return buff;
+}
+
+unique_ptr<char[]> SendReceive(const vector<string> &args, bdcp::T type)
 {
   UnixDomainSocket socket;
-  bdcp::BdResponse resp;
-  resp.status = false;
+  auto buff = bdcp::Create(type,args);
+  auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
+  unique_ptr<char[]> returnBuff = nullptr;
 
   if(!socket.Connect("bdfsclient"))
   {
-    sprintf(&resp.data1[0],"Error: Unable to connect to bdfsclient daemon.\n");
+    printf("Error: Unable to connect to bdfsclient daemon.\n");
+    exit(0);
   }
-  else if (socket.SendMessage(buff, length,SENDRECV_TIMEOUT) != length)
+  else if (socket.SendMessage(buff.get(), buffLength,SENDRECV_TIMEOUT) != buffLength)
   {
-    sprintf(&resp.data1[0],"Error: Unable to sendmessage to bdfsclient daemon.\n");
+    printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
+    exit(0);
   }
-  else if(socket.RecvMessage(&resp,sizeof(bdcp::BdResponse),SENDRECV_TIMEOUT) != resp.hdr.length)
+  else
   {
-    sprintf(&resp.data1[0],"Error: Unable to readresponse from bdfsclient daemon.\n");
+    returnBuff = ReceiveBdcp(&socket);
+    if(buff == nullptr)
+    {
+      printf("Error: Unable to readresponse from bdfsclient daemon.\n");
+      exit(0);
+    }
   }
 
-  return resp;
+  return returnBuff;
 }
 
 void ListVolumes()
 {
-  bdcp::BdRequest request;
-  memset(&request,0,sizeof(bdcp::BdRequest));
-  request.hdr.length = sizeof(bdcp::BdRequest);
-  request.hdr.type = bdcp::QUERY_VOLUMEINFO;
-
   UnixDomainSocket socket;
-  bdcp::BdResponse resp;
-  resp.status = false;
-
+  auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO,vector<string>());
+  auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
+  
   if(!socket.Connect("bdfsclient"))
   {
-    sprintf(&resp.data1[0],"Error: Unable to connect to bdfsclient daemon.\n");
+    printf("Error: Unable to connect to bdfsclient daemon.\n");
+    exit(0);
   }
-  else if (socket.SendMessage(&request, request.hdr.length,SENDRECV_TIMEOUT) != request.hdr.length)
+  else if (socket.SendMessage(buff.get(), buffLength,SENDRECV_TIMEOUT) != buffLength)
   {
-    sprintf(&resp.data1[0],"Error: Unable to sendmessage to bdfsclient daemon.\n");
+    printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
+    exit(0);
   }
   else
   {
     printf("\n%-25s%-20s%-25s\n","VOLUME NAME", "NBD PATH", "MOUNT PATH");
-    memset(&resp,0,sizeof(bdcp::BdRequest));
-    while(socket.RecvMessage(&resp,sizeof(bdcp::BdResponse),SENDRECV_TIMEOUT) == resp.hdr.length && resp.status)
+    do
     {
-      printf("%-25s%-20s%-25s\n", &resp.data1[0], &resp.data2[0], &resp.data3[0]);
-    }
+      unique_ptr<char[]> resp = ReceiveBdcp(&socket);
+      if(resp == nullptr || ((bdcp::BdResponse*)resp.get())->status == 0)
+      {
+        break;
+      }
+
+      vector<string> args = bdcp::Parse(resp);
+      for(auto &arg : args)
+      {
+        printf("%-25s%", arg.c_str());
+      }
+      printf("\n");
+    }while(true);
   }
 }
 
 
 void HandleOptions()
 {
-  bdcp::BdRequest request;
-  memset(&request,0,sizeof(bdcp::BdRequest));
-  request.hdr.length = sizeof(bdcp::BdRequest);
+  vector<string> args;
 
   switch(Options::Action)
   {
@@ -118,19 +151,19 @@ void HandleOptions()
       }
       else
       {
-        request.hdr.type = bdcp::BIND;
-        strncpy(request.data1,Options::Name.c_str(),Options::Name.length());
-        strncpy(request.data2,Options::Paths[0].c_str(),Options::Paths[0].length());
-        bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
+        args.emplace_back(Options::Name);
+        args.emplace_back(Options::Paths[0]);
+        auto resp = SendReceive(args,bdcp::BIND);
+        auto respParams = bdcp::Parse(resp);
 
-        if(!resp.status)
+        if(!((bdcp::BdResponse*)resp.get())->status || respParams.size() != 1)
         {
           printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
           exit(0);
         }
 
 			  int timeout = 10;	
-				while(!nbd_ready(&resp.data1[0]) && timeout--)
+				while(!nbd_ready(respParams[0].c_str()) && timeout--)
         {
           sleep(1);
         }
@@ -141,14 +174,14 @@ void HandleOptions()
           exit(0);
         }
 
-        printf("Mounting '%s' to '%s'\n",resp.data1,Options::Paths[0].c_str());
+        printf("Mounting '%s' to '%s'\n",respParams[0].c_str(),Options::Paths[0].c_str());
         
         std::string cmd = "sudo mount";
         for(auto arg : Options::ExternalArgs)
         {
           cmd += " " + arg;
         }
-        cmd += " " + std::string(resp.data1);
+        cmd += " " + respParams[0];
         cmd += " " + Options::Paths[0];
         system(cmd.c_str());
       }
@@ -163,10 +196,11 @@ void HandleOptions()
       }
       else
       {
-        request.hdr.type = bdcp::UNBIND;
-        strncpy(request.data1,Options::Name.c_str(),Options::Name.length());
-        bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
-        if(!resp.status)
+        args.emplace_back(Options::Name);
+        auto resp = SendReceive(args,bdcp::UNBIND);
+        auto respParams = bdcp::Parse(resp);
+
+        if(!((bdcp::BdResponse*)resp.get())->status)
         {
           printf("Mount path not found for volume '%s'.\n",Options::Name.c_str());
           exit(0);
@@ -184,18 +218,18 @@ void HandleOptions()
       }
       else
       {
-        request.hdr.type = bdcp::BIND;
-        strncpy(request.data1,Options::Name.c_str(),Options::Name.length());
-        bdcp::BdResponse resp = SendReceive((const uint8_t*)&request,request.hdr.length);
+        args.emplace_back(Options::Name);
+        auto resp = SendReceive(args,bdcp::BIND);
+        auto respParams = bdcp::Parse(resp);
 
-        if(!resp.status)
+        if(!((bdcp::BdResponse*)resp.get())->status || respParams.size() != 1)
         {
           printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
           exit(0);
         }
 
 			  int timeout = 10;	
-				while(!nbd_ready(&resp.data1[0]) && timeout--)
+				while(!nbd_ready(respParams[0].c_str()) && timeout--)
         {
           sleep(1);
         }
@@ -206,10 +240,9 @@ void HandleOptions()
           exit(0);
         }
 
-        printf("Formatting '%s' to '%s'...\n",resp.data1,Options::Paths[0].c_str());
+        printf("Formatting '%s' to '%s'...\n",respParams[0].c_str(),Options::Paths[0].c_str());
        
         std::string mkfs = "mkfs." + Options::Paths[0];
-        char *args[] = {"sudo", (char*)mkfs.c_str(), resp.data1, NULL};
         
         std::string cmd = "sudo mkfs.";
         cmd += Options::Paths[0];
@@ -217,7 +250,7 @@ void HandleOptions()
         {
           cmd += " " + arg;
         }
-        cmd += " " + std::string(resp.data1);
+        cmd += " " + std::string(respParams[0]);
         system(cmd.c_str());
       }
       break;

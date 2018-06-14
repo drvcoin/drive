@@ -75,9 +75,8 @@ namespace dfs
   {
     if(context)
     {
-      printf("Deleteing volume from xmp_cleanup\n");
       delete ((Volume*)context);
-      printf("Deleteing volume from xmp_cleanup complete...\n");
+      printf("Deleteing volume from xmp_cleanup\n");
     }
   }
 
@@ -93,7 +92,7 @@ namespace dfs
 		return 0;
 	}
 
-  void ActionHandler::Unmount(std::string nbdPath, bool matchAll=false)
+  void ActionHandler::Unmount(const std::string &nbdPath, bool matchAll=false)
   {
     std::ifstream fp("/proc/mounts");
     std::string line,s1,s2;
@@ -124,7 +123,7 @@ namespace dfs
   }
 
   // returns {0: fail, 1: success, 2: already binded}
-  int ActionHandler::BindVolume(const std::string name, const std::string path)
+  int ActionHandler::BindVolume(const std::string &name, const std::string &path)
   {
     std::string nbdPath = ActionHandler::GetNextNBD();
     if(nbdPath == "") 
@@ -199,7 +198,7 @@ namespace dfs
 
   
   // returns {0: fail, 1: success, 2: already binded}
-  int ActionHandler::UnbindVolume(const std::string name)
+  int ActionHandler::UnbindVolume(const std::string &name)
   {
     auto it = volumeInfo.find(name);
     if(it != volumeInfo.end())
@@ -209,7 +208,7 @@ namespace dfs
       nbdInfo[it->second->nbdPath] = false;
       ubd_disconnect(it->second->nbdPath.c_str());
       delete it->second;
-      volumeInfo.erase(name);
+      volumeInfo.erase(it);
     }
     return 1;
   }

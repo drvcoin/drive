@@ -27,6 +27,7 @@
 #include <thread>
 #include "ActionHandler.h"
 #include "VolumeManager.h"
+#include "BdProtocol.h"
 
 namespace dfs
 {
@@ -76,37 +77,41 @@ namespace dfs
 		return true;
 	}
 
-  std::unique_ptr<bdcp::BdResponse> ClientManager::ProcessRequest(const bdcp::BdHdr *pHdr, UnixDomainSocket *socket, bool &shouldReply)
+  std::unique_ptr<char[]> ClientManager::ProcessRequest(std::unique_ptr<char[]> &buff, UnixDomainSocket *socket, bool &shouldReply)
   {
     shouldReply = true;
 
-    std::unique_ptr<bdcp::BdResponse> resp = std::make_unique<bdcp::BdResponse>();;
-    resp->hdr.length = sizeof(bdcp::BdResponse);
-    resp->hdr.type = bdcp::RESPONSE;
-    resp->status = 0;
-    
-    bdcp::BdRequest *pReq = (bdcp::BdRequest *)pHdr;
+    uint8_t status = 0;
+    std::vector<std::string> args;
 
-    switch(pHdr->type)
+    auto inArgs = bdcp::Parse(buff);
+    
+    switch(((bdcp::BdHdr *)buff.get())->type)
     {
       case bdcp::BIND:
       {
-        resp->status = ActionHandler::BindVolume(pReq->data1,pReq->data2);
-        if(resp->status)
+        if(inArgs.size() > 0)
         {
-          std::string nbdPath = ActionHandler::GetNbdForVolume(pReq->data1);
-          strncpy(resp->data1,nbdPath.c_str(), std::min(nbdPath.length(),sizeof(resp->data1)));
+          status = ActionHandler::BindVolume(inArgs[0], inArgs.size() > 1 ? inArgs[1]: "");
+          if(status)
+          {
+            std::string nbdPath = ActionHandler::GetNbdForVolume(inArgs[0]);
+            args.emplace_back(nbdPath);
+          }
         }
         break;
       }
 
       case bdcp::UNBIND:
       {
-        std::string mountPath = ActionHandler::GetMountPathForVolume(std::string(pReq->data1));
-        resp->status = ActionHandler::UnbindVolume(pReq->data1);
-        if(resp->status)
+        if(inArgs.size() == 1)
         {
-          strncpy(resp->data1,mountPath.c_str(), std::min(mountPath.length(),sizeof(resp->data1)));
+          std::string mountPath = ActionHandler::GetMountPathForVolume(inArgs[0]);
+          status = ActionHandler::UnbindVolume(inArgs[0]);
+          if(status)
+          {
+            args.emplace_back(mountPath);
+          }
         }
         break;
       }
@@ -114,24 +119,27 @@ namespace dfs
       case bdcp::QUERY_VOLUMEINFO:
       {
         shouldReply = false;
-        resp->status = 1;
+        status = 1;
         
         for(auto &it : ActionHandler::GetVolumeInfo())
         {
           printf("QUERY_%s,%s,%s\n",it.second->volumeName.c_str(),it.second->nbdPath.c_str(),it.second->mountPath.c_str());
-          strncpy(resp->data1,it.second->volumeName.c_str(), std::min(it.second->volumeName.length(),sizeof(resp->data1)));
-          strncpy(resp->data2,it.second->nbdPath.c_str(), std::min(it.second->nbdPath.length(),sizeof(resp->data2)));
-          strncpy(resp->data3,it.second->mountPath.c_str(), std::min(it.second->mountPath.length(),sizeof(resp->data3)));
-          socket->SendMessage(resp.get(),resp->hdr.length);
+          args.emplace_back(it.second->volumeName);
+          args.emplace_back(it.second->nbdPath);
+          args.emplace_back(it.second->mountPath);
+
+          auto p = bdcp::Create(bdcp::RESPONSE,args,status);
+          
+          socket->SendMessage(p.get(),((bdcp::BdHdr *)p.get())->length);
         }
         break;
       }
 
       default:
-        printf("Unhandled instruction of type : %d\n",pHdr->type);
+        printf("Unhandled instruction of type : %d\n",((bdcp::BdHdr *)buff.get())->type);
     }
    
-    return resp;
+    return bdcp::Create(bdcp::RESPONSE,args,status);
   }
 
 	bool ClientManager::HandleRequest(void * sender, UnixDomainSocket * socket)
@@ -147,27 +155,24 @@ namespace dfs
 			return false;
 		}
 
-    uint8_t *buff = new uint8_t[length];
-    bdcp::BdHdr *pHdr = (bdcp::BdHdr *)(buff);
-    pHdr->length = length;
+    std::unique_ptr<char[]>buff = std::make_unique<char[]>(length);
+    ((bdcp::BdHdr*)buff.get())->length = length;
 
-		if (socket->RecvMessage(buff+sizeof(uint32_t), length-sizeof(uint32_t)) > 0)
+		if (socket->RecvMessage(buff.get()+sizeof(uint32_t), length-sizeof(uint32_t)) > 0)
     {
       bool shouldReply = true;
-      auto resp = _this->ProcessRequest((bdcp::BdHdr *)buff,socket,shouldReply);
+      auto resp = _this->ProcessRequest(buff,socket,shouldReply);
       
       if(shouldReply)
       {
-        socket->SendMessage(resp.get(),resp->hdr.length);
+        socket->SendMessage(resp.get(),((bdcp::BdHdr*)resp.get())->length);
       }
-      resp.reset();
     }
     else
     {
       printf("%s: failed to read bdfs message.\n",__func__);
     }
-  
-    delete(buff);
+ 
     socket->Close();
     
     return true;

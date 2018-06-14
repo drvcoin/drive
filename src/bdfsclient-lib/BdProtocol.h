@@ -22,7 +22,11 @@
 
 #pragma once
 #include <stdint.h>
+#include <memory>
+#include <string>
+#include <vector>
 #pragma pack(push,1)
+using namespace std;
 namespace bdfs
 {
   // Block Drive Client Protocol
@@ -36,18 +40,17 @@ namespace bdfs
       QUERY_VOLUMEINFO
     };
 
+    // paramCount = null terminated params after struct
     typedef struct
     {
       uint32_t length;
       T type;
+      uint8_t paramCount;
     }BdHdr;
 
     typedef struct
     {
       BdHdr hdr;
-      char data1[128];
-      char data2[128];
-      char data3[128];
     }BdRequest;
 
     // BdResponse for BIND
@@ -57,10 +60,54 @@ namespace bdfs
     {
       BdHdr hdr;
       uint8_t status;
-      char data1[128];
-      char data2[128];
-      char data3[128];
     }BdResponse;
+
+    unique_ptr<char[]> Create(T type, const vector<string> &args, uint8_t status = 0)
+    {
+      const uint32_t structSize = (type == RESPONSE ? sizeof(BdResponse) : sizeof(BdRequest));
+      uint32_t size = structSize;
+      for(auto &arg : args)
+      {
+        size += arg.length() + 1;
+      }
+      
+      unique_ptr<char[]> ptr = make_unique<char[]>(size);
+      BdHdr *pHdr = (BdHdr *)ptr.get();
+      pHdr->type = type;
+      pHdr->length = size;
+      pHdr->paramCount = args.size();
+
+      if(type == RESPONSE)
+      {
+       ((BdResponse *)ptr.get())->status = status;
+      }
+      
+      uint32_t pos = structSize;
+      char *p = ptr.get();
+      for(auto &arg : args)
+      {
+        strncpy(p+pos,arg.c_str(),arg.length()+1);
+        pos += arg.length()+1;
+      }
+      
+      return ptr;
+    }
+
+    vector<string> Parse(unique_ptr<char []> &ptr)
+    {
+      vector<string> args;
+      BdHdr *pHdr = (BdHdr *)ptr.get();
+
+      const char *p = ptr.get();
+      uint32_t pos = (((BdHdr*)p)->type == RESPONSE ? sizeof(BdResponse) : sizeof(BdRequest));
+      for(int i = 0; i < pHdr->paramCount; i++)
+      {
+        string str = string(p+pos);
+        pos += str.length() + 1;
+        args.emplace_back(str);
+      }
+      return args;
+    }
   }
 }
 #pragma pack(pop)

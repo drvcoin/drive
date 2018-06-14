@@ -26,7 +26,6 @@
 #include <memory>
 #include "EventLoop.h"
 #include "UnixDomainSocket.h"
-#include "BdProtocol.h"
 
 namespace dfs
 {
@@ -39,7 +38,7 @@ namespace dfs
     bool isUnixSocketListening;
     EventLoop<UnixDomainSocket *> requestLoop;
 
-    std::unique_ptr<bdcp::BdResponse> ProcessRequest(const bdcp::BdHdr *,UnixDomainSocket *s, bool &shouldReply);
+    std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char []> &buff, UnixDomainSocket *socket, bool &shouldReply);
     static bool HandleRequest(void *sender, UnixDomainSocket *socket);
     void Listen();
 
