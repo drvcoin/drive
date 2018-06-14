@@ -22,6 +22,8 @@
 
 #include <stdio.h>
 #include <signal.h>
+#include <memory>
+#include <sstream>
 
 #include "cm256.h"
 #include "UnixDomainSocket.h"
@@ -42,6 +44,22 @@ void signalHandler(int signum)
   exit(signum);
 }
 
+std::string execCmd(std::string cmd)
+{
+	std::array<char, 128> buffer;
+	std::string result;
+	std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+	if (!pipe) throw std::runtime_error("popen() failed!");
+	while (!feof(pipe.get()))
+  {
+		if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
+		{
+			result += buffer.data();
+		}
+	}
+	return result;
+}
+
 int main(int argc, char * * argv)
 {
   if (argc > 1)
@@ -56,6 +74,14 @@ int main(int argc, char * * argv)
     exit(1);
   }
   
+	auto nbdPaths = execCmd("ls -1 /dev/nbd*");
+  std::stringstream ss;
+  ss.str(nbdPaths);
+  std::string path;
+  while(std::getline(ss,path,'\n') && !path.empty())
+  {
+    ActionHandler::AddNbdPath(path);
+  }
   
   if(!client.Start())
   {

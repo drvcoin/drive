@@ -69,6 +69,7 @@ namespace dfs
     printf("  -?|h           Show this help screen\n");
     printf("\n");
     printf("Options: mount\n");
+    printf("eg: ./drive mount -n volume /folder/to/mount\n");
     printf("\n");
     printf("  -n {name}      Volume name\n");
     printf("  --args {args}  Args for mount command\n");
@@ -80,8 +81,10 @@ namespace dfs
     printf("  -?|h           Show this help screen\n");
     printf("\n");
     printf("Options: format\n");
+    printf("eg: ./drive format -n volume xfs\n");
     printf("\n");
     printf("  -n {name}      Volume name\n");
+    printf("  {fstype}       Format type (xfs,ext2,ext3,ext4,ntfs,fat,vfat)\n");
     printf("  --args {args}  Args for mkfs command\n");
     printf("  -?|h           Show this help screen\n");
     printf("\n");

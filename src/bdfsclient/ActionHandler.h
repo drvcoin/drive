@@ -46,6 +46,11 @@ namespace dfs
     static int BindVolume(const std::string &name, const std::string &path);
     static int UnbindVolume(const std::string &name);
     
+    static inline void AddNbdPath(std::string path)
+    {
+      ActionHandler::nbdInfo[path] = false;
+    }
+
     static inline std::string GetNbdForVolume(const std::string &name)
     {
       return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name]->nbdPath : "";

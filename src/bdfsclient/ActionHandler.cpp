@@ -44,16 +44,7 @@
 namespace dfs
 {
   std::map<std::string, VolumeMeta *> ActionHandler::volumeInfo;
-  std::map<std::string, bool> ActionHandler::nbdInfo = {
-    {"/dev/nbd0",false},
-    {"/dev/nbd1",false},
-    {"/dev/nbd2",false},
-    {"/dev/nbd3",false},
-    {"/dev/nbd4",false},
-    {"/dev/nbd5",false},
-    {"/dev/nbd6",false},
-    {"/dev/nbd7",false}
-  };	
+  std::map<std::string, bool> ActionHandler::nbdInfo;
 	
   // ubd callbacks	
 	static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
