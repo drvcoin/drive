@@ -24,39 +24,20 @@
 
 #include <memory.h>
 #include <sys/stat.h>
-
-
-
-#include <stdio.h>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include <thread>
-#include <chrono>
-#include <iterator>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include "Contact.h"
+#include <arpa/inet.h>
+
 #include "Config.h"
 #include "TransportFactory.h"
-#include "LinuxFileTransport.h"
 #include "TcpTransport.h"
 #include "Digest.h"
 #include "Kademlia.h"
 
-#include <arpa/inet.h>
-
-
 #include "Options.h"
-
-
 #include "KademliaHandler.h"
 
 
 using namespace kad;
-
 
 
 namespace bdhost
@@ -70,49 +51,48 @@ namespace bdhost
   {
   }
 
-class TransportFactoryImpl : public TransportFactory
-{
-public:
-
-  std::unique_ptr<ITransport> Create() override
+  class TransportFactoryImpl : public TransportFactory
   {
-    return std::unique_ptr<ITransport>(new TcpTransport());
-  }
-};
+  public:
 
-static void SetVerbose(const std::string & option)
-{
-  if (option == "on")
+    std::unique_ptr<ITransport> Create() override
+    {
+      return std::unique_ptr<ITransport>(new TcpTransport());
+    }
+  };
+
+  static void SetVerbose(const std::string & option)
   {
-    Config::SetVerbose(true);
+    if (option == "on")
+    {
+      Config::SetVerbose(true);
+    }
+    else if (option == "off")
+    {
+      Config::SetVerbose(false);
+    }
+    else
+    {
+      printf("ERROR: Unknown verbose option.\n");
+    }
   }
-  else if (option == "off")
-  {
-    Config::SetVerbose(false);
-  }
-  else
-  {
-    printf("ERROR: Unknown verbose option.\n");
-  }
-}
 
 
-static void InitKey(const char * rootPath)
-{ 
-  sha1_t digest;
-  Digest::Compute(rootPath, strlen(rootPath), digest);
-  
-  KeyPtr key = std::make_shared<Key>(digest);
-  
-  FILE * file = fopen((std::string(rootPath) + "/key").c_str(), "w");
-  
-  if (file)
+  static void InitKey(const char * rootPath)
   { 
-    fwrite(key->Buffer(), 1, Key::KEY_LEN, file);
-    fclose(file);
-  }
+    sha1_t digest;
+    Digest::Compute(rootPath, strlen(rootPath), digest);
 
-}
+    KeyPtr key = std::make_shared<Key>(digest);
+
+    FILE * file = fopen((std::string(rootPath) + "/key").c_str(), "w");
+
+    if (file)
+    {
+      fwrite(key->Buffer(), 1, Key::KEY_LEN, file);
+      fclose(file);
+    }
+  }
 
   void KademliaModule::Initialize()
   {
