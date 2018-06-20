@@ -39,9 +39,6 @@ namespace bdhost
   uint32_t Options::k_addr;
   uint16_t Options::k_port;
 
-  uint32_t Options::k_bootaddr;
-  uint16_t Options::k_bootport;
-
 
   bool Options::Usage(const char * message, ...)
   {
@@ -60,7 +57,6 @@ namespace bdhost
     printf("  -p <port>             port to listen http request on (default:80)\n");
     printf("  -k <path>             kademlia node name and path\n");
     printf("  -n <addr> <port>      kademlia node address and port\n");
-    printf("  -b <addr> <port>      bootstrap node address and port\n");
     printf("\n");
     exit(message == NULL ? 0 : 1);
   }
@@ -90,13 +86,6 @@ namespace bdhost
         assert_argument_index(++i, "node port");
         k_port = static_cast<uint16_t>(atoi(argv[i]));
 
-      }
-      else if (strcmp(argv[i], "-b") == 0)
-      {
-        assert_argument_index(++i, "bootstrap addr");
-        k_bootaddr = static_cast<uint32_t>(inet_addr(argv[i]));
-        assert_argument_index(++i, "bootstrap port");
-        k_bootport = static_cast<uint16_t>(atoi(argv[i]));
       }
       else
       {

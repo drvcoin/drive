@@ -114,39 +114,6 @@ static void InitKey(const char * rootPath)
 
 }
 
-static void InitBuckets(const char * rootPath, const Contact & bootContact)
-{ 
-  std::string bucketsPath = std::string(rootPath) + "/contacts";
-  
-  FILE * file = fopen(bucketsPath.c_str(), "r");
-  
-  if (file)
-  { 
-    fseek(file, 0, SEEK_END);
-    long size = ftell(file);
-    fclose(file);
-    
-    if (size > 0)
-    { 
-      return;
-    }
-  }
-  
-  file = fopen(bucketsPath.c_str(), "w");
-  
-  if (file)
-  { 
-    sha1_t digest;
-    Digest::Compute("root", sizeof("root") - 1, digest);
-    
-    fwrite(digest, 1, sizeof(digest), file);
-    
-    fwrite(&bootContact, 1, sizeof(bootContact), file);
-    
-    fclose(file);
-  }
-}
-
   void KademliaModule::Initialize()
   {
     printf("[KAD] Initialize\n");
@@ -156,20 +123,13 @@ static void InitBuckets(const char * rootPath, const Contact & bootContact)
     printf("root path: %s\n", bdhost::Options::k_root);
 
     printf("kademlia node: addr = %08X port=%u\n", bdhost::Options::k_addr, bdhost::Options::k_port);
-    printf("kademlia bootstrap node: addr = %08X port=%u\n", bdhost::Options::k_bootaddr, bdhost::Options::k_bootport);
 
     Contact self;
     self.addr = bdhost::Options::k_addr;
     self.port = bdhost::Options::k_port;
 
-    Contact boot;
-    boot.addr = bdhost::Options::k_bootaddr;
-    boot.port = bdhost::Options::k_bootport;
-
     mkdir(bdhost::Options::k_root, 0755);
     InitKey(bdhost::Options::k_root);
-    InitBuckets(bdhost::Options::k_root, boot);
-
 
     Config::Initialize(bdhost::Options::k_root);
 
