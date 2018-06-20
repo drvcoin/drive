@@ -50,7 +50,6 @@
 
 
 #include "Options.h"
-#include "Global.h"
 
 
 #include "KademliaHandler.h"

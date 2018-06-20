@@ -28,7 +28,6 @@
 #include "Options.h"
 #include "HttpModule.h"
 #include "HttpServer.h"
-#include "Global.h"
 #include "KademliaModule.h"
 
 

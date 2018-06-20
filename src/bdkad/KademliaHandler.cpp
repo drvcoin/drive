@@ -28,7 +28,6 @@
 #include <string>
 #include <assert.h>
 #include <json/json.h>
-#include "Global.h"
 #include "HttpHandlerRegister.h"
 #include "KademliaHandler.h"
 
@@ -56,7 +55,6 @@
 #include <arpa/inet.h>
 
 #include "Options.h"
-#include "Global.h"
 
 
 using namespace kad;
