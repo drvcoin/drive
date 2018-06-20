@@ -36,12 +36,13 @@ namespace bdhost
 
     static uint16_t port;
 
-    static const char * k_root;
+    static std::string k_root;
 
     static uint32_t k_addr;
     static uint16_t k_port;
 
     static bool Usage(const char * message = nullptr, ...);
     static bool Init(int argc, const char ** argv);
+    static bool LoadConfig(const char * path);
   };
 }

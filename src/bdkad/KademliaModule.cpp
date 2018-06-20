@@ -120,18 +120,17 @@ static void InitKey(const char * rootPath)
 
     SetVerbose("on");
 
-    printf("root path: %s\n", bdhost::Options::k_root);
-
+    printf("root path: %s\n", bdhost::Options::k_root.c_str());
     printf("kademlia node: addr = %08X port=%u\n", bdhost::Options::k_addr, bdhost::Options::k_port);
 
     Contact self;
     self.addr = bdhost::Options::k_addr;
     self.port = bdhost::Options::k_port;
 
-    mkdir(bdhost::Options::k_root, 0755);
-    InitKey(bdhost::Options::k_root);
+    mkdir(bdhost::Options::k_root.c_str(), 0755);
+    InitKey(bdhost::Options::k_root.c_str());
 
-    Config::Initialize(bdhost::Options::k_root);
+    Config::Initialize(bdhost::Options::k_root.c_str());
 
     Key selfKey{Config::NodeId()->Buffer()};
 
