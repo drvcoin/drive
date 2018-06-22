@@ -111,7 +111,7 @@ namespace bdcontract
     FILE * file = fopen(filename.c_str(), "r");
     if (!file)
     {
-      return false;
+      return nullptr;
     }
 
     size_t size = BUFSIZ;
