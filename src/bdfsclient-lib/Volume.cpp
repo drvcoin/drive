@@ -368,7 +368,7 @@ namespace dfs
       return cache->Write(row, column, buffer, size, offset);
     }
 
-    return __WriteCached(row, column, buffer, size, offset);
+    return __WriteDirect(row, column, buffer, size, offset);
   }
 
 
