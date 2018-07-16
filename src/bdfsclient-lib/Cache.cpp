@@ -22,9 +22,13 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#include "dirent.h"
+#else
 #include <unistd.h>
 #include <dirent.h>
-
+#endif
 #include <assert.h>
 #include <vector>
 #include <chrono>
@@ -36,33 +40,41 @@
 
 namespace dfs
 {
-  static int mkpath(char* path, mode_t mode)
-  {
-    char * p = path;
+#ifdef _WIN32
+	static int mkpath(char* path)
+#else
+	static int mkpath(char* path, mode_t mode)
+#endif
+	{
+		char * p = path;
 
-    do
-    {
-      p = strchr(p + 1, '/');
-      if (p)
-      {
-        *p = '\0';
-      }
+		do
+		{
+			p = strchr(p + 1, '/');
+			if (p)
+			{
+				*p = '\0';
+			}
 
-      int rtn = mkdir(path, mode);
+			int rtn = 0;
+#ifdef _WIN32
+			rtn = _mkdir(path);
+#else
+			rtn = mkdir(path, mode);
+#endif
+			if (p)
+			{
+				*p = '/';
+			}
 
-      if (p)
-      {
-        *p = '/';
-      }
+			if (rtn == -1 && errno != EEXIST)
+			{
+				return -1;
+			}
+		} while (p);
 
-      if (rtn == -1 && errno != EEXIST)
-      {
-        return -1;
-      }
-    } while (p);
-
-    return 0;
-  }
+		return 0;
+	}
 
 
   static void cleanpath(const char * folder)
@@ -91,7 +103,7 @@ namespace dfs
       char path[PATH_MAX];
       sprintf(path, "%s/%s", folder, name.c_str());
 
-      unlink(path);
+//      unlink(path);
     }
   }
 
@@ -115,7 +127,11 @@ namespace dfs
       rootPath.resize(rootPath.size() - 1);
     }
 
+#ifdef _WIN32
+	mkpath(const_cast<char *>(rootPath.c_str()));
+#else
     mkpath(const_cast<char *>(rootPath.c_str()), 0755);
+#endif
     cleanpath(rootPath.c_str());
 
     this->thread = std::thread(std::bind(&Cache::ThreadProc, this));
@@ -301,7 +317,7 @@ namespace dfs
     else
     {
       buf = new uint8_t[this->volume->BlockSize()];
-      if (!this->Read(row, column, buf, this->volume->BlockSize(), 0))
+      if (!this->ReadImpl(row, column, buf, this->volume->BlockSize(), 0))
       {
         delete[] buf;
         return false;
@@ -351,7 +367,7 @@ namespace dfs
         {
           char filename[PATH_MAX];
           sprintf(filename, "%s/%" PRIu64 "", this->rootPath.c_str(), ts->second);
-          unlink(filename);
+          _unlink(filename);
 
           this->items.erase(it);
         }
@@ -482,6 +498,7 @@ namespace dfs
       {
         if (idx == column)
         {
+		  fseek(file, 0, SEEK_CUR);
           bytes = fwrite(buffer, 1, this->volume->BlockSize(), file);
           break;
         }
@@ -493,6 +510,7 @@ namespace dfs
 
       if (bytes != this->volume->BlockSize())
       {
+		fseek(file, 0, SEEK_CUR);
         if (fwrite(&column, 1, sizeof(column), file) == sizeof(column))
         {
           bytes = fwrite(buffer, 1, this->volume->BlockSize(), file);
@@ -531,10 +549,10 @@ namespace dfs
     }
     else
     {
-      this->items[row] = {
+      /*this->items[row] = {
         .timestamp = now,
         .dirty = setDirty
-      };
+      };*/
     }
 
     this->timestamps.emplace(now, row);

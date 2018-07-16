@@ -24,9 +24,9 @@
 #include <signal.h>
 #include <memory>
 #include <sstream>
+#include <array>
 
 #include "cm256.h"
-#include "UnixDomainSocket.h"
 #include "ClientManager.h"
 #include "VolumeManager.h"
 #include "ActionHandler.h"
@@ -38,18 +38,18 @@ ClientManager client;
 
 void signalHandler(int signum)
 {
-  printf("Interrupt received by signal ( %d ).\n",signum);
-  ActionHandler::Cleanup();
-  client.Stop();
-  exit(signum);
+	printf("Interrupt received by signal ( %d ).\n", signum);
+	ActionHandler::Cleanup();
+	client.Stop();
+	exit(signum);
 }
 
 std::string execCmd(std::string cmd)
 {
 	std::array<char, 128> buffer;
 	std::string result;
-	std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-	if (!pipe) throw std::runtime_error("popen() failed!");
+	std::shared_ptr<FILE> pipe(_popen(cmd.c_str(), "r"), _pclose);
+	if (!pipe) throw std::runtime_error("_popen() failed!");
 	while (!feof(pipe.get()))
   {
 		if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
@@ -62,38 +62,27 @@ std::string execCmd(std::string cmd)
 
 int main(int argc, char * * argv)
 {
-  if (argc > 1)
-  {
-    VolumeManager::kademliaUrl = argv[1];
-  }
+	if (argc > 1)
+	{
+		VolumeManager::kademliaUrl = argv[1];
+	}
+	else {
+		VolumeManager::kademliaUrl = "http://10.1.3.100:7800";
+	}
 
-  signal(SIGINT, signalHandler);
-  signal(SIGTERM, signalHandler);
-  
-  if (cm256_init()) {
-    exit(1);
-  }
-  
-	auto nbdPaths = execCmd("ls -1 /dev/nbd*");
-  std::stringstream ss;
-  ss.str(nbdPaths);
-  std::string path;
-  while(std::getline(ss,path,'\n') && !path.empty())
-  {
-    ActionHandler::AddNbdPath(path);
-  }
-  
-  if(!client.Start())
-  {
-    printf("Error: Failed to start processing thread.\n");
-  }
+	signal(SIGINT, signalHandler);
+	signal(SIGTERM, signalHandler);
 
-  while(true)
-  {
-    sleep(1);
-  }
+	if (cm256_init()) {
+		exit(1);
+	}
 
-  client.Stop();
+	if (!client.Start())
+	{
+		printf("Error: Failed to start processing thread.\n");
+	}
 
-  return 0;
+	client.Stop();
+
+	return 0;
 }

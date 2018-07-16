@@ -20,13 +20,15 @@
   SOFTWARE.
 */
 
+#define NOMINMAX
 #include <stdio.h>
 #include <sys/stat.h>
 #include <cmath>
 #include <limits>
-#include <unistd.h>
+#include <algorithm>
 #include <json/json.h>
 #include <thread>
+#include <stdint.h>
 
 #include "VolumeManager.h"
 #include "BdTypes.h"
@@ -150,7 +152,6 @@ namespace dfs
 	bool VolumeManager::CreateVolume(const std::string & volumeName, const std::string & repoName, const uint16_t dataBlocks, const uint16_t codeBlocks)
 	{
 		std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
-
 		uint64_t size = std::numeric_limits<uint64_t>::max();
 
 		size_t blockSize = 64*1024;
@@ -177,12 +178,11 @@ namespace dfs
 
 		for (size_t i = 0; i < dataBlocks + codeBlocks; ++i)
 		{
-      auto ep = GetProviderEndpoint(contracts[i]->Provider());
-      if (ep.empty())
-      {
-        return false;
-      }
-
+			auto ep = GetProviderEndpoint(contracts[i]->Provider());
+			if (ep.empty())
+			{
+				return false;
+			}
 			auto session = bdfs::BdSession::CreateSession(ep.c_str(), &defaultConfig);
 			auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
 				session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
@@ -241,7 +241,7 @@ namespace dfs
 			return false;
 		}
 
-		unlink((name + ".config").c_str());
+		_unlink((name + ".config").c_str());
 
     return true;
 	}

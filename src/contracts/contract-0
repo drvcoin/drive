@@ -1,0 +1,6 @@
+{
+   "consumer" : "test",
+   "name" : "contract-0",
+   "provider" : "host-0",
+   "size" : 268435456
+}
