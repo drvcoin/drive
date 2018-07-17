@@ -51,7 +51,7 @@ static bdfs::HttpConfig defaultConfig;
 #define SENDRECV_TIMEOUT 30
 
 
-unique_ptr<char[]> ReceiveBdcp(UnixDomainSocket *socket)
+std::unique_ptr<char[]> ReceiveBdcp(UnixDomainSocket *socket)
 {
   uint32_t length;
  
@@ -64,24 +64,24 @@ unique_ptr<char[]> ReceiveBdcp(UnixDomainSocket *socket)
   std::unique_ptr<char[]>buff = std::make_unique<char[]>(length);
   ((bdcp::BdHdr*)buff.get())->length = length;
 
-  socket->RecvMessage(buff.get()+sizeof(uint32_t), length-sizeof(uint32_t),SENDRECV_TIMEOUT);
+  socket->RecvMessage(buff.get()+sizeof(uint32_t), length-sizeof(uint32_t), SENDRECV_TIMEOUT);
 
   return buff;
 }
 
-unique_ptr<char[]> SendReceive(const vector<string> &args, bdcp::T type)
+std::unique_ptr<char[]> SendReceive(const std::vector<std::string> &args, bdcp::T type)
 {
   UnixDomainSocket socket;
   auto buff = bdcp::Create(type,args);
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
-  unique_ptr<char[]> returnBuff = nullptr;
+  std::unique_ptr<char[]> returnBuff = nullptr;
 
   if(!socket.Connect("bdfsclient"))
   {
     printf("Error: Unable to connect to bdfsclient daemon.\n");
     exit(0);
   }
-  else if (socket.SendMessage(buff.get(), buffLength,SENDRECV_TIMEOUT) != buffLength)
+  else if (socket.SendMessage(buff.get(), buffLength, SENDRECV_TIMEOUT) != buffLength)
   {
     printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
     exit(0);
@@ -102,7 +102,7 @@ unique_ptr<char[]> SendReceive(const vector<string> &args, bdcp::T type)
 void ListVolumes()
 {
   UnixDomainSocket socket;
-  auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO,vector<string>());
+  auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO, std::vector<std::string>());
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
   
   if(!socket.Connect("bdfsclient"))
@@ -110,7 +110,7 @@ void ListVolumes()
     printf("Error: Unable to connect to bdfsclient daemon.\n");
     exit(0);
   }
-  else if (socket.SendMessage(buff.get(), buffLength,SENDRECV_TIMEOUT) != buffLength)
+  else if (socket.SendMessage(buff.get(), buffLength, SENDRECV_TIMEOUT) != buffLength)
   {
     printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
     exit(0);
@@ -120,26 +120,26 @@ void ListVolumes()
     printf("\n%-25s%-20s%-25s\n","VOLUME NAME", "NBD PATH", "MOUNT PATH");
     do
     {
-      unique_ptr<char[]> resp = ReceiveBdcp(&socket);
+      std::unique_ptr<char[]> resp = ReceiveBdcp(&socket);
       if(resp == nullptr || ((bdcp::BdResponse*)resp.get())->status == 0)
       {
         break;
       }
 
-      vector<string> args = bdcp::Parse(resp);
+      std::vector<std::string> args = bdcp::Parse(resp);
       for(auto &arg : args)
       {
-        printf("%-25s%", arg.c_str());
+        printf("%-25s", arg.c_str());
       }
       printf("\n");
-    }while(true);
+    } while(true);
   }
 }
 
 
 void HandleOptions()
 {
-  vector<string> args;
+  std::vector<std::string> args;
 
   switch(Options::Action)
   {
