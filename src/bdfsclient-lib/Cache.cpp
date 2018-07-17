@@ -301,7 +301,7 @@ namespace dfs
     else
     {
       buf = new uint8_t[this->volume->BlockSize()];
-      if (!this->Read(row, column, buf, this->volume->BlockSize(), 0))
+      if (!this->ReadImpl(row, column, buf, this->volume->BlockSize(), 0))
       {
         delete[] buf;
         return false;

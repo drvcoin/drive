@@ -39,19 +39,24 @@ namespace dfs
     static std::map<std::string, bool> nbdInfo;
 
     static std::string GetNextNBD();
-    static void Unmount(std::string nbdPath, bool matchAll);
+    static void Unmount(const std::string &nbdPath, bool matchAll);
 
   public:
     static void Cleanup();
-    static int BindVolume(const std::string name, const std::string path);
-    static int UnbindVolume(const std::string name);
+    static int BindVolume(const std::string &name, const std::string &path);
+    static int UnbindVolume(const std::string &name);
     
-    static inline std::string GetNbdForVolume(const std::string name)
+    static inline void AddNbdPath(std::string path)
+    {
+      ActionHandler::nbdInfo[path] = false;
+    }
+
+    static inline std::string GetNbdForVolume(const std::string &name)
     {
       return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name]->nbdPath : "";
     }
 
-    static inline std::string GetMountPathForVolume(const std::string name)
+    static inline std::string GetMountPathForVolume(const std::string &name)
     {
       return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name]->mountPath : "";
     }
