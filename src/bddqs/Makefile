@@ -20,27 +20,36 @@
 # SOFTWARE.
 # 
 
-ROOT = $(realpath ..)
+ROOT = $(realpath ../..)
 
-DIRS = \
-	jsoncpp \
-	mongoose \
-	bdcontract-lib \
-	bdcontract \
-	bdfs-lib \
-	bdfsclient-lib \
-	bdfs \
-	bdfsclient \
-	httpserver \
-	bdhost \
-	bdkad \
-	bddqs
+TARGETEXE = bddqs
 
-.PHONY: all clean $(DIRS)
+include $(ROOT)/Config.mk
 
-all: $(DIRS)
+SRCS = \
+	Main.cpp \
+	Options.cpp \
+	KademliaModule.cpp \
+	KademliaHandler.cpp \
 
-clean: $(DIRS)
 
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+VPATH = $(BINDIR)
+
+ifneq ($(BUILDTYPE),debug)
+VPATH += $(ROOT)/../kademlia/out/linux.x86_64/release/bin
+else
+VPATH += $(ROOT)/../kademlia/out/linux.x86_64/debug/bin
+endif
+
+LIBS = \
+	libbdcontract.a \
+	libbdhttp.a \
+	libmongoose.a \
+	libjson.a \
+	kad.a
+
+SYSLIBS = -lcrypto -lcurl -luuid -ldl -pthread
+
+CCFLAGS = -I$(ROOT)/../kademlia/out/include -I../jsoncpp/include -I../mongoose -I../bdcontract-lib -I../httpserver -fPIC -std=c++17
+
+include $(ROOT)/Cpp.mk
