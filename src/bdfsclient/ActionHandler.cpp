@@ -42,114 +42,114 @@
 
 namespace dfs
 {
-	std::unordered_map<std::string, std::string> ActionHandler::volumeInfo;
+  std::unordered_map<std::string, std::string> ActionHandler::volumeInfo;
 
-	// drv callbacks	
-	static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
-	{
-		auto r = ((Volume*)context)->ReadDecrypt(buf, size, offset) ? size : 0;
-		//printf("read size:%d, offset:%d, ret:%d\n", size, offset, r);
-		return r;
-	}
+  // drv callbacks
+  static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
+  {
+    auto r = ((Volume*)context)->ReadDecrypt(buf, size, offset) ? size : 0;
+    //printf("read size:%d, offset:%d, ret:%d\n", size, offset, r);
+    return r;
+  }
 
-	static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
-	{
-		auto r = ((Volume*)context)->WriteEncrypt(buf, size, offset) ? size : 0;
-		//printf("write size:%d, offset:%d, ret:%d", size, offset,r);
-		return r;
-	}
-
-
-	static void xmp_cleanup(void * context)
-	{
-		if (context)
-		{
-			delete ((Volume*)context);
-			printf("Deleteing volume from xmp_cleanup\n");
-		}
-	}
-
-	void ActionHandler::Unmount(const std::string &path, bool matchAll = false)
-	{
-		printf("Unmounting %s\n", path.c_str());
-		std::string cmd = "imdisk -D -m " + path;
-		system(cmd.c_str());
-	}
-
-	void ActionHandler::Cleanup()
-	{
-		printf("Unmounting volumes...\n");
-		for (auto &it : volumeInfo)
-		{
-			printf("Cleaning %s...\n", it.second.c_str());
-			ActionHandler::Unmount(it.second.c_str());
-			drv_disconnect(it.first.c_str());
-		}
-	}
-
-	// returns {0: fail, 1: success, 2: already binded}
-	int ActionHandler::BindVolume(const std::string &name, const std::string &path)
-	{
-		if (volumeInfo.find(name) != volumeInfo.end())
-		{
-			printf("Volume is binded to '%s'.\n", volumeInfo[name].c_str());
-			if (!path.empty())
-			{
-				volumeInfo[name] = path;
-			}
-			if (!drv_task_active(name))
-			{
-				ActionHandler::UnbindVolume(name);
-			}
-			else
-			{
-				return 2;
-			}
-		}
-
-		auto volume = VolumeManager::LoadVolume(name);
-
-		if (volume == nullptr)
-		{
-			printf("Failed to load volume '%s'\n", name.c_str());
-			return 0;
-		}
-
-		// Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
-		volume->EnableCache(std::make_unique<dfs::Cache>("cache", volume.get(), 200, 10));
+  static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
+  {
+    auto r = ((Volume*)context)->WriteEncrypt(buf, size, offset) ? size : 0;
+    //printf("write size:%d, offset:%d, ret:%d", size, offset,r);
+    return r;
+  }
 
 
-		static struct drv_operations ops;
-		ops.read = xmp_read;
-		ops.write = xmp_write;
-		ops.cleanup = xmp_cleanup;
+  static void xmp_cleanup(void * context)
+  {
+    if (context)
+    {
+      delete ((Volume*)context);
+      printf("Deleteing volume from xmp_cleanup\n");
+    }
+  }
 
-		Volume *pVolume = volume.release();
-		drv_register(name.c_str(), pVolume->DataSize(), &ops, (void *)pVolume);
+  void ActionHandler::Unmount(const std::string &path, bool matchAll = false)
+  {
+    printf("Unmounting %s\n", path.c_str());
+    std::string cmd = "imdisk -D -m " + path;
+    system(cmd.c_str());
+  }
 
-		int counter = 10;
-		while (!drv_task_active(name) && counter--)
-		{
-			Sleep(1000);
-		}
+  void ActionHandler::Cleanup()
+  {
+    printf("Unmounting volumes...\n");
+    for (auto &it : volumeInfo)
+    {
+      printf("Cleaning %s...\n", it.second.c_str());
+      ActionHandler::Unmount(it.second.c_str());
+      drv_disconnect(it.first.c_str());
+    }
+  }
 
-		volumeInfo[name] = path;
+  // returns {0: fail, 1: success, 2: already binded}
+  int ActionHandler::BindVolume(const std::string &name, const std::string &path)
+  {
+    if (volumeInfo.find(name) != volumeInfo.end())
+    {
+      printf("Volume is binded to '%s'.\n", volumeInfo[name].c_str());
+      if (!path.empty())
+      {
+        volumeInfo[name] = path;
+      }
+      if (!drv_task_active(name))
+      {
+        ActionHandler::UnbindVolume(name);
+      }
+      else
+      {
+        return 2;
+      }
+    }
 
-		return 1;
-	}
+    auto volume = VolumeManager::LoadVolume(name);
+
+    if (volume == nullptr)
+    {
+      printf("Failed to load volume '%s'\n", name.c_str());
+      return 0;
+    }
+
+    // Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
+    volume->EnableCache(std::make_unique<dfs::Cache>("cache", volume.get(), 200, 10));
 
 
-	// returns {0: fail, 1: success, 2: already binded}
-	int ActionHandler::UnbindVolume(const std::string &name)
-	{
-		auto it = volumeInfo.find(name);
-		if (it != volumeInfo.end())
-		{
-			printf("Unbinding volume: %s\n", name.c_str());
-			ActionHandler::Unmount(it->second);
-			drv_disconnect(name);
-			volumeInfo.erase(it);
-		}
-		return 1;
-	}
+    static struct drv_operations ops;
+    ops.read = xmp_read;
+    ops.write = xmp_write;
+    ops.cleanup = xmp_cleanup;
+
+    Volume *pVolume = volume.release();
+    drv_register(name.c_str(), pVolume->DataSize(), &ops, (void *)pVolume);
+
+    int counter = 10;
+    while (!drv_task_active(name) && counter--)
+    {
+      Sleep(1000);
+    }
+
+    volumeInfo[name] = path;
+
+    return 1;
+  }
+
+
+  // returns {0: fail, 1: success, 2: already binded}
+  int ActionHandler::UnbindVolume(const std::string &name)
+  {
+    auto it = volumeInfo.find(name);
+    if (it != volumeInfo.end())
+    {
+      printf("Unbinding volume: %s\n", name.c_str());
+      ActionHandler::Unmount(it->second);
+      drv_disconnect(name);
+      volumeInfo.erase(it);
+    }
+    return 1;
+  }
 }

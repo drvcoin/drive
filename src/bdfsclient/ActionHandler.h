@@ -23,28 +23,28 @@
 #include <unordered_map>
 namespace dfs
 {
-	struct VolumeMeta
-	{
-		std::string volumeName;
-		std::string mountPath;
-	};
+  struct VolumeMeta
+  {
+    std::string volumeName;
+    std::string mountPath;
+  };
 
-	class ActionHandler
-	{
-		static std::unordered_map<std::string, std::string> volumeInfo;
+  class ActionHandler
+  {
+    static std::unordered_map<std::string, std::string> volumeInfo;
 
-		static void Unmount(const std::string &nbdPath, bool matchAll);
+    static void Unmount(const std::string &nbdPath, bool matchAll);
 
-	public:
-		static void Cleanup();
-		static int BindVolume(const std::string &name, const std::string &path);
-		static int UnbindVolume(const std::string &name);
+  public:
+    static void Cleanup();
+    static int BindVolume(const std::string &name, const std::string &path);
+    static int UnbindVolume(const std::string &name);
 
-		static inline std::string GetMountPathForVolume(const std::string &name)
-		{
-			return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name] : "";
-		}
+    static inline std::string GetMountPathForVolume(const std::string &name)
+    {
+      return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name] : "";
+    }
 
-		static inline const std::unordered_map<std::string, std::string> &GetVolumeInfo() { return ActionHandler::volumeInfo; }
-	};
+    static inline const std::unordered_map<std::string, std::string> &GetVolumeInfo() { return ActionHandler::volumeInfo; }
+  };
 }

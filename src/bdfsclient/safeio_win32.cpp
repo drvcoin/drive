@@ -43,12 +43,12 @@ extern "C"
 int
 safe_read(SOCKET fd, void *pdata, safeio_size_t size)
 {
-  return Overlapped.BufRecv((HANDLE) fd, pdata, size) == (DWORD)size;
+  return Overlapped.BufRecv((HANDLE)fd, pdata, size) == (DWORD)size;
 }
 
 extern "C"
 int
 safe_write(SOCKET fd, const void *pdata, safeio_size_t size)
 {
-  return Overlapped.BufSend((HANDLE) fd, pdata, size);
+  return Overlapped.BufSend((HANDLE)fd, pdata, size);
 }

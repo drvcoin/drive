@@ -51,7 +51,7 @@ static bdfs::HttpConfig defaultConfig;
 #define SENDRECV_TIMEOUT 30
 
 
-unique_ptr<char[]> ReceiveBdcp(PiperIPC *ipc)
+std::unique_ptr<char[]> ReceiveBdcp(PiperIPC *ipc)
 {
   uint32_t length;
   DWORD cbLen;
@@ -69,12 +69,12 @@ unique_ptr<char[]> ReceiveBdcp(PiperIPC *ipc)
   return buff;
 }
 
-unique_ptr<char[]> SendReceive(const vector<string> &args, bdcp::T type)
+std::unique_ptr<char[]> SendReceive(const std::vector<std::string> &args, bdcp::T type)
 {
   PiperIPC ipc;
   auto buff = bdcp::Create(type, args);
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
-  unique_ptr<char[]> returnBuff = nullptr;
+  std::unique_ptr<char[]> returnBuff = nullptr;
 
   if (!ipc.AttachEndPoint())
   {
@@ -102,7 +102,7 @@ unique_ptr<char[]> SendReceive(const vector<string> &args, bdcp::T type)
 void ListVolumes()
 {
   PiperIPC ipc;
-  auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO, vector<string>());
+  auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO, std::vector<std::string>());
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
 
   if (!ipc.AttachEndPoint())
@@ -119,14 +119,14 @@ void ListVolumes()
   {
     do
     {
-      unique_ptr<char[]> resp = ReceiveBdcp(&ipc);
+      std::unique_ptr<char[]> resp = ReceiveBdcp(&ipc);
       if (resp == nullptr || ((bdcp::BdResponse*)resp.get())->status == 0)
       {
         break;
       }
 
-      vector<string> args = bdcp::Parse(resp);
-      if(args.size() == 2)
+      std::vector<std::string> args = bdcp::Parse(resp);
+      if (args.size() == 2)
       {
         printf("Volume name: %s\n", args[0].c_str());
         std::string cmd = "imdisk -l -m " + args[1];
@@ -140,7 +140,7 @@ void ListVolumes()
 
 void HandleOptions()
 {
-  vector<string> args;
+  std::vector<std::string> args;
 
   switch (Options::Action)
   {

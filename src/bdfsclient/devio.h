@@ -53,37 +53,37 @@ SOFTWARE.
 extern "C" {
 #endif
 
-	typedef safeio_ssize_t(__cdecl *dllread_proc)(void *handle,
-		void *buf,
-		safeio_size_t size,
-		off_t_64 offset);
+  typedef safeio_ssize_t(__cdecl *dllread_proc)(void *handle,
+    void *buf,
+    safeio_size_t size,
+    off_t_64 offset);
 
-	typedef safeio_ssize_t(__cdecl *dllwrite_proc)(void *handle,
-		void *buf,
-		safeio_size_t size,
-		off_t_64 offset);
+  typedef safeio_ssize_t(__cdecl *dllwrite_proc)(void *handle,
+    void *buf,
+    safeio_size_t size,
+    off_t_64 offset);
 
-	typedef int(__cdecl *dllclose_proc)(void *handle);
+  typedef int(__cdecl *dllclose_proc)(void *handle);
 
-	typedef void * (__cdecl *dllopen_proc)(const char *file,
-		int read_only,
-		dllread_proc *dllread,
-		dllwrite_proc *dllwrite,
-		dllclose_proc *dllclose,
-		off_t_64 *size);
+  typedef void * (__cdecl *dllopen_proc)(const char *file,
+    int read_only,
+    dllread_proc *dllread,
+    dllwrite_proc *dllwrite,
+    dllclose_proc *dllclose,
+    off_t_64 *size);
 
 #ifdef __cplusplus
 
-	struct drv_operations
-	{
-		size_t(*read)(void * buffer, size_t size, size_t offset, void * context);
-		size_t(*write)(const void * buffer, size_t size, size_t offset, void * context);
-		void(*cleanup)(void * context);
-	};
+  struct drv_operations
+  {
+    size_t(*read)(void * buffer, size_t size, size_t offset, void * context);
+    size_t(*write)(const void * buffer, size_t size, size_t offset, void * context);
+    void(*cleanup)(void * context);
+  };
 
-	bool drv_register(const char * path, size_t size, struct drv_operations * operations, void * context);
-	bool drv_disconnect(const std::string &name);
-	bool drv_task_active(const std::string &name);
-	inline std::string drv_imdisk_shm_name(const std::string &name) { return name + "_shm"; }
+  bool drv_register(const char * path, size_t size, struct drv_operations * operations, void * context);
+  bool drv_disconnect(const std::string &name);
+  bool drv_task_active(const std::string &name);
+  inline std::string drv_imdisk_shm_name(const std::string &name) { return name + "_shm"; }
 }
 #endif
