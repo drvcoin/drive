@@ -66,9 +66,11 @@ int main(int argc, char * * argv)
 	{
 		VolumeManager::kademliaUrl = argv[1];
 	}
-	else {
-		VolumeManager::kademliaUrl = "http://10.1.3.100:7800";
-	}
+  else
+  {
+    printf("Missing Kademlia URL.\n");
+    return 0;
+  }
 
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);

@@ -280,8 +280,6 @@ int main(int argc, char * * argv)
 {
   Options::Init(argc, argv);
 
-  Options::KademliaUrl = "http://10.1.3.100:7800";
-
   VolumeManager::defaultConfig.ConnectTimeout(5);
   VolumeManager::defaultConfig.RequestTimeout(5);
 
