@@ -28,19 +28,16 @@
 
 
 #include <arpa/inet.h>
-
+#include <json/json.h>
 
 namespace bdhost
 {
   uint16_t Options::port = 80;
 
-  const char * Options::k_root;
+  std::string  Options::k_root;
 
   uint32_t Options::k_addr;
   uint16_t Options::k_port;
-
-  uint32_t Options::k_bootaddr;
-  uint16_t Options::k_bootport;
 
 
   bool Options::Usage(const char * message, ...)
@@ -57,10 +54,10 @@ namespace bdhost
     printf("Usage: bdkad [option]\n");
     printf("\n");
     printf("Options:\n");
+    printf("  -c <config file>      config file in json format\n");
     printf("  -p <port>             port to listen http request on (default:80)\n");
     printf("  -k <path>             kademlia node name and path\n");
     printf("  -n <addr> <port>      kademlia node address and port\n");
-    printf("  -b <addr> <port>      bootstrap node address and port\n");
     printf("\n");
     exit(message == NULL ? 0 : 1);
   }
@@ -73,7 +70,12 @@ namespace bdhost
 
     for (int i = 1; i < argc; ++i)
     {
-      if (strcmp(argv[i], "-p") == 0)
+      if (strcmp(argv[i], "-c") == 0)
+      {
+        assert_argument_index(++i, "config");
+        LoadConfig(argv[i]);
+      }
+      else if (strcmp(argv[i], "-p") == 0)
       {
         assert_argument_index(++i, "port");
         port = static_cast<uint16_t>(atoi(argv[i]));
@@ -91,13 +93,6 @@ namespace bdhost
         k_port = static_cast<uint16_t>(atoi(argv[i]));
 
       }
-      else if (strcmp(argv[i], "-b") == 0)
-      {
-        assert_argument_index(++i, "bootstrap addr");
-        k_bootaddr = static_cast<uint32_t>(inet_addr(argv[i]));
-        assert_argument_index(++i, "bootstrap port");
-        k_bootport = static_cast<uint16_t>(atoi(argv[i]));
-      }
       else
       {
         Usage("Error: unknown argument '%s'.\n", argv[i]);
@@ -106,4 +101,64 @@ namespace bdhost
 
     return true;
   }
+
+  bool Options::LoadConfig(const char * path)
+  {
+    printf("loadconfig from %s\n",path);
+
+    FILE * file = fopen(path, "r");
+
+    if (!file)
+    {
+      printf("ERROR missing config file %s\n",path);
+      return false;
+    }
+
+    size_t size = BUFSIZ;
+    char * buffer = static_cast<char *>(malloc(size));
+    size_t offset = 0;
+
+    size_t bytes;
+    while ((bytes = fread(buffer + offset, 1, size - offset, file)) == size - offset)
+    {
+      char * buf = static_cast<char *>(realloc(buffer, size + BUFSIZ));
+      if (!buf)
+      {
+        break;
+      }
+
+      buffer = buf;
+      offset = size;
+      size += BUFSIZ;
+    }
+
+    int len = offset + bytes;
+
+    Json::Reader reader;
+    Json::Value json;
+
+    if (!reader.parse(buffer, len, json, false) ||
+        !json.isObject() ||
+        !json["http_port"].isIntegral() ||
+        !json["node_name"].isString() ||
+        !json["kad_addr"].isString() ||
+        !json["kad_port"].isIntegral())
+    {
+      printf("ERROR reading config file %s\n",path);
+      return false;
+    }
+
+    port = static_cast<uint16_t>( json["http_port"].asUInt() );
+    k_root = json["node_name"].asString();
+
+    k_addr = static_cast<uint32_t>( inet_addr( json["kad_addr"].asString().c_str() ));
+    k_port = static_cast<uint16_t>( json["kad_port"].asUInt() );
+
+    free(buffer);
+
+    fclose(file);
+
+    return true;
+  }
+
 }

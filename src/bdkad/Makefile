@@ -27,7 +27,6 @@ TARGETEXE = bdkad
 include $(ROOT)/Config.mk
 
 SRCS = \
-	Global.cpp \
 	Main.cpp \
 	Options.cpp \
 	KademliaModule.cpp \

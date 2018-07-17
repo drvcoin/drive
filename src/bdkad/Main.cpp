@@ -28,15 +28,12 @@
 #include "Options.h"
 #include "HttpModule.h"
 #include "HttpServer.h"
-#include "Global.h"
 #include "KademliaModule.h"
 
 
 
 int main(int argc, const char ** argv)
 {
-  printf("main\n");
-
   bdhost::Options::Init(argc, argv);
 
   bdhttp::HttpModule::Initialize();
@@ -50,8 +47,6 @@ int main(int argc, const char ** argv)
   }
 
   bdhost::KademliaModule::Initialize();
-
-  printf("kad initialized\n");
 
   while (server.IsRunning())
   {
