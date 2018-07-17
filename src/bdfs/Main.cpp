@@ -197,41 +197,6 @@ void HandleOptions()
     break;
   }
 
-  case Action::Format:
-  {
-    if (Options::Name.empty() || Options::Paths.size() != 1)
-    {
-      printf("Missing <volumename> or <fstype>\n");
-    }
-    else
-    {
-      args.emplace_back(Options::Name);
-      auto resp = SendReceive(args, bdcp::BIND);
-      auto respParams = bdcp::Parse(resp);
-
-      if (!((bdcp::BdResponse*)resp.get())->status || respParams.size() != 1)
-      {
-        printf("Bind failed for volume '%s'.\n", Options::Name.c_str());
-        exit(0);
-      }
-
-      int timeout = 10;
-      //while(!nbd_ready(respParams[0].c_str()) && timeout--)
-      {
-        // sleep(1);
-      }
-
-      if (timeout == 0)
-      {
-        printf("Bind timeout for volume '%s'.\n", Options::Name.c_str());
-        exit(0);
-      }
-
-      printf("Formatting '%s' to '%s'...\n", respParams[0].c_str(), Options::Paths[0].c_str());
-    }
-    break;
-  }
-
   case Action::Create:
   {
     if (Options::Name == "" || Options::Repo == "")
