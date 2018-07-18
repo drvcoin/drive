@@ -84,7 +84,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)/../libs/openssl/lib;$(SolutionDir)/../libs/curl/lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)/../libs/openssl/lib;$(SolutionDir)/../libs/curl/lib;$(SolutionDir)\..\..\cm256\src\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);Normaliz.lib;libcurl_a.lib;libeay32.lib;ssleay32.lib;wsock32.lib;wldap32.lib;ws2_32.lib;cm256.lib;jsoncpp.lib;bdfs-lib.lib;bdfsclient-lib.lib;bdcontract-lib.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -107,7 +107,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);Normaliz.lib;libcurl_a.lib;libeay32.lib;ssleay32.lib;wsock32.lib;wldap32.lib;ws2_32.lib;cm256.lib;jsoncpp.lib;bdfs-lib.lib;bdfsclient-lib.lib;bdcontract-lib.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)/../libs/openssl/lib;$(SolutionDir)/../libs/curl/lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)/../libs/openssl/lib;$(SolutionDir)/../libs/curl/lib;$(SolutionDir)\..\..\cm256\src\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
