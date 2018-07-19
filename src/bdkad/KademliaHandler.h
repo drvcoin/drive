@@ -45,5 +45,8 @@ namespace bdhost
 
     void OnGetValue(bdhttp::HttpContext & context);
 
+    void OnPublish(bdhttp::HttpContext & context);
+
+    void OnQuery(bdhttp::HttpContext & context);
   };
 }
