@@ -114,6 +114,7 @@ namespace bdhost
       return false;
     }
 
+    // TODO: Change the way to read file
     size_t size = BUFSIZ;
     char * buffer = static_cast<char *>(malloc(size));
     size_t offset = 0;
