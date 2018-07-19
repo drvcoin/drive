@@ -147,17 +147,17 @@ namespace bdhost
 
 
     auto data = std::make_shared<Buffer>(buffer, size, false, true);
-    
+
     auto result = AsyncResultPtr(new AsyncResult<bool>());
-    
-    KademliaHandler::controller->Store(key, data, 999, 1, result);
-    
+
+    KademliaHandler::controller->Publish(key, data, 999, 1, result);
+
     if (!result->Wait(60000) || !AsyncResultHelper::GetResult<bool>(result.get()))
     {
       printf("ERROR: failed to set value.\n");
       context.setResponseCode(500);
       context.writeError("Failed", "Failed to set value", bdhttp::ErrorCode::GENERIC_ERROR);
-    } 
+    }
 
     context.writeResponse("true");
   }
@@ -176,7 +176,7 @@ namespace bdhost
 
     auto result = AsyncResultPtr(new  AsyncResult<BufferPtr>());
 
-    KademliaHandler::controller->FindValue(key, query, result);
+    KademliaHandler::controller->Query(key, query, result);
 
     if (!result->Wait(60000))
     {
