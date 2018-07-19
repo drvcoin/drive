@@ -28,9 +28,9 @@
 
 int Create(bdcontract::ContractRepository & repo,
     const std::string & name,
-    const std::string & consumer,
     const std::string & provider,
-    uint64_t size)
+    uint64_t size,
+    uint32_t reputation)
 {
   if (repo.LoadContract(name.c_str()))
   {
@@ -40,9 +40,9 @@ int Create(bdcontract::ContractRepository & repo,
 
   bdcontract::Contract contract;
   contract.SetName(name);
-  contract.SetConsumer(consumer);
   contract.SetProvider(provider);
   contract.SetSize(size);
+  contract.SetReputation(reputation);
 
   if (!repo.SaveContract(contract))
   {
@@ -77,9 +77,9 @@ int Show(bdcontract::ContractRepository & repo, const std::string & name)
   }
 
   printf("Name:     %s\n", contract->Name().c_str());
-  printf("Consumer: %s\n", contract->Consumer().c_str());
   printf("Provider: %s\n", contract->Provider().c_str());
   printf("Size:     %" PRIu64 " MB\n", contract->Size() / (1024 * 1024));
+  printf("Reputation: %" PRIu32 "\n", contract->Reputation());
 
   return 0;
 }
@@ -102,9 +102,9 @@ int main(int argc, const char ** argv)
   {
     return Create(repo,
                   bdcontract::Options::name,
-                  bdcontract::Options::consumer,
                   bdcontract::Options::provider,
-                  bdcontract::Options::size);
+                  bdcontract::Options::size,
+                  bdcontract::Options::reputation);
   }
   else if (bdcontract::Options::action == "list")
   {

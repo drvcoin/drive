@@ -117,4 +117,76 @@ namespace bdfs
 
     return rtn ? result : nullptr;
   }
+
+  AsyncResultPtr<bool> BdKademlia::Publish(const char * node, const size_t storage, const size_t reputation = 1)
+  {
+    assert(node);
+    assert(storage);
+
+    Json::Value value;
+    value["node"] = std::string(node);
+    value["storage"] = Json::Value::UInt(storage);
+    value["reputation"] = Json::Value::UInt(reputation);
+
+    BdObject::CArgs args;
+    args["value"] = value.toStyledString();;
+
+    auto result = std::make_shared<AsyncResult<bool>>();
+
+    bool rtn = this->Call("Publish", args,
+      [result](Json::Value & response, bool error)
+      {
+        if (error || !response.isBool())
+        {
+          result->Complete(false);
+        }
+        else
+        {
+          result->Complete(response.asBool());
+        }
+      }
+    );
+
+    return rtn ? result : nullptr;
+  }
+
+
+  AsyncResultPtr<Buffer> BdKademlia::Query(const char * query)
+  {
+    assert(query);
+
+    BdObject::CArgs args;
+    args["query"] = std::string(query);
+
+    auto result = std::make_shared<AsyncResult<Buffer>>();
+
+    bool rtn = this->Call("Query", args,
+      [result](Json::Value & response, bool error)
+      {
+        if (error || !response.isString())
+        {
+          result->Complete(Buffer());
+        }
+        else
+        {
+          auto str = response.asString();
+
+          size_t decodedLen = Base64Encoder::GetDecodedLength(str.size());
+
+          Buffer buffer;
+          buffer.Resize(decodedLen);
+
+          decodedLen = Base64Encoder::Decode(str.c_str(), str.size(), static_cast<uint8_t *>(buffer.Buf()), decodedLen);
+          if (decodedLen < buffer.Size())
+          {
+            buffer.Resize(decodedLen);
+          }
+
+          result->Complete(std::move(buffer));
+        }
+      }
+    );
+
+    return rtn ? result : nullptr;
+  }
 }

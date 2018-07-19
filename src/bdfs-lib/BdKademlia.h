@@ -42,5 +42,9 @@ namespace bdfs
     AsyncResultPtr<bool> SetValue(const char * key, const void * value, size_t size, uint64_t version, uint32_t ttl);
 
     AsyncResultPtr<Buffer> GetValue(const char * key);
+
+    AsyncResultPtr<bool> Publish(const char * node, const size_t storage, const size_t reputation);
+
+    AsyncResultPtr<Buffer> Query(const char * query);
   };
 }

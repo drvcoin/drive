@@ -31,9 +31,9 @@ namespace bdcontract
   std::string Options::action;
   std::string Options::repo;
   std::string Options::name;
-  std::string Options::consumer;
   std::string Options::provider;
   uint64_t Options::size;
+  uint32_t Options::reputation;
 
 
   bool Options::Usage(const char * message, ...)
@@ -54,10 +54,10 @@ namespace bdcontract
     printf("  create <name> <consumer> <provider> <size>\n");
     printf("    Create a new contract.\n");
     printf("    Args:\n");
-    printf("      name:     contract name\n");
-    printf("      consumer: consumer name\n");
-    printf("      provider: provider base URL\n");
-    printf("      size:     total size in MB\n");
+    printf("      name:       contract name\n");
+    printf("      provider:   provider base URL\n");
+    printf("      size:       total size in MB\n");
+    printf("      reputation: provider reputation\n");
     printf("\n");
     printf("  list\n");
     printf("    List all the contracts.\n");
@@ -111,9 +111,6 @@ namespace bdcontract
           
           if (action == "create")
           {
-            assert_argument_index(++i, "consumer");
-            consumer = argv[i];
-
             assert_argument_index(++i, "provider");
             provider = argv[i];
 
@@ -124,6 +121,15 @@ namespace bdcontract
             if (errno)
             {
               Usage("Invalid size.\n");
+            }
+
+            assert_argument_index(++i, "reputation");
+            errno = 0;
+            reputation = strtoull(argv[i], nullptr, 10);
+
+            if (errno)
+            {
+              Usage("Invalid reputation.\n");
             }
           }
           else if (action != "show" && action != "delete")

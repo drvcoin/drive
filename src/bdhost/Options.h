@@ -40,6 +40,8 @@ namespace bdhost
 
     static std::string repo;
 
+    static std::string contract;
+
     static bool Usage(const char * message = nullptr, ...);
     static bool Init(int argc, const char ** argv);
   };
