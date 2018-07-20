@@ -183,7 +183,7 @@ namespace dfs
     size_t blockRemaining = blockSize - blockOffset;
     uint8_t * byteBuffer = (uint8_t*)buffer;
 
-    return_false_if_msg(offset >= (blockCount*dataCount*blockSize), "Error: param 'offset' out of range: %ld\n", offset);
+    return_false_if_msg(offset >=  (blockCount*dataCount*blockSize), "Error: param 'offset' out of range: %ld\n", offset);
     return_false_if_msg(size > (blockCount*dataCount*blockSize), "Error: param 'size' out of range: %ld\n", offset);
     return_false_if_msg((offset+size) > (blockCount*dataCount*blockSize), "Error: param 'offset+size' out of range: %ld\n", offset+size);
 
@@ -368,7 +368,7 @@ namespace dfs
       return cache->Write(row, column, buffer, size, offset);
     }
 
-    return __WriteCached(row, column, buffer, size, offset);
+    return __WriteDirect(row, column, buffer, size, offset);
   }
 
 

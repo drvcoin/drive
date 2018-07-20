@@ -24,6 +24,13 @@
 
 #include <string.h>
 
+#if defined(_WIN32) || defined(_WIN64) 
+#define snprintf _snprintf 
+#define vsnprintf _vsnprintf 
+#define strcasecmp _stricmp 
+#define strncasecmp _strnicmp 
+#endif
+
 namespace dfs
 {
   namespace Action
@@ -32,16 +39,16 @@ namespace dfs
     {
       switch (value)
       {
-        default:
-        case Unknown: return "Unknown";
-        case Create:  return "Create";
-        case Delete:  return "Delete";
-        case Verify:  return "Verify";
-        case List:  return "List";
-        case Mount:   return "Mount";
-        case Unmount: return "Unmount";
-        case Show:  return "Show";
-        case Format:  return "Format";
+      default:
+      case Unknown: return "Unknown";
+      case Create:  return "Create";
+      case Delete:  return "Delete";
+      case Verify:  return "Verify";
+      case List:  return "List";
+      case Mount:   return "Mount";
+      case Unmount: return "Unmount";
+      case Show:  return "Show";
+      case Format:  return "Format";
       }
     }
 
@@ -49,14 +56,14 @@ namespace dfs
     {
       if (value != NULL)
       {
-             if (strcasecmp("Create", value) == 0)  { return Create; }
-        else if (strcasecmp("Delete", value) == 0)  { return Delete; }
-        else if (strcasecmp("Verify", value) == 0)  { return Verify; }
-        else if (strcasecmp("List", value) == 0)    { return List; }
-        else if (strcasecmp("Mount", value) == 0)   { return Mount; }
+        if (strcasecmp("Create", value) == 0) { return Create; }
+        else if (strcasecmp("Delete", value) == 0) { return Delete; }
+        else if (strcasecmp("Verify", value) == 0) { return Verify; }
+        else if (strcasecmp("List", value) == 0) { return List; }
+        else if (strcasecmp("Mount", value) == 0) { return Mount; }
         else if (strcasecmp("Unmount", value) == 0) { return Unmount; }
-        else if (strcasecmp("Show", value) == 0)    { return Show; }
-        else if (strcasecmp("Format", value) == 0)    { return Format; }
+        else if (strcasecmp("Show", value) == 0) { return Show; }
+        else if (strcasecmp("Format", value) == 0) { return Format; }
       }
       return Unknown;
     }

@@ -40,8 +40,8 @@
 #include "ContractRepository.h"
 #include "Cache.h"
 
-#include "UnixDomainSocket.h"
 #include "BdProtocol.h"
+#include "PiperIPC.h"
 
 using namespace dfs;
 using namespace bdfs;
@@ -51,252 +51,193 @@ static bdfs::HttpConfig defaultConfig;
 #define SENDRECV_TIMEOUT 30
 
 
-unique_ptr<char[]> ReceiveBdcp(UnixDomainSocket *socket)
+std::unique_ptr<char[]> ReceiveBdcp(PiperIPC *ipc)
 {
   uint32_t length;
- 
-  if (socket != nullptr && socket->RecvMessage(&length, sizeof(uint32_t)) <= 0)
+  DWORD cbLen;
+  if (ipc == nullptr)
   {
-    socket->Close();
     return nullptr;
   }
 
+  ipc->SyncRead((uint8_t*)&length, sizeof(uint32_t), cbLen);
   std::unique_ptr<char[]>buff = std::make_unique<char[]>(length);
   ((bdcp::BdHdr*)buff.get())->length = length;
 
-  socket->RecvMessage(buff.get()+sizeof(uint32_t), length-sizeof(uint32_t),SENDRECV_TIMEOUT);
+  ipc->SyncRead((uint8_t*)buff.get() + sizeof(uint32_t), length - sizeof(uint32_t), cbLen);
 
   return buff;
 }
 
-unique_ptr<char[]> SendReceive(const vector<string> &args, bdcp::T type)
+std::unique_ptr<char[]> SendReceive(const std::vector<std::string> &args, bdcp::T type)
 {
-  UnixDomainSocket socket;
-  auto buff = bdcp::Create(type,args);
+  PiperIPC ipc;
+  auto buff = bdcp::Create(type, args);
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
-  unique_ptr<char[]> returnBuff = nullptr;
+  std::unique_ptr<char[]> returnBuff = nullptr;
 
-  if(!socket.Connect("bdfsclient"))
+  if (!ipc.AttachEndPoint())
   {
     printf("Error: Unable to connect to bdfsclient daemon.\n");
     exit(0);
   }
-  else if (socket.SendMessage(buff.get(), buffLength,SENDRECV_TIMEOUT) != buffLength)
+  else if (!ipc.SyncWrite((uint8_t*)buff.get(), buffLength))
   {
     printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
     exit(0);
   }
   else
   {
-    returnBuff = ReceiveBdcp(&socket);
-    if(buff == nullptr)
+    returnBuff = ReceiveBdcp(&ipc);
+    if (buff == nullptr)
     {
       printf("Error: Unable to readresponse from bdfsclient daemon.\n");
       exit(0);
     }
   }
-
+  ipc.Disconnect();
   return returnBuff;
 }
 
 void ListVolumes()
 {
-  UnixDomainSocket socket;
-  auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO,vector<string>());
+  PiperIPC ipc;
+  auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO, std::vector<std::string>());
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
-  
-  if(!socket.Connect("bdfsclient"))
+
+  if (!ipc.AttachEndPoint())
   {
     printf("Error: Unable to connect to bdfsclient daemon.\n");
     exit(0);
   }
-  else if (socket.SendMessage(buff.get(), buffLength,SENDRECV_TIMEOUT) != buffLength)
+  else if (!ipc.SyncWrite((uint8_t*)buff.get(), buffLength))
   {
     printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
     exit(0);
   }
   else
   {
-    printf("\n%-25s%-20s%-25s\n","VOLUME NAME", "NBD PATH", "MOUNT PATH");
     do
     {
-      unique_ptr<char[]> resp = ReceiveBdcp(&socket);
-      if(resp == nullptr || ((bdcp::BdResponse*)resp.get())->status == 0)
+      std::unique_ptr<char[]> resp = ReceiveBdcp(&ipc);
+      if (resp == nullptr || ((bdcp::BdResponse*)resp.get())->status == 0)
       {
         break;
       }
 
-      vector<string> args = bdcp::Parse(resp);
-      for(auto &arg : args)
+      std::vector<std::string> args = bdcp::Parse(resp);
+      if (args.size() == 2)
       {
-        printf("%-25s%", arg.c_str());
+        printf("Volume name: %s\n", args[0].c_str());
+        std::string cmd = "imdisk -l -m " + args[1];
+        system(cmd.c_str());
       }
       printf("\n");
-    }while(true);
+    } while (true);
   }
 }
 
 
 void HandleOptions()
 {
-  vector<string> args;
+  std::vector<std::string> args;
 
-  switch(Options::Action)
+  switch (Options::Action)
   {
-    case Action::Mount:
+  case Action::Mount:
+  {
+    if (Options::Paths.size() != 1)
     {
-      if(Options::Paths.size() != 1)
+      printf("Missing <volumename> or <path>\n");
+    }
+    else
+    {
+      args.emplace_back(Options::Name);
+      args.emplace_back(Options::Paths[0]);
+      auto resp = SendReceive(args, bdcp::BIND);
+      auto respParams = bdcp::Parse(resp);
+
+      if (!((bdcp::BdResponse*)resp.get())->status || respParams.size() != 1)
       {
-        printf("Missing <volumename> or <path>\n");
+        printf("Bind failed for volume '%s', status:%d.\n", Options::Name.c_str(), ((bdcp::BdResponse*)resp.get())->status);
+        exit(0);
       }
+
+      printf("Mounting '%s' to '%s'\n", respParams[0].c_str(), Options::Paths[0].c_str());
+
+      std::string cmd = "imdisk -a -t proxy -o shm -f " + respParams[0] + " -m " + Options::Paths[0];
+      for (auto arg : Options::ExternalArgs)
+      {
+        cmd += " " + arg;
+      }
+      system(cmd.c_str());
+    }
+    break;
+  }
+
+  case Action::Unmount:
+  {
+    if (Options::Name.empty())
+    {
+      printf("Missing <volumename>\n");
+    }
+    else
+    {
+      args.emplace_back(Options::Name);
+      auto resp = SendReceive(args, bdcp::UNBIND);
+      auto respParams = bdcp::Parse(resp);
+
+      if (!((bdcp::BdResponse*)resp.get())->status)
+      {
+        printf("Mount path not found for volume '%s'.\n", Options::Name.c_str());
+        exit(0);
+      }
+      printf("Unmounting complete.\n");
+    }
+    break;
+  }
+
+  case Action::Create:
+  {
+    if (Options::Name == "" || Options::Repo == "")
+    {
+      printf("Missing <volumeName> or <contractRepo>\n");
+    }
+    else
+    {
+      printf("Creating volume '%s'...\n", Options::Name.c_str());
+      bool success = VolumeManager::CreateVolume(Options::Name, Options::Repo, Options::DataBlocks, Options::CodeBlocks);
+      if (success)
+        printf("Config file : %s.config\n", Options::Name.c_str());
       else
-      {
-        args.emplace_back(Options::Name);
-        args.emplace_back(Options::Paths[0]);
-        auto resp = SendReceive(args,bdcp::BIND);
-        auto respParams = bdcp::Parse(resp);
-
-        if(!((bdcp::BdResponse*)resp.get())->status || respParams.size() != 1)
-        {
-          printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
-          exit(0);
-        }
-
-			  int timeout = 10;	
-				while(!nbd_ready(respParams[0].c_str()) && timeout--)
-        {
-          sleep(1);
-        }
-
-        if(timeout == 0)
-        {
-          printf("Bind timeout for volume '%s'.\n",Options::Name.c_str());
-          exit(0);
-        }
-
-        printf("Mounting '%s' to '%s'\n",respParams[0].c_str(),Options::Paths[0].c_str());
-        
-        std::string cmd = "sudo mount";
-        for(auto arg : Options::ExternalArgs)
-        {
-          cmd += " " + arg;
-        }
-        cmd += " " + respParams[0];
-        cmd += " " + Options::Paths[0];
-        system(cmd.c_str());
-      }
-      break;
+        printf("Error creating volume '%s'.\n", Options::Name.c_str());
     }
+    break;
+  }
 
-    case Action::Unmount:
+  case Action::Delete:
+  {
+    if (Options::Name == "")
     {
-      if(Options::Name.empty())
-      {
-        printf("Missing <volumename>\n");
-      }
-      else
-      {
-        args.emplace_back(Options::Name);
-        auto resp = SendReceive(args,bdcp::UNBIND);
-        auto respParams = bdcp::Parse(resp);
-
-        if(!((bdcp::BdResponse*)resp.get())->status)
-        {
-          printf("Mount path not found for volume '%s'.\n",Options::Name.c_str());
-          exit(0);
-        }
-        printf("Unmounting complete.\n");
-      }
-      break;
+      printf("Missing <volumeName>\n");
     }
-
-    case Action::Format:
+    else
     {
-      if(Options::Name.empty() || Options::Paths.size() != 1)
-      {
-        printf("Missing <volumename> or <fstype>\n");
-      }
-      else
-      {
-        args.emplace_back(Options::Name);
-        auto resp = SendReceive(args,bdcp::BIND);
-        auto respParams = bdcp::Parse(resp);
-
-        if(!((bdcp::BdResponse*)resp.get())->status || respParams.size() != 1)
-        {
-          printf("Bind failed for volume '%s'.\n",Options::Name.c_str());
-          exit(0);
-        }
-
-			  int timeout = 10;	
-				while(!nbd_ready(respParams[0].c_str()) && timeout--)
-        {
-          sleep(1);
-        }
-
-        if(timeout == 0)
-        {
-          printf("Bind timeout for volume '%s'.\n",Options::Name.c_str());
-          exit(0);
-        }
-
-        printf("Formatting '%s' to '%s'...\n",respParams[0].c_str(),Options::Paths[0].c_str());
-       
-        std::string mkfs = "mkfs." + Options::Paths[0];
-        
-        std::string cmd = "sudo mkfs.";
-        cmd += Options::Paths[0];
-        for(auto arg : Options::ExternalArgs)
-        {
-          cmd += " " + arg;
-        }
-        cmd += " " + std::string(respParams[0]);
-        system(cmd.c_str());
-      }
-      break;
+      bool success = VolumeManager::DeleteVolume(Options::Name);
+      if (success)
+        printf("Volume '%s' deleted.\n", Options::Name.c_str());
     }
+    break;
+  }
 
-    case Action::Create:
-    {
-      if(Options::Name == "" || Options::Repo == "")
-      {
-        printf("Missing <volumeName> or <contractRepo>\n");
-      }
-      else 
-      {
-        printf("Creating volume '%s'...\n",Options::Name.c_str());
-        bool success = VolumeManager::CreateVolume(Options::Name, Options::Repo, Options::DataBlocks, Options::CodeBlocks);
-        if(success)
-          printf("Config file : %s.config\n",Options::Name.c_str());
-        else
-          printf("Error creating volume '%s'.\n", Options::Name.c_str());
-      }
-      break;
-    }
+  case Action::List:
+  {
+    ListVolumes();
+    break;
+  }
 
-    case Action::Delete:
-    {
-      if(Options::Name == "")
-      {
-        printf("Missing <volumeName>\n");
-      }
-      else 
-      {
-        bool success = VolumeManager::DeleteVolume(Options::Name);
-        if(success)
-          printf("Volume '%s' deleted.\n",Options::Name.c_str());
-      }
-      break;
-    }
-
-    case Action::List:
-    {
-      ListVolumes();
-      break;
-    }
-
-    default:
-      printf("Unhandled option : %s\n",Action::ToString(Options::Action));
+  default:
+    printf("Unhandled option : %s\n", Action::ToString(Options::Action));
   }
 }
 

@@ -23,9 +23,11 @@
 #include "Util.h"
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <cerrno>
+
+#ifndef _WIN32
+#include <unistd.h>
 
 uint64_t htonll(uint64_t val)
 {
@@ -78,3 +80,4 @@ bool nbd_ready(const char* devname, bool do_print) {
   close(fd);
   return true;
 }
+#endif

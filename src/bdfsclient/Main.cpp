@@ -24,9 +24,9 @@
 #include <signal.h>
 #include <memory>
 #include <sstream>
+#include <array>
 
 #include "cm256.h"
-#include "UnixDomainSocket.h"
 #include "ClientManager.h"
 #include "VolumeManager.h"
 #include "ActionHandler.h"
@@ -38,7 +38,7 @@ ClientManager client;
 
 void signalHandler(int signum)
 {
-  printf("Interrupt received by signal ( %d ).\n",signum);
+  printf("Interrupt received by signal ( %d ).\n", signum);
   ActionHandler::Cleanup();
   client.Stop();
   exit(signum);
@@ -46,18 +46,18 @@ void signalHandler(int signum)
 
 std::string execCmd(std::string cmd)
 {
-	std::array<char, 128> buffer;
-	std::string result;
-	std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-	if (!pipe) throw std::runtime_error("popen() failed!");
-	while (!feof(pipe.get()))
+  std::array<char, 128> buffer;
+  std::string result;
+  std::shared_ptr<FILE> pipe(_popen(cmd.c_str(), "r"), _pclose);
+  if (!pipe) throw std::runtime_error("_popen() failed!");
+  while (!feof(pipe.get()) && !ferror(pipe.get()))
   {
-		if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
-		{
-			result += buffer.data();
-		}
-	}
-	return result;
+    if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
+    {
+      result += buffer.data();
+    }
+  }
+  return result;
 }
 
 int main(int argc, char * * argv)
@@ -66,31 +66,22 @@ int main(int argc, char * * argv)
   {
     VolumeManager::kademliaUrl = argv[1];
   }
+  else
+  {
+    printf("Missing Kademlia URL.\n");
+    return 0;
+  }
 
   signal(SIGINT, signalHandler);
   signal(SIGTERM, signalHandler);
-  
+
   if (cm256_init()) {
     exit(1);
   }
-  
-	auto nbdPaths = execCmd("ls -1 /dev/nbd*");
-  std::stringstream ss;
-  ss.str(nbdPaths);
-  std::string path;
-  while(std::getline(ss,path,'\n') && !path.empty())
-  {
-    ActionHandler::AddNbdPath(path);
-  }
-  
-  if(!client.Start())
+
+  if (!client.Start())
   {
     printf("Error: Failed to start processing thread.\n");
-  }
-
-  while(true)
-  {
-    sleep(1);
   }
 
   client.Stop();

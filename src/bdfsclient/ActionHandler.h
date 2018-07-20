@@ -20,50 +20,31 @@
   SOFTWARE.
 */
 
-#include <map>
-
+#include <unordered_map>
 namespace dfs
 {
-  struct VolumeMeta 
+  struct VolumeMeta
   {
     std::string volumeName;
-    std::string nbdPath;
     std::string mountPath;
-    bool isFormatted;
-    bool isMounted;
   };
 
   class ActionHandler
   {
-    static std::map<std::string,VolumeMeta*> volumeInfo;
-    static std::map<std::string, bool> nbdInfo;
+    static std::unordered_map<std::string, std::string> volumeInfo;
 
-    static std::string GetNextNBD();
     static void Unmount(const std::string &nbdPath, bool matchAll);
 
   public:
     static void Cleanup();
     static int BindVolume(const std::string &name, const std::string &path);
     static int UnbindVolume(const std::string &name);
-    
-    static inline void AddNbdPath(std::string path)
-    {
-      ActionHandler::nbdInfo[path] = false;
-    }
-
-    static inline std::string GetNbdForVolume(const std::string &name)
-    {
-      return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name]->nbdPath : "";
-    }
 
     static inline std::string GetMountPathForVolume(const std::string &name)
     {
-      return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name]->mountPath : "";
+      return volumeInfo.find(name) != volumeInfo.end() ? volumeInfo[name] : "";
     }
 
-    static inline const std::map<std::string,VolumeMeta *> &GetVolumeInfo()
-    {
-      return ActionHandler::volumeInfo;
-    }
+    static inline const std::unordered_map<std::string, std::string> &GetVolumeInfo() { return ActionHandler::volumeInfo; }
   };
 }

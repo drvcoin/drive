@@ -20,11 +20,12 @@
   SOFTWARE.
 */
 
+
+#include "VolumeManager.cpp"
 #include <stdio.h>
 #include <sys/stat.h>
 #include <cmath>
 #include <limits>
-#include <unistd.h>
 #include <json/json.h>
 #include <thread>
 #include <fstream>
@@ -37,180 +38,118 @@
 
 #include "cm256.h"
 #include "gf256.h"
-#include "ubd.h"
-
-#include "VolumeManager.cpp"
+#include "devio.h"
 
 namespace dfs
 {
-  std::map<std::string, VolumeMeta *> ActionHandler::volumeInfo;
-  std::map<std::string, bool> ActionHandler::nbdInfo;
-	
-  // ubd callbacks	
-	static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
-	{
-		return ((Volume*)context)->ReadDecrypt(buf, size, offset) ? 0 : -1;
-	}
+  std::unordered_map<std::string, std::string> ActionHandler::volumeInfo;
 
-	static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
-	{
-		return ((Volume*)context)->WriteEncrypt(buf, size, offset) ? 0 : -1;
-	}
+  // drv callbacks
+  static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
+  {
+    auto r = ((Volume*)context)->ReadDecrypt(buf, size, offset) ? size : 0;
+    //printf("read size:%d, offset:%d, ret:%d\n", size, offset, r);
+    return r;
+  }
 
-	static void xmp_disc(void * context)
-	{
-		(void)(context);
-	}
+  static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
+  {
+    auto r = ((Volume*)context)->WriteEncrypt(buf, size, offset) ? size : 0;
+    //printf("write size:%d, offset:%d, ret:%d", size, offset,r);
+    return r;
+  }
+
 
   static void xmp_cleanup(void * context)
   {
-    if(context)
+    if (context)
     {
       delete ((Volume*)context);
       printf("Deleteing volume from xmp_cleanup\n");
     }
   }
 
-	static int xmp_flush(void * context)
-	{
-		(void)(context);
-		return 0;
-	}
-
-	static int xmp_trim(size_t from, size_t len, void * context)
-	{
-		(void)(context);
-		return 0;
-	}
-
-  void ActionHandler::Unmount(const std::string &nbdPath, bool matchAll=false)
+  void ActionHandler::Unmount(const std::string &path, bool matchAll = false)
   {
-    std::ifstream fp("/proc/mounts");
-    std::string line,s1,s2;
-    while(fp >> s1 >> s2 && std::getline(fp,line))
-    {
-      if((s1.compare(0,nbdPath.length(),nbdPath) == 0 && matchAll) 
-        || s1 == nbdPath)
-      {
-        printf("Unmounting %s\n",s2.c_str());
-        std::string cmd = "umount " + s2;
-        system(cmd.c_str());
-      }
-    }
-    fp.close();
+    printf("Unmounting %s\n", path.c_str());
+    std::string cmd = "imdisk -D -m " + path;
+    system(cmd.c_str());
   }
 
   void ActionHandler::Cleanup()
   {
     printf("Unmounting volumes...\n");
-    ActionHandler::Unmount("/dev/nbd",true);
-
-    for(auto &it : volumeInfo)
+    for (auto &it : volumeInfo)
     {
-      printf("Cleaning %s...\n",it.second->nbdPath.c_str());
-      ubd_disconnect(it.second->nbdPath.c_str());
-      delete it.second;
+      printf("Cleaning %s...\n", it.second.c_str());
+      ActionHandler::Unmount(it.second.c_str());
+      drv_disconnect(it.first.c_str());
     }
   }
 
   // returns {0: fail, 1: success, 2: already binded}
   int ActionHandler::BindVolume(const std::string &name, const std::string &path)
   {
-    std::string nbdPath = ActionHandler::GetNextNBD();
-    if(nbdPath == "") 
+    if (volumeInfo.find(name) != volumeInfo.end())
     {
-      printf("No available block devices.\n");
-      return 0;
-    }
-
-    if(volumeInfo.find(name) != volumeInfo.end())
-    {
-      printf("Volume is binded to '%s'.\n",volumeInfo[name]->nbdPath.c_str());
-      if(!path.empty())
+      printf("Volume is binded to '%s'.\n", volumeInfo[name].c_str());
+      if (!path.empty())
       {
-        volumeInfo[name]->mountPath = path;
+        volumeInfo[name] = path;
       }
-      return 2;
+      if (!drv_task_active(name))
+      {
+        ActionHandler::UnbindVolume(name);
+      }
+      else
+      {
+        return 2;
+      }
     }
-
-#if 0
-    uint64_t blockCount = 256;//*1024*1024ul;
-    size_t blockSize = 1*1024*1024;
-    std::string volumeId = path;
-#endif
 
     auto volume = VolumeManager::LoadVolume(name);
 
-    if(volume == nullptr)
+    if (volume == nullptr)
     {
-      printf("Failed to load volume '%s'\n",name.c_str());
+      printf("Failed to load volume '%s'\n", name.c_str());
       return 0;
     }
 
     // Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
     volume->EnableCache(std::make_unique<dfs::Cache>("cache", volume.get(), 200, 10));
-    
-    printf("Processing: %s\n", nbdPath.c_str());
 
-    static struct ubd_operations ops = {
-      .read = xmp_read,
-      .write = xmp_write,
-      .disc = xmp_disc,
-      .flush = xmp_flush,
-      .trim = xmp_trim,
-      .cleanup = xmp_cleanup
-    };
-    
+
+    static struct drv_operations ops;
+    ops.read = xmp_read;
+    ops.write = xmp_write;
+    ops.cleanup = xmp_cleanup;
+
     Volume *pVolume = volume.release();
-    ubd_register(nbdPath.c_str(), pVolume->DataSize(), &ops, (void *)pVolume);
-    
+    drv_register(name.c_str(), pVolume->DataSize(), &ops, (void *)pVolume);
+
     int counter = 10;
-    while(!nbd_ready(nbdPath.c_str()) && counter--)
+    while (!drv_task_active(name) && counter--)
     {
-      sleep(1);
+      Sleep(1000);
     }
 
-    if(counter == 0)
-    {
-      return 0;
-    }
-
-    VolumeMeta *meta = new VolumeMeta;
-    meta->volumeName = name;
-    meta->nbdPath = nbdPath;
-    meta->mountPath = path;
-    meta->isMounted = meta->isFormatted = false;
-    volumeInfo[name] = meta;
-
-    nbdInfo[nbdPath] = true;
+    volumeInfo[name] = path;
 
     return 1;
   }
 
-  
+
   // returns {0: fail, 1: success, 2: already binded}
   int ActionHandler::UnbindVolume(const std::string &name)
   {
     auto it = volumeInfo.find(name);
-    if(it != volumeInfo.end())
+    if (it != volumeInfo.end())
     {
-      printf("Unbinding volume: %s\n",name.c_str());
-      ActionHandler::Unmount(it->second->nbdPath);
-      nbdInfo[it->second->nbdPath] = false;
-      ubd_disconnect(it->second->nbdPath.c_str());
-      delete it->second;
+      printf("Unbinding volume: %s\n", name.c_str());
+      ActionHandler::Unmount(it->second);
+      drv_disconnect(name);
       volumeInfo.erase(it);
     }
     return 1;
-  }
-  
-  std::string ActionHandler::GetNextNBD()
-  {
-    for(auto it : ActionHandler::nbdInfo)
-    {
-      if(!it.second)
-        return it.first;
-    }
-    return "";
   }
 }

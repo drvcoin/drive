@@ -22,7 +22,7 @@
 
 #include "BitSet.h"
 #include "Util.h"
-
+#include <WinSock2.h>
 uint64_t BitSet::Reference::trash_bits = 0;
 
 BitSet::Reference::Reference(BitSet & bitSet, size_t index)

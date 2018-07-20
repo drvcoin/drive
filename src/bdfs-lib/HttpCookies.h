@@ -29,6 +29,8 @@
 
 namespace bdfs
 {
+  extern char *strchrnul(const char *p, int ch);
+
   class HttpCookies
   {
     class Cookie
@@ -63,6 +65,8 @@ namespace bdfs
       void HttpOnly(bool value) { httpOnly = value; }
       bool Secure() { return secure; }
       void Secure(bool value) { secure = value; }
+
+	 
     };
 
     typedef std::vector<Cookie*>::iterator Iterator;

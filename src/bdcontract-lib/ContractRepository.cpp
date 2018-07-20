@@ -22,17 +22,27 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-
 #include <string.h>
 #include <stdio.h>
+
+#ifdef _WIN32
+#include <direct.h>
+#include "dirent.h"
+
+#else
+#include <unistd.h>
+#include <dirent.h>
+#endif
 
 #include "ContractRepository.h"
 
 namespace bdcontract
 {
+#ifdef _WIN32
+	static int mkpath(char* path)
+#else
   static int mkpath(char* path, mode_t mode)
+#endif
   {
     char * p = path;
 
@@ -44,8 +54,12 @@ namespace bdcontract
         *p = '\0';
       }
 
-      int rtn = mkdir(path, mode);
-
+	  int rtn = 0;
+#ifdef _WIN32
+	  rtn = _mkdir(path);
+#else
+	  rtn = mkdir(path, mode);
+#endif
       if (p)
       {
         *p = '/';
@@ -71,7 +85,12 @@ namespace bdcontract
         root.resize(root.size() - 1);
       }
 
-      mkpath(const_cast<char *>(root.c_str()), 0755);
+#ifdef _WIN32
+	  mkpath(const_cast<char *>(root.c_str()));
+#else
+	  mkpath(const_cast<char *>(root.c_str()), 0755);
+#endif
+	  
     }
     else
     {
@@ -150,7 +169,7 @@ namespace bdcontract
     }
 
     std::string filename = this->root + "/" + name;
-    unlink(filename.c_str());
+    _unlink(filename.c_str());
   }
 
   

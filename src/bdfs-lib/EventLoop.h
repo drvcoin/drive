@@ -24,7 +24,6 @@
 
 #include <utility>
 #include <limits>
-#include <pthread.h>
 #include "Event.h"
 #include "LockFreeQueue.h"
 

@@ -51,7 +51,7 @@ namespace dfs
 
     printf("Usage: drive {action} [options] [files]\n");
     printf("\n");
-    printf("Actions: create,delete,mount,unmount,format,list\n");
+    printf("Actions: create,delete,mount,unmount,list\n");
     printf("\n");
     printf("Options: create\n");
     printf("\n");
@@ -78,14 +78,6 @@ namespace dfs
     printf("Options: unmount\n");
     printf("\n");
     printf("  -n {name}      Volume name\n");
-    printf("  -?|h           Show this help screen\n");
-    printf("\n");
-    printf("Options: format\n");
-    printf("eg: ./drive format -n volume xfs\n");
-    printf("\n");
-    printf("  -n {name}      Volume name\n");
-    printf("  {fstype}       Format type (xfs,ext2,ext3,ext4,ntfs,fat,vfat)\n");
-    printf("  --args {args}  Args for mkfs command\n");
     printf("  -?|h           Show this help screen\n");
     printf("\n");
     printf("Options: list\n");
