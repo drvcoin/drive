@@ -23,8 +23,11 @@
 #pragma once
 
 #include "HttpConfig.h"
+#include "RelayInfo.h"
 #include "BdObject.h"
 #include <string.h>
+#include <vector>
+#include <map>
 #include <json/json.h>
 
 namespace bdfs
@@ -37,6 +40,7 @@ namespace bdfs
     HttpConfig * config;
     std::string base;
     std::string st;
+
     std::string __EncodeArgs(BdObject::CArgs & args);
 
     static SharedMutex mutex;

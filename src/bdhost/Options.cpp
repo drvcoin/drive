@@ -40,6 +40,10 @@ namespace bdhost
 
   std::string Options::contract = "contract";
 
+  std::string Options::relayExe = "./relay-client";
+
+  size_t Options::maxRelayCount = 1;
+
 
   bool Options::Usage(const char * message, ...)
   {
@@ -59,6 +63,8 @@ namespace bdhost
     printf("  -p <port>       port to listen on (default:80)\n");
     printf("  -e <url>        endpoint url to register (default:http://localhost)\n");
     printf("  -k <kad>        kademlia service url (default:http://localhost:7800)\n");
+    printf("  -a <relay_exe>  relay executable path (default:relay-client)\n");
+    printf("  -m <max_relays> maximum relay count (default:1)\n");
     printf("  -r <path>       root path of contract repository (default:.)\n");
     printf("  -c <contract>   relevant contract name inside repository (default:contract)\n");
     printf("\n");
@@ -98,10 +104,20 @@ namespace bdhost
         assert_argument_index(++i, "kad");
         kademlia = argv[i];
       }
+      else if (strcmp(argv[i], "-a") == 0)
+      {
+        assert_argument_index(++i, "relay_exe");
+        relayExe = argv[i];
+      }
       else if (strcmp(argv[i], "-p") == 0)
       {
         assert_argument_index(++i, "port");
         port = static_cast<uint16_t>(atoi(argv[i]));
+      }
+      else if (strcmp(argv[i], "-m") == 0)
+      {
+        assert_argument_index(++i, "max_relays");
+        maxRelayCount = static_cast<size_t>(atoi(argv[i]));
       }
       else
       {

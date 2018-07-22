@@ -20,28 +20,28 @@
   SOFTWARE.
 */
 
-#include <map>
-#include "HttpConfig.h"
-#include "Volume.h"
-#include "HostInfo.h"
+#pragma once
 
-namespace dfs
+#include <stdint.h>
+#include <string>
+#include <vector>
+
+#include "RelayInfo.h"
+
+namespace bdfs
 {
-  class VolumeManager
+  struct HostInfo
   {
   public:
-    static std::unique_ptr<Volume> LoadVolume(const std::string &name);
 
-		static bool CreateVolume(const std::string &volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks);
-    
-		static bool DeleteVolume(const std::string &name);  
-    
-    static bdfs::HttpConfig defaultConfig;
+    std::string ToString() const;
 
-    static std::string kademliaUrl;
+    bool FromString(const std::string & str);
 
-  private:
+  public:
 
-    static bdfs::HostInfo GetProviderEndpoint(const std::string & name);
+    std::string url;
+
+    std::vector<RelayInfo> relays;
   };
 }

@@ -103,15 +103,15 @@ namespace dfs
       }
 
       auto ep = GetProviderEndpoint(config["provider"].asString());
-      if (ep.empty())
+      if (ep.url.empty())
       {
         return nullptr;
       }
 
-      auto session = bdfs::BdSession::CreateSession(ep.c_str(), &defaultConfig);
-      auto name = config["name"].asString();
-      auto path = "host://Partitions/" + name;
-      auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
+			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), &defaultConfig);
+			auto name = config["name"].asString();
+			auto path = "host://Partitions/" + name;
+			auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
 
       volume->SetPartition(i, new Partition(partition, blockCount, blockSize));
     }
@@ -120,11 +120,13 @@ namespace dfs
   }
 
 
-  std::string VolumeManager::GetProviderEndpoint(const std::string & name)
-  {
+  bdfs::HostInfo VolumeManager::GetProviderEndpoint(const std::string & name)
+	{
+		bdfs::HostInfo hostInfo;
+
     if (kademliaUrl.empty())
     {
-      return std::string();
+      return hostInfo;
     }
 
     auto session = bdfs::BdSession::CreateSession(kademliaUrl.c_str(), &defaultConfig);
@@ -135,17 +137,20 @@ namespace dfs
     if (!result->Wait())
     {
       printf("Failed to connect to kademlia.\n");
-      return std::string();
+      return hostInfo;
     }
 
     auto & buffer = result->GetResult();
     if (buffer.Size() == 0)
     {
       printf("Failed to find endpoint for provider '%s'\n", name.c_str());
-      return std::string();
+      return hostInfo;
     }
 
-    return std::string(static_cast<const char *>(buffer.Buf()), buffer.Size());    
+		std::string hostInfoStr = std::string(static_cast<const char *>(buffer.Buf()), buffer.Size());
+		hostInfo.FromString(hostInfoStr);
+
+    return hostInfo;
   }
 
 
@@ -203,12 +208,12 @@ namespace dfs
     for (size_t i = 0; i < dataBlocks + codeBlocks; ++i)
     {
       auto ep = GetProviderEndpoint(contracts[i]->Provider());
-      if (ep.empty())
+      if (ep.url.empty())
       {
         return false;
       }
 
-      auto session = bdfs::BdSession::CreateSession(ep.c_str(), &defaultConfig);
+			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), &defaultConfig);
       auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
         session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
       auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);

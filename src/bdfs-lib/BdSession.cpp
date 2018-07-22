@@ -75,7 +75,8 @@ namespace bdfs
     {
       config = &defaultConfig;
     }
-    std::shared_ptr<BdSession> session(new BdSession(base, config));
+
+    auto session = std::shared_ptr<BdSession>(new BdSession(base, config));
     sessions[session->Base()] = session;
     return session;
   }

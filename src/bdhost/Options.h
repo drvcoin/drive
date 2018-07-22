@@ -42,6 +42,10 @@ namespace bdhost
 
     static std::string contract;
 
+    static std::string relayExe;
+
+    static size_t maxRelayCount;
+
     static bool Usage(const char * message = nullptr, ...);
     static bool Init(int argc, const char ** argv);
   };

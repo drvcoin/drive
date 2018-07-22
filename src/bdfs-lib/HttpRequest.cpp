@@ -121,7 +121,12 @@ namespace bdfs
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-
+/*
+    if (!this->proxy.empty())
+    {
+      curl_easy_setopt(curl, CURLOPT_PROXY, this->proxy.c_str());
+    }
+*/
     if(!range.empty())
     {
       curl_easy_setopt(curl, CURLOPT_RANGE, range.c_str());

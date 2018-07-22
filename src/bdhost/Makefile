@@ -33,6 +33,7 @@ SRCS = \
 	Options.cpp \
 	Partition.cpp \
 	PartitionHandler.cpp \
+	RelayManager.cpp \
 	Util.cpp \
 
 VPATH = $(BINDIR)

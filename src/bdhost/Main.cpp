@@ -32,6 +32,8 @@
 #include "HttpConfig.h"
 #include "BdSession.h"
 #include "BdKademlia.h"
+#include "RelayManager.h"
+#include "HostInfo.h"
 #include "Global.h"
 
 /*
@@ -65,16 +67,34 @@ static void init_kad()
     {
       auto key = "ep:" + bdhost::Options::name;
 
-      auto endpoint = bdhost::Options::endpoint;
-      if (endpoint.empty())
+      bdfs::HostInfo hostInfo;
+      hostInfo.url = bdhost::Options::endpoint;
+      if (hostInfo.url.empty())
       {
-        char buf[128];
+        char buf[BUFSIZ];
         sprintf(buf, "http://localhost:%u", bdhost::Options::port);
-        endpoint = buf;
+        hostInfo.url = buf;
       }
+
+      bdhost::RelayManager relayManager{bdhost::Options::maxRelayCount};
 
       while (true)
       {
+        relayManager.Validate();
+
+        std::vector<const bdfs::RelayInfo *> relays;
+        if (!relayManager.GetRelayInfos(relays))
+        {
+          printf("WARNING: failed to find any relays.\n");
+        }
+
+        for (auto ptr : relays)
+        {
+          hostInfo.relays.push_back(*ptr);
+        }
+
+        auto host = hostInfo.ToString();
+
         bdfs::HttpConfig config;
         config.ConnectTimeout(5);
         config.RequestTimeout(5);
@@ -83,7 +103,7 @@ static void init_kad()
 
         auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
 
-        auto result = kademlia->SetValue(key.c_str(), endpoint.c_str(), endpoint.size(), time(nullptr), 7 * 24 * 60 * 60);
+        auto result = kademlia->SetValue(key.c_str(), host.c_str(), host.size(), time(nullptr), 7 * 24 * 60 * 60);
 
         if (!result->Wait() || !result->GetResult())
         {
