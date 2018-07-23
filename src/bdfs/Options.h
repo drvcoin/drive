@@ -36,7 +36,7 @@ namespace dfs
     static std::string Name;
     static uint16_t DataBlocks;
     static uint16_t CodeBlocks;
-    static std::string Repo;
+    static uint64_t Size;
     static std::string KademliaUrl;
     static std::vector<std::string> Paths;
     static std::vector<std::string> ExternalArgs;

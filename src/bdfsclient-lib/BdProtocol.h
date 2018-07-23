@@ -26,12 +26,13 @@
 #include <string>
 #include <vector>
 #pragma pack(push,1)
-using namespace std;
 namespace bdfs
 {
   // Block Drive Client Protocol
   namespace bdcp
   {
+    using namespace std;
+
     enum T : uint8_t
     {
       BIND = 0,

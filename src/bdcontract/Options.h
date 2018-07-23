@@ -35,9 +35,9 @@ namespace bdcontract
     static std::string repo;
 
     static std::string name;
-    static std::string consumer;
     static std::string provider;
     static uint64_t size;
+    static uint32_t reputation;
 
     static bool Usage(const char * message = nullptr, ...);
     static bool Init(int argc, const char ** argv);

@@ -79,7 +79,8 @@ static void init_kad()
         config.ConnectTimeout(5);
         config.RequestTimeout(5);
 
-        auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config);
+        auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config); 
+
         auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
 
         auto result = kademlia->SetValue(key.c_str(), endpoint.c_str(), endpoint.size(), time(nullptr), 7 * 24 * 60 * 60);
@@ -87,6 +88,16 @@ static void init_kad()
         if (!result->Wait() || !result->GetResult())
         {
           printf("WARNING: failed to publish endpoints to kademlia\n");
+        }
+
+        // Publish size and reputaiton of host
+        auto contract = bdhost::g_contracts->LoadContract(bdhost::Options::contract.c_str());
+
+        auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::contract.c_str(), contract->Size()/(1024*1024), contract->Reputation());
+
+        if (!result_query->Wait() || !result_query->GetResult())
+        {
+          printf("WARNING: failed to publish storage and reputation to kademlia\n");
         }
 
         sleep(24 * 60 * 60);

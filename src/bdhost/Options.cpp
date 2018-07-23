@@ -38,6 +38,8 @@ namespace bdhost
 
   std::string Options::repo = ".";
 
+  std::string Options::contract = "contract";
+
 
   bool Options::Usage(const char * message, ...)
   {
@@ -58,6 +60,7 @@ namespace bdhost
     printf("  -e <url>        endpoint url to register (default:http://localhost)\n");
     printf("  -k <kad>        kademlia service url (default:http://localhost:7800)\n");
     printf("  -r <path>       root path of contract repository (default:.)\n");
+    printf("  -c <contract>   relevant contract name inside repository (default:contract)\n");
     printf("\n");
     exit(message == NULL ? 0 : 1);
   }
@@ -74,6 +77,11 @@ namespace bdhost
       {
         assert_argument_index(++i, "path");
         repo = argv[i];
+      }
+      else if (strcmp(argv[i], "-c") == 0)
+      {
+        assert_argument_index(++i, "contract");
+        contract = argv[i];
       }
       else if (strcmp(argv[i], "-n") == 0)
       {

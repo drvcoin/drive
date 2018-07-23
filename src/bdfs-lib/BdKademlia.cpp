@@ -21,6 +21,7 @@
 */
 
 #include <assert.h>
+#include <stdio.h>
 #include <json/json.h>
 #include "BdTypes.h"
 #include "Base64Encoder.h"
@@ -111,6 +112,67 @@ namespace bdfs
           }
 
           result->Complete(std::move(buffer));
+        }
+      }
+    );
+
+    return rtn ? result : nullptr;
+  }
+
+  AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const char * contract, const size_t storage, const size_t reputation = 1)
+  {
+    assert(node);
+    assert(storage);
+
+    Json::Value value;
+    value["type"] = "storage";
+    value["name"] = std::string(node);
+    value["contract"] = std::string(contract);
+    value["size"] = Json::Value::UInt(storage);
+    value["reputation"] = Json::Value::UInt(reputation);
+
+    BdObject::CArgs args;
+    args["value"] = value.toStyledString();;
+
+    auto result = std::make_shared<AsyncResult<bool>>();
+
+    bool rtn = this->Call("Publish", args,
+      [result](Json::Value & response, bool error)
+      {
+        if (error || !response.isBool())
+        {
+          result->Complete(false);
+        }
+        else
+        {
+          result->Complete(response.asBool());
+        }
+      }
+    );
+
+    return rtn ? result : nullptr;
+  }
+
+
+  AsyncResultPtr<Json::Value> BdKademlia::QueryStorage(const char * query)
+  {
+    assert(query);
+
+    BdObject::CArgs args;
+    args["query"] = std::string(query);
+
+    auto result = std::make_shared<AsyncResult<Json::Value>>();
+
+    bool rtn = this->Call("Query", args,
+      [result](Json::Value & response, bool error)
+      {
+        if (error || !response.isArray())
+        {
+          result->Complete(Json::Value());
+        }
+        else
+        {
+          result->Complete(std::move(response));
         }
       }
     );
