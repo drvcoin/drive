@@ -295,9 +295,7 @@ namespace bdhost
     if (buffer && buffer->Size() > 0)
     {
       printf("RESULT: %s\n", std::string(reinterpret_cast<const char *>(buffer->Data()), buffer->Size()).c_str());
-      Json::Value json = std::string(static_cast<const char *>(buffer->Data()), buffer->Size());
-      auto resp = json.toStyledString();
-      context.writeResponse(resp.c_str(), resp.size());
+      context.writeResponse(static_cast<const char *>(buffer->Data()), buffer->Size());
     }
     else
     {
