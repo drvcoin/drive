@@ -93,7 +93,7 @@ static void init_kad()
         // Publish size and reputaiton of host
         auto contract = bdhost::g_contracts->LoadContract(bdhost::Options::contract.c_str());
 
-        auto result_query = kademlia->Publish(bdhost::Options::name.c_str(),contract->Size(), contract->Reputation());
+        auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::contract.c_str(), contract->Size()/(1024*1024), contract->Reputation());
 
         if (!result_query->Wait() || !result_query->GetResult())
         {

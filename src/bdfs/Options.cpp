@@ -31,7 +31,7 @@ namespace dfs
   std::string Options::Name;
   uint16_t Options::DataBlocks = 4;
   uint16_t Options::CodeBlocks = 4;
-  std::string Options::Repo;
+  uint64_t Options::Size =  1024; // MB;
   std::string Options::KademliaUrl;
   std::vector<std::string> Options::Paths;
   std::vector<std::string> Options::ExternalArgs;
@@ -56,7 +56,7 @@ namespace dfs
     printf("Options: create\n");
     printf("\n");
     printf("  -n {name}      Volume name\n");
-    printf("  -r {path}      Contract repository\n");
+    printf("  -s {size}      Volume size in MB\n");
     printf("  -k {url}       Kademlia server\n");
     printf("  -d {blocks}    Data blocks (1 .. 255)\n");
     printf("  -c {blocks}    Code blocks (1 .. 255)\n");
@@ -135,9 +135,15 @@ namespace dfs
         }
         Options::CodeBlocks = (uint16_t)val;
       }
-      else if (strcmp(arg, "-r") == 0)
+      else if (strcmp(arg, "-s") == 0)
       {
-        Options::Repo = argv[++i];
+        errno = 0;
+        Options::Size = strtoull(argv[++i], nullptr, 10);
+
+        if (errno)
+        {
+          Usage("Error: Invalid size.\n");
+        }
       }
       else if (strcmp(arg, "-k") == 0)
       {

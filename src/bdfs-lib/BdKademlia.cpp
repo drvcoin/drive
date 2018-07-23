@@ -119,15 +119,16 @@ namespace bdfs
     return rtn ? result : nullptr;
   }
 
-  AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const size_t storage, const size_t reputation = 1)
+  AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const char * contract, const size_t storage, const size_t reputation = 1)
   {
     assert(node);
     assert(storage);
 
     Json::Value value;
     value["type"] = "storage";
-    value["node"] = std::string(node);
-    value["storage"] = Json::Value::UInt(storage);
+    value["name"] = std::string(node);
+    value["contract"] = std::string(contract);
+    value["size"] = Json::Value::UInt(storage);
     value["reputation"] = Json::Value::UInt(reputation);
 
     BdObject::CArgs args;
@@ -165,7 +166,7 @@ namespace bdfs
     bool rtn = this->Call("Query", args,
       [result](Json::Value & response, bool error)
       {
-        if (error || !response.isObject())
+        if (error || !response.isArray())
         {
           result->Complete(Json::Value());
         }

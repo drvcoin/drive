@@ -147,29 +147,52 @@ namespace dfs
   }
 
 
-	bool VolumeManager::CreateVolume(const std::string & volumeName, const std::string & repoName, const uint16_t dataBlocks, const uint16_t codeBlocks)
+	bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
 	{
-		std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
-
-		uint64_t size = std::numeric_limits<uint64_t>::max();
-
 		size_t blockSize = 64*1024;
+		auto providerCount = dataBlocks + codeBlocks;
+		auto providerSize = size * 2 / providerCount;
+    uint64_t ssize = std::numeric_limits<uint64_t>::max();
 
-		bdcontract::ContractRepository repo{repoName.c_str()};
+		std::string query = "type:\"storage\" size:" + std::to_string(providerSize);
 
-		for (const auto & name : repo.GetContractNames())
-		{
-			auto ptr = repo.LoadContract(name.c_str());
-			if (ptr && ptr->Size() > blockSize)
-			{
-				size = std::min(ptr->Size(), size);
-				contracts.emplace_back(std::move(ptr));
-			}
+    auto session = bdfs::BdSession::CreateSession(kademliaUrl.c_str(), &defaultConfig);
+    auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(
+      session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
+    auto qresult = kademlia->QueryStorage(query.c_str());
+
+    if (!qresult->Wait())
+    {
+      printf("Failed to connect to kademlia.\n");
+      return false;
+    }
+
+    auto &jsonArray = qresult->GetResult();
+    if (jsonArray.isNull())
+    {
+      printf("Failed to query for providers.\n");
+      return false;
 		}
+
+    std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
+    for(auto &json : jsonArray)
+    {
+      auto contract = std::make_unique<bdcontract::Contract>();
+      contract->SetName(json["contract"].asString());
+      contract->SetProvider(json["name"].asString());
+      contract->SetSize(json["size"].asUInt() * 1024 * 1024);
+      contract->SetReputation(json["reputation"].asUInt());
+
+      if (contract->Size() > blockSize)
+      {
+        ssize = std::min(contract->Size(), ssize);
+        contracts.emplace_back(std::move(contract));
+      }
+    }
 
 		if (contracts.size() < dataBlocks + codeBlocks)
 		{
-			printf("Not enough contract.\n");
+			printf("Not enough providers.\n");
 			return false;
 		}
 
@@ -204,7 +227,7 @@ namespace dfs
 		
 		Json::Value volume;
 		volume["blockSize"] = Json::Value::UInt(blockSize);
-		volume["blockCount"] = Json::Value::UInt(size / blockSize);
+		volume["blockCount"] = Json::Value::UInt(ssize / blockSize);
 		volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
 		volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
 		volume["partitions"] = arr;
