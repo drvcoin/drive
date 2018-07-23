@@ -274,6 +274,7 @@ namespace bdhost
     printf("Kademlia::OnQuery\n");
 
     std::string query(context.parameter("query"));
+    uint32_t limit = static_cast<uint32_t>(strtoul(context.parameter("limit"), nullptr, 10));
 
     sha1_t digest;
     Digest::Compute(query.c_str(), query.size(), digest);
@@ -281,7 +282,7 @@ namespace bdhost
 
     auto result = AsyncResultPtr(new  AsyncResult<BufferPtr>());
 
-    KademliaHandler::controller->Query(key, query, result);
+    KademliaHandler::controller->Query(key, query, limit, result);
 
     if (!result->Wait(60000))
     {
