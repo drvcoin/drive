@@ -103,13 +103,62 @@ namespace bdfs
     return realSize;
   }
 
+
   void HttpRequest::Execute()
+  {
+    auto & relays = this->config->Relays();
+
+    if (this->config->ActiveRelay() >= static_cast<int>(relays.size()))
+    {
+      // Reset relay since all endpoints failed before. We should retry from beginning.
+      this->config->ActiveRelay(-1);
+      this->config->ActiveRelayEndpoint(-1);
+    }
+
+    int rtn = CURLE_OK;
+
+    while (this->config->ActiveRelay() < static_cast<int>(relays.size()))
+    {
+      int rtn = this->ExecuteImpl();
+      if (rtn != CURLE_COULDNT_RESOLVE_PROXY &&
+          rtn != CURLE_COULDNT_RESOLVE_HOST &&
+          rtn != CURLE_COULDNT_CONNECT &&
+          rtn != CURLE_REMOTE_ACCESS_DENIED &&
+          rtn != CURLE_OPERATION_TIMEDOUT &&
+          rtn != CURLE_SEND_ERROR)
+      {
+        // TODO: maybe we should handle more errors like ssl handshake to make sure we were
+        // trying to connect to the right server
+        break;
+      }
+
+      if (this->config->ActiveRelay() < 0 ||
+          this->config->ActiveRelayEndpoint() >= static_cast<int>(relays[this->config->ActiveRelay()].endpoints.size()))
+      {
+        do
+        {
+          this->config->ActiveRelay(this->config->ActiveRelay() + 1);
+          this->config->ActiveRelayEndpoint(0);
+        } while (this->config->ActiveRelay() < static_cast<int>(relays.size()) &&
+                 relays[this->config->ActiveRelay()].endpoints.size() == 0);
+      }
+      else
+      {
+        this->config->ActiveRelayEndpoint(this->config->ActiveRelayEndpoint() + 1);
+      }
+    }
+
+    completeCallback(rtn != CURLE_OK);
+  }
+
+
+  int HttpRequest::ExecuteImpl()
   {
     CURL * curl = curl_easy_init();
     if (curl == NULL)
     {
       completeCallback(true);
-      return;
+      return -1;
     }
 #if !(defined(_WIN32) || defined(_WIN64))
   //  curl_easy_setopt(curl, CURLOPT_OPENSOCKETFUNCTION, HttpClient::CurlOpenSocketCallback);
@@ -121,12 +170,23 @@ namespace bdfs
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-/*
-    if (!this->proxy.empty())
+
+    auto & relays = this->config->Relays();
+
+    if (this->config->ActiveRelay() >= 0 &&
+        this->config->ActiveRelay() < static_cast<int>(relays.size()) &&
+        this->config->ActiveRelayEndpoint() >= 0 &&
+        this->config->ActiveRelayEndpoint() < static_cast<int>(relays[this->config->ActiveRelay()].endpoints.size()))
     {
-      curl_easy_setopt(curl, CURLOPT_PROXY, this->proxy.c_str());
+      auto & endpoint = relays[this->config->ActiveRelay()].endpoints[this->config->ActiveRelayEndpoint()];
+      if (!endpoint.host.empty() && endpoint.socksPort > 0)
+      {
+        char relay[BUFSIZ];
+        snprintf(relay, sizeof(relay), "socks5h://%s:%u", endpoint.host.c_str(), endpoint.socksPort);
+        curl_easy_setopt(curl, CURLOPT_PROXY, relay);
+      }
     }
-*/
+
     if(!range.empty())
     {
       curl_easy_setopt(curl, CURLOPT_RANGE, range.c_str());
@@ -200,7 +260,7 @@ namespace bdfs
 
     curl_easy_cleanup(curl);
 
-    completeCallback(res != CURLE_OK);
+    return res;
   }
 
   void HttpRequest::Get(JsonCallback callback)

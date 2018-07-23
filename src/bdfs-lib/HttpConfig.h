@@ -23,7 +23,9 @@
 #pragma once
 
 #include "HttpCookies.h"
+#include "RelayInfo.h"
 #include <string>
+#include <vector>
 
 namespace bdfs
 {
@@ -31,12 +33,16 @@ namespace bdfs
   {
   private:
     HttpCookies cookies;
-    uint32_t connectTimeout;
-    uint32_t requestTimeout;
+    uint32_t connectTimeout = 5;
+    uint32_t requestTimeout = 5;
     std::string userAgent;
     std::string certPath;
     std::string keyPath;
     std::string caPath;
+
+    std::vector<RelayInfo> relays;
+    int activeRelay = -1;
+    int activeRelayEndpoint = -1;
 
   public:
     HttpCookies & Cookies() { return cookies; }
@@ -56,5 +62,12 @@ namespace bdfs
     std::string & CaPath() { return caPath; }
     void CaPath(std::string & value) { caPath = value; }
     void CaPath(const char * value) { caPath = value; }
+
+    std::vector<RelayInfo> & Relays()         { return relays; }
+    int ActiveRelay()                         { return activeRelay; }
+    int ActiveRelayEndpoint()                 { return activeRelayEndpoint; }
+    void Relays(std::vector<RelayInfo> val)   { relays = std::move(val); }
+    void ActiveRelay(int val)                 { activeRelay = val; }
+    void ActiveRelayEndpoint(int val)         { activeRelayEndpoint = val; }
   };
 }

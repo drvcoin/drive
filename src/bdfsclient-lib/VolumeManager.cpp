@@ -108,7 +108,9 @@ namespace dfs
         return nullptr;
       }
 
-			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), &defaultConfig);
+			auto cfg = new bdfs::HttpConfig();
+			cfg->Relays(std::move(ep.relays));
+			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
 			auto name = config["name"].asString();
 			auto path = "host://Partitions/" + name;
 			auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
@@ -213,7 +215,9 @@ namespace dfs
         return false;
       }
 
-			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), &defaultConfig);
+			auto cfg = new bdfs::HttpConfig();
+			cfg->Relays(std::move(ep.relays));
+			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
       auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
         session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
       auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);

@@ -23,11 +23,8 @@
 #pragma once
 
 #include "HttpConfig.h"
-#include "RelayInfo.h"
 #include "BdObject.h"
 #include <string.h>
-#include <vector>
-#include <map>
 #include <json/json.h>
 
 namespace bdfs
@@ -40,6 +37,7 @@ namespace bdfs
     HttpConfig * config;
     std::string base;
     std::string st;
+    bool ownConfig;
 
     std::string __EncodeArgs(BdObject::CArgs & args);
 
@@ -47,14 +45,16 @@ namespace bdfs
     static HttpConfig defaultConfig;
     static std::map<std::string, std::shared_ptr<BdSession> > sessions;
 
-    BdSession(const char * base, HttpConfig * config);
+    BdSession(const char * base, HttpConfig * config, bool ownConfig);
 
     HttpRequest * CreateRequest(std::string & path, const char * method, BdObject::CArgs & args, Json::Value & data);
 
   public:
     static std::shared_ptr<BdSession> GetSession(const char * base);
     static std::shared_ptr<BdSession> GetSession(const std::string & base);
-    static std::shared_ptr<BdSession> CreateSession(const char * base, HttpConfig * config);
+    static std::shared_ptr<BdSession> CreateSession(const char * base, HttpConfig * config, bool ownConfig = false);
+
+    ~BdSession();
 
     std::string & Base() { return base; }
 

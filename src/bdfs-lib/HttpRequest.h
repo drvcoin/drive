@@ -78,5 +78,9 @@ namespace bdfs
 
     static char * EncodeStr(const char* str);
     static void FreeEncodedStr(char * str);
+
+  private:
+
+    int ExecuteImpl();
   };
 }
