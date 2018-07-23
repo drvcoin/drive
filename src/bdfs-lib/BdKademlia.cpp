@@ -21,6 +21,7 @@
 */
 
 #include <assert.h>
+#include <stdio.h>
 #include <json/json.h>
 #include "BdTypes.h"
 #include "Base64Encoder.h"
@@ -118,12 +119,13 @@ namespace bdfs
     return rtn ? result : nullptr;
   }
 
-  AsyncResultPtr<bool> BdKademlia::Publish(const char * node, const size_t storage, const size_t reputation = 1)
+  AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const size_t storage, const size_t reputation = 1)
   {
     assert(node);
     assert(storage);
 
     Json::Value value;
+    value["type"] = "storage";
     value["node"] = std::string(node);
     value["storage"] = Json::Value::UInt(storage);
     value["reputation"] = Json::Value::UInt(reputation);
@@ -151,38 +153,25 @@ namespace bdfs
   }
 
 
-  AsyncResultPtr<Buffer> BdKademlia::Query(const char * query)
+  AsyncResultPtr<Json::Value> BdKademlia::QueryStorage(const char * query)
   {
     assert(query);
 
     BdObject::CArgs args;
     args["query"] = std::string(query);
 
-    auto result = std::make_shared<AsyncResult<Buffer>>();
+    auto result = std::make_shared<AsyncResult<Json::Value>>();
 
     bool rtn = this->Call("Query", args,
       [result](Json::Value & response, bool error)
       {
-        if (error || !response.isString())
+        if (error || !response.isObject())
         {
-          result->Complete(Buffer());
+          result->Complete(Json::Value());
         }
         else
         {
-          auto str = response.asString();
-
-          size_t decodedLen = Base64Encoder::GetDecodedLength(str.size());
-
-          Buffer buffer;
-          buffer.Resize(decodedLen);
-
-          decodedLen = Base64Encoder::Decode(str.c_str(), str.size(), static_cast<uint8_t *>(buffer.Buf()), decodedLen);
-          if (decodedLen < buffer.Size())
-          {
-            buffer.Resize(decodedLen);
-          }
-
-          result->Complete(std::move(buffer));
+          result->Complete(std::move(response));
         }
       }
     );
