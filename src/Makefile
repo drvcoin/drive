@@ -34,7 +34,6 @@ DIRS = \
 	httpserver \
 	bdhost \
 	bdkad \
-	bddqs
 
 .PHONY: all clean $(DIRS)
 
