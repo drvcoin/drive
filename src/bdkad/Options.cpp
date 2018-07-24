@@ -25,7 +25,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <fstream>
 
 #include <arpa/inet.h>
 #include <json/json.h>
@@ -104,41 +104,15 @@ namespace bdhost
 
   bool Options::LoadConfig(const char * path)
   {
-    printf("loadconfig from %s\n",path);
+    std::ifstream ifs(path);
 
-    FILE * file = fopen(path, "r");
+    std::string content( (std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>() );
 
-    if (!file)
-    {
-      printf("ERROR missing config file %s\n",path);
-      return false;
-    }
-
-    // TODO: Change the way to read file
-    size_t size = BUFSIZ;
-    char * buffer = static_cast<char *>(malloc(size));
-    size_t offset = 0;
-
-    size_t bytes;
-    while ((bytes = fread(buffer + offset, 1, size - offset, file)) == size - offset)
-    {
-      char * buf = static_cast<char *>(realloc(buffer, size + BUFSIZ));
-      if (!buf)
-      {
-        break;
-      }
-
-      buffer = buf;
-      offset = size;
-      size += BUFSIZ;
-    }
-
-    int len = offset + bytes;
 
     Json::Reader reader;
     Json::Value json;
 
-    if (!reader.parse(buffer, len, json, false) ||
+    if (!reader.parse(content, json, false) ||
         !json.isObject() ||
         !json["http_port"].isIntegral() ||
         !json["node_name"].isString() ||
@@ -154,10 +128,6 @@ namespace bdhost
 
     k_addr = static_cast<uint32_t>( inet_addr( json["kad_addr"].asString().c_str() ));
     k_port = static_cast<uint16_t>( json["kad_port"].asUInt() );
-
-    free(buffer);
-
-    fclose(file);
 
     return true;
   }
