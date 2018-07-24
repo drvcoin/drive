@@ -42,7 +42,7 @@ namespace bdhost
 
   std::string Options::relayExe = "./relay-client";
 
-  size_t Options::maxRelayCount = 1;
+  size_t Options::maxRelayCount = 0;
 
 
   bool Options::Usage(const char * message, ...)
@@ -64,7 +64,7 @@ namespace bdhost
     printf("  -e <url>        endpoint url to register (default:http://localhost)\n");
     printf("  -k <kad>        kademlia service url (default:http://localhost:7800)\n");
     printf("  -a <relay_exe>  relay executable path (default:relay-client)\n");
-    printf("  -m <max_relays> maximum relay count (default:1)\n");
+    printf("  -m <max_relays> maximum relay count (default:0)\n");
     printf("  -r <path>       root path of contract repository (default:.)\n");
     printf("  -c <contract>   relevant contract name inside repository (default:contract)\n");
     printf("\n");
