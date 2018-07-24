@@ -30,9 +30,9 @@
 #include <arpa/inet.h>
 #include <json/json.h>
 
-namespace bdhost
+namespace bdkad
 {
-  uint16_t Options::port = 80;
+  uint16_t Options::http_port = 80;
 
   std::string  Options::k_root;
 
@@ -78,7 +78,7 @@ namespace bdhost
       else if (strcmp(argv[i], "-p") == 0)
       {
         assert_argument_index(++i, "port");
-        port = static_cast<uint16_t>(atoi(argv[i]));
+        http_port = static_cast<uint16_t>(atoi(argv[i]));
       }
       else if (strcmp(argv[i], "-k") == 0)
       {
@@ -123,7 +123,7 @@ namespace bdhost
       return false;
     }
 
-    port = static_cast<uint16_t>( json["http_port"].asUInt() );
+    http_port = static_cast<uint16_t>( json["http_port"].asUInt() );
     k_root = json["node_name"].asString();
 
     k_addr = static_cast<uint32_t>( inet_addr( json["kad_addr"].asString().c_str() ));

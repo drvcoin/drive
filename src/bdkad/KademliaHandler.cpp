@@ -34,7 +34,7 @@
 using namespace kad;
 
 
-namespace bdhost
+namespace bdkad
 {
   static const char PATH[] = "/api/host/Kademlia";
 

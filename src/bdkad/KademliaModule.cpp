@@ -40,7 +40,7 @@
 using namespace kad;
 
 
-namespace bdhost
+namespace bdkad
 {
 
   KademliaModule::KademliaModule()
@@ -96,18 +96,18 @@ namespace bdhost
 
   void KademliaModule::Initialize()
   {
-    printf("[KAD] Initialize kademlia node=%s addr=%08X port=%u\n", bdhost::Options::k_root.c_str(), bdhost::Options::k_addr, bdhost::Options::k_port);
+    printf("[KAD] Initialize kademlia node=%s addr=%08X port=%u\n", bdkad::Options::k_root.c_str(), bdkad::Options::k_addr, bdkad::Options::k_port);
 
     SetVerbose("on");
 
     Contact self;
-    self.addr = bdhost::Options::k_addr;
-    self.port = bdhost::Options::k_port;
+    self.addr = bdkad::Options::k_addr;
+    self.port = bdkad::Options::k_port;
 
-    mkdir(bdhost::Options::k_root.c_str(), 0755);
-    InitKey(bdhost::Options::k_root.c_str());
+    mkdir(bdkad::Options::k_root.c_str(), 0755);
+    InitKey(bdkad::Options::k_root.c_str());
 
-    Config::Initialize(bdhost::Options::k_root.c_str());
+    Config::Initialize(bdkad::Options::k_root.c_str());
 
     Key selfKey{Config::NodeId()->Buffer()};
 
