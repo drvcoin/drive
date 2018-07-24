@@ -79,7 +79,7 @@ namespace bdhost
 
 
   static void InitKey(const char * rootPath)
-  { 
+  {
     sha1_t digest;
     Digest::Compute(rootPath, strlen(rootPath), digest);
 
@@ -96,12 +96,9 @@ namespace bdhost
 
   void KademliaModule::Initialize()
   {
-    printf("[KAD] Initialize\n");
+    printf("[KAD] Initialize kademlia node=%s addr=%08X port=%u\n", bdhost::Options::k_root.c_str(), bdhost::Options::k_addr, bdhost::Options::k_port);
 
     SetVerbose("on");
-
-    printf("root path: %s\n", bdhost::Options::k_root.c_str());
-    printf("kademlia node: addr = %08X port=%u\n", bdhost::Options::k_addr, bdhost::Options::k_port);
 
     Contact self;
     self.addr = bdhost::Options::k_addr;
