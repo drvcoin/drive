@@ -82,9 +82,6 @@ namespace bdhost
     }
 
     bdfs::HttpConfig config;
-    config.ConnectTimeout(10);
-    config.RequestTimeout(10);
-
     auto session = bdfs::BdSession::CreateSession(Options::kademlia.c_str(), &config);
     auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
 
@@ -184,13 +181,20 @@ namespace bdhost
     char portStr[16];
     snprintf(portStr, sizeof(portStr), "%u", info->endpoints[0].quicPort);
 
+    char logFile[PATH_MAX];
+    snprintf(logFile, sizeof(logFile), "/var/log/bdrelay.%s.log", Options::name.c_str());
+
     char * args[] = {
+      const_cast<char *>(Options::relayExe.c_str()),
       const_cast<char *>("-n"),
-      const_cast<char *>(info->name.c_str()),
+      const_cast<char *>(Options::name.c_str()),
       const_cast<char *>("-h"),
       const_cast<char *>(info->endpoints[0].host.c_str()),
       const_cast<char *>("-p"),
-      portStr
+      portStr,
+      const_cast<char *>("-o"),
+      logFile,
+      nullptr
     };
 
     pid_t ppid = getpid();

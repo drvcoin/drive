@@ -221,7 +221,7 @@ namespace dfs
       auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
         session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
       auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
-      if (!result->Wait(5000) || !result->GetResult())
+			if (!result->Wait(folder->GetTimeout()) || !result->GetResult())
       {
         printf("Failed to create on partition from contract '%s'\n", contracts[i]->Name().c_str());
         return false;

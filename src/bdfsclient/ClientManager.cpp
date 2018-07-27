@@ -37,8 +37,6 @@ namespace dfs
     isUnixSocketListening(false),
     requestLoop(&ClientManager::HandleRequest)
   {
-    VolumeManager::defaultConfig.ConnectTimeout(5);
-    VolumeManager::defaultConfig.RequestTimeout(5);
   }
 
   bool ClientManager::Start()

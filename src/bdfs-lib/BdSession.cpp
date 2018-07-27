@@ -193,4 +193,15 @@ namespace bdfs
   {
     return BdTypes::Create(base.c_str(), name, path, type);
   }
+
+
+  uint32_t BdSession::GetTimeout() const
+  {
+    if (!this->config)
+    {
+      return 1;
+    }
+
+    return 1000 * (this->config->ConnectTimeout() + this->config->RequestTimeout()) * (1 + this->config->Relays().size());
+  }
 }

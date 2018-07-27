@@ -63,5 +63,7 @@ namespace bdfs
     bool Call(std::string & path, const char * method, BdObject::CArgs & args, const void * body, size_t bodyLen, BdObject::Callback callback);
 
     std::shared_ptr<BdObject> CreateObject(const char * name, const char * path, const char * type);
+
+    uint32_t GetTimeout() const;
   };
 }

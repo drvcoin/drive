@@ -36,6 +36,10 @@ OUTEXE = $(patsubst %,$(BINDIR)/%,$(TARGETEXE))
 
 CCFLAGS += -g -Wall
 
+ifeq ($(BUILDTYPE),debug)
+CCFLAGS += -DDEBUG
+endif
+
 define cc-command
 @echo "compile: $<"
 @$(CC) $(CCFLAGS) -Wp,-MD,${patsubst %.o,%.dep,$@} -Wp,-MT,$@ -Wp,-MP -o $@ -c $<

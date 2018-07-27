@@ -91,14 +91,13 @@ static void init_kad()
         for (auto ptr : relays)
         {
           hostInfo.relays.push_back(*ptr);
+          hostInfo.relays[hostInfo.relays.size() - 1].name = bdhost::Options::name;
         }
 
         auto host = hostInfo.ToString();
+        printf("Host info: %s\n", host.c_str());
 
         bdfs::HttpConfig config;
-        config.ConnectTimeout(5);
-        config.RequestTimeout(5);
-
         auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config); 
 
         auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));

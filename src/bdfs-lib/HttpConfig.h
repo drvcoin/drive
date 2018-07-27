@@ -33,7 +33,7 @@ namespace bdfs
   {
   private:
     HttpCookies cookies;
-    uint32_t connectTimeout = 5;
+    uint32_t connectTimeout = 2;
     uint32_t requestTimeout = 5;
     std::string userAgent;
     std::string certPath;
