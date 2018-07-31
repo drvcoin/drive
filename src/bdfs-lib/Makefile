@@ -48,4 +48,8 @@ ifneq ($(DEBUG_HTTP),)
 CCFLAGS += -DDEBUG_HTTP
 endif
 
+ifneq ($(DEBUG_HTTP_RELAY),)
+CCFLAGS += -DDEBUG_HTTP_RELAY
+endif
+
 include $(ROOT)/Cpp.mk

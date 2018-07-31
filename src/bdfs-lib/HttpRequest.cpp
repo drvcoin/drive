@@ -117,6 +117,10 @@ namespace bdfs
     }
 #endif
 
+#ifdef DEBUG_HTTP_RELAY
+    printf("HttpRequest::Execute: %s\n", this->url.c_str());
+#endif
+
     int rtn = CURLE_OK;
     bool tryingRelays = this->config->ActiveRelay() < 0;
     while (this->config->ActiveRelay() < static_cast<int>(relays.size()))
@@ -232,7 +236,7 @@ namespace bdfs
 
     if (altHost.empty())
     {
-#ifdef DEBUG
+#ifdef DEBUG_HTTP_RELAY
       printf("Trying to connect to: %s\n", url.c_str());
 #endif      
       curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -240,7 +244,7 @@ namespace bdfs
     else
     {
       std::string altUrl = replaceHostInUrl(url, altHost);
-#ifdef DEBUG
+#ifdef DEBUG_HTTP_RELAY
       printf("Trying to connect to: %s\n", altUrl.c_str());
 #endif      
       curl_easy_setopt(curl, CURLOPT_URL, altUrl.c_str());
