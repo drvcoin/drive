@@ -197,23 +197,32 @@ namespace dfs
 		}
 
 		Json::Value arr;
+    std::vector<bool> providersUsed;
 
-		for (size_t i = 0; i < dataBlocks + codeBlocks; ++i)
+		for (size_t i = 0; i < contracts.size(); ++i)
 		{
       auto ep = GetProviderEndpoint(contracts[i]->Provider());
       if (ep.empty())
       {
-        return false;
+        continue;
       }
 
 			auto session = bdfs::BdSession::CreateSession(ep.c_str(), &defaultConfig);
 			auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
 				session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
+
+      auto reserveResult = folder->ReservePartition(blockSize/(1024)); // convert to MB
+			if (!reserveResult->Wait(5000) || !reserveResult->GetResult())
+			{
+				printf("Failed to reserve space on provider '%s'\n", contracts[i]->Provider().c_str());
+				continue;;
+			}
+
 			auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
 			if (!result->Wait(5000) || !result->GetResult())
 			{
 				printf("Failed to create on partition from contract '%s'\n", contracts[i]->Name().c_str());
-				return false;
+				continue;
 			}
 
 			auto obj = result->GetResult();
@@ -223,7 +232,19 @@ namespace dfs
 			partition["provider"] = contracts[i]->Provider();
 
 			arr.append(partition);
+      providersUsed.emplace_back(true);
+
+      if(providersUsed.size() == codeBlocks + dataBlocks)
+      {
+        break;
+      }
 		}
+
+    if(providersUsed.size() != codeBlocks + dataBlocks)
+    {
+      printf("Failed to reserve and create partition on desired providers\n");
+      return false;
+    }
 		
 		Json::Value volume;
 		volume["blockSize"] = Json::Value::UInt(blockSize);

@@ -32,8 +32,8 @@
 #include "HttpConfig.h"
 #include "BdSession.h"
 #include "BdKademlia.h"
-#include "Global.h"
-
+#include "ContractRepository.h"
+#include "Util.h"
 /*
 static int Init(const std::string & name)
 {
@@ -56,7 +56,28 @@ static int Init(const std::string & name)
   return 0;
 }
 */
+void PublishStorage()
+{
+		bdfs::HttpConfig config;
+		config.ConnectTimeout(5);
+		config.RequestTimeout(5);
 
+		auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config);
+
+    auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
+
+		// Publish size and reputaiton of host
+		auto contract = bdcontract::ContractRepository::Load(bdhost::Options::contract.c_str());
+
+		auto availableSize = (contract->Size()/(1024*1024)) - bdhost::GetReservedSpace();
+
+		auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::contract.c_str(), availableSize, contract->Reputation());
+
+		if (!result_query->Wait() || !result_query->GetResult())
+		{
+			printf("WARNING: failed to publish storage and reputation to kademlia\n");
+		}
+}
 
 static void init_kad()
 {
@@ -90,15 +111,7 @@ static void init_kad()
           printf("WARNING: failed to publish endpoints to kademlia\n");
         }
 
-        // Publish size and reputaiton of host
-        auto contract = bdhost::g_contracts->LoadContract(bdhost::Options::contract.c_str());
-
-        auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::contract.c_str(), contract->Size()/(1024*1024), contract->Reputation());
-
-        if (!result_query->Wait() || !result_query->GetResult())
-        {
-          printf("WARNING: failed to publish storage and reputation to kademlia\n");
-        }
+				PublishStorage();
 
         sleep(24 * 60 * 60);
       }
@@ -114,8 +127,6 @@ int main(int argc, const char ** argv)
   bdhost::Options::Init(argc, argv);
 
   init_kad();
-
-  bdhost::g_contracts = new bdcontract::ContractRepository(bdhost::Options::repo.c_str());
 
   bdhttp::HttpModule::Initialize();
 

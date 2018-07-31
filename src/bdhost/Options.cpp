@@ -59,7 +59,6 @@ namespace bdhost
     printf("  -p <port>       port to listen on (default:80)\n");
     printf("  -e <url>        endpoint url to register (default:http://localhost)\n");
     printf("  -k <kad>        kademlia service url (default:http://localhost:7800)\n");
-    printf("  -r <path>       root path of contract repository (default:.)\n");
     printf("  -c <contract>   relevant contract name inside repository (default:contract)\n");
     printf("\n");
     exit(message == NULL ? 0 : 1);
@@ -73,12 +72,7 @@ namespace bdhost
 
     for (int i = 1; i < argc; ++i)
     {
-      if (strcmp(argv[i], "-r") == 0)
-      {
-        assert_argument_index(++i, "path");
-        repo = argv[i];
-      }
-      else if (strcmp(argv[i], "-c") == 0)
+      if (strcmp(argv[i], "-c") == 0)
       {
         assert_argument_index(++i, "contract");
         contract = argv[i];

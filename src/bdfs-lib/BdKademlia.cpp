@@ -122,7 +122,6 @@ namespace bdfs
   AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const char * contract, const size_t storage, const size_t reputation = 1)
   {
     assert(node);
-    assert(storage);
 
     Json::Value value;
     value["type"] = "storage";

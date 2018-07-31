@@ -20,9 +20,6 @@
   SOFTWARE.
 */
 
-#include "ContractRepository.h"
-
 namespace bdhost
 {
-  extern bdcontract::ContractRepository * g_contracts;
 }
