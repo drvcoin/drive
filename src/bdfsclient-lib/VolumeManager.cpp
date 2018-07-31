@@ -42,63 +42,65 @@
 
 namespace dfs
 {
-	bdfs::HttpConfig VolumeManager::defaultConfig;
+  bdfs::HttpConfig VolumeManager::defaultConfig;
 
   std::string VolumeManager::kademliaUrl;
 
-	std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name)
-	{
-		FILE * file = fopen((name + ".config").c_str(), "r");
-		if (!file)
-		{
-			return nullptr;
-		}
+  std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name)
+  {
+    std::string path = "/etc/drive/" + name + "/volume.conf";
+    printf("path=%s\n", path.c_str());
+    FILE * file = fopen(path.c_str(), "r");
+    if (!file)
+    {
+      return nullptr;
+    }
 
-		bdfs::Buffer buffer;
-		buffer.Resize(BUFSIZ);
-		size_t offset = 0;
+    bdfs::Buffer buffer;
+    buffer.Resize(BUFSIZ);
+    size_t offset = 0;
 
-		size_t bytes;
-		while ((bytes = fread(static_cast<char *>(buffer.Buf()) + offset, 1, BUFSIZ, file)) == BUFSIZ)
-		{
-			offset = buffer.Size();
-			buffer.Resize(buffer.Size() + BUFSIZ);
-		}
+    size_t bytes;
+    while ((bytes = fread(static_cast<char *>(buffer.Buf()) + offset, 1, BUFSIZ, file)) == BUFSIZ)
+    {
+      offset = buffer.Size();
+      buffer.Resize(buffer.Size() + BUFSIZ);
+    }
 
-		fclose(file);
+    fclose(file);
 
-		Json::Reader reader;
-		Json::Value json;
-		if (!reader.parse(static_cast<const char *>(buffer.Buf()), offset + bytes, json, false) ||
-				!json.isObject() ||
-				!json["blockSize"].isIntegral() ||
-				!json["blockCount"].isIntegral() ||
-				!json["dataBlocks"].isIntegral() ||
-				!json["codeBlocks"].isIntegral() ||
-				!json["partitions"].isArray())
-		{
-			return nullptr;
-		}
+    Json::Reader reader;
+    Json::Value json;
+    if (!reader.parse(static_cast<const char *>(buffer.Buf()), offset + bytes, json, false) ||
+        !json.isObject() ||
+        !json["blockSize"].isIntegral() ||
+        !json["blockCount"].isIntegral() ||
+        !json["dataBlocks"].isIntegral() ||
+        !json["codeBlocks"].isIntegral() ||
+        !json["partitions"].isArray())
+    {
+      return nullptr;
+    }
 
-		size_t blockSize = json["blockSize"].asUInt();
-		uint64_t blockCount = json["blockCount"].asUInt();
-		uint64_t dataBlocks = json["dataBlocks"].asUInt();
-		uint64_t codeBlocks = json["codeBlocks"].asUInt();
+    size_t blockSize = json["blockSize"].asUInt();
+    uint64_t blockCount = json["blockCount"].asUInt();
+    uint64_t dataBlocks = json["dataBlocks"].asUInt();
+    uint64_t codeBlocks = json["codeBlocks"].asUInt();
 
-		if (json["partitions"].size() < dataBlocks + codeBlocks)
-		{
-			return nullptr;
-		}
+    if (json["partitions"].size() < dataBlocks + codeBlocks)
+    {
+      return nullptr;
+    }
 
-		auto volume = std::make_unique<Volume>(name.c_str(), dataBlocks, codeBlocks, blockCount, blockSize, "HelloWorld");
+    auto volume = std::make_unique<Volume>(name.c_str(), dataBlocks, codeBlocks, blockCount, blockSize, "HelloWorld");
 
-		for (size_t i = 0; i < json["partitions"].size(); ++i)
-		{
-			auto & config = json["partitions"][i];
-			if (!config["name"].isString() || !config["provider"].isString())
-			{
-				return nullptr;
-			}
+    for (size_t i = 0; i < json["partitions"].size(); ++i)
+    {
+      auto & config = json["partitions"][i];
+      if (!config["name"].isString() || !config["provider"].isString())
+      {
+        return nullptr;
+      }
 
       auto ep = GetProviderEndpoint(config["provider"].asString());
       if (ep.empty())
@@ -106,16 +108,16 @@ namespace dfs
         return nullptr;
       }
 
-			auto session = bdfs::BdSession::CreateSession(ep.c_str(), &defaultConfig);
-			auto name = config["name"].asString();
-			auto path = "host://Partitions/" + name;
-			auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
+      auto session = bdfs::BdSession::CreateSession(ep.c_str(), &defaultConfig);
+      auto name = config["name"].asString();
+      auto path = "host://Partitions/" + name;
+      auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
 
-			volume->SetPartition(i, new Partition(partition, blockCount, blockSize));
-		}
+      volume->SetPartition(i, new Partition(partition, blockCount, blockSize));
+    }
 
-		return volume;
-	}
+    return volume;
+  }
 
 
   std::string VolumeManager::GetProviderEndpoint(const std::string & name)
@@ -147,14 +149,14 @@ namespace dfs
   }
 
 
-	bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
-	{
-		size_t blockSize = 64*1024;
-		auto providerCount = dataBlocks + codeBlocks;
-		auto providerSize = size * 2 / providerCount;
+  bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
+  {
+    size_t blockSize = 64*1024;
+    auto providerCount = dataBlocks + codeBlocks;
+    auto providerSize = size * 2 / providerCount;
     uint64_t ssize = std::numeric_limits<uint64_t>::max();
 
-		std::string query = "type:\"storage\" size:" + std::to_string(providerSize);
+    std::string query = "type:\"storage\" size:" + std::to_string(providerSize);
 
     auto session = bdfs::BdSession::CreateSession(kademliaUrl.c_str(), &defaultConfig);
     auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(
@@ -172,7 +174,7 @@ namespace dfs
     {
       printf("Failed to query for providers.\n");
       return false;
-		}
+    }
 
     std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
     for(auto &json : jsonArray)
@@ -190,82 +192,89 @@ namespace dfs
       }
     }
 
-		if (contracts.size() < dataBlocks + codeBlocks)
-		{
-			printf("Not enough providers.\n");
-			return false;
-		}
+    if (contracts.size() < dataBlocks + codeBlocks)
+    {
+      printf("Not enough providers.\n");
+      return false;
+    }
 
-		Json::Value arr;
+    Json::Value arr;
 
-		for (size_t i = 0; i < dataBlocks + codeBlocks; ++i)
-		{
+    for (size_t i = 0; i < dataBlocks + codeBlocks; ++i)
+    {
       auto ep = GetProviderEndpoint(contracts[i]->Provider());
       if (ep.empty())
       {
         return false;
       }
 
-			auto session = bdfs::BdSession::CreateSession(ep.c_str(), &defaultConfig);
-			auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
-				session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
-			auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
-			if (!result->Wait(5000) || !result->GetResult())
-			{
-				printf("Failed to create on partition from contract '%s'\n", contracts[i]->Name().c_str());
-				return false;
-			}
+      auto session = bdfs::BdSession::CreateSession(ep.c_str(), &defaultConfig);
+      auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
+        session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
+      auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
+      if (!result->Wait(5000) || !result->GetResult())
+      {
+        printf("Failed to create on partition from contract '%s'\n", contracts[i]->Name().c_str());
+        return false;
+      }
 
-			auto obj = result->GetResult();
+      auto obj = result->GetResult();
 
-			Json::Value partition;
-			partition["name"] = obj->Name();
-			partition["provider"] = contracts[i]->Provider();
+      Json::Value partition;
+      partition["name"] = obj->Name();
+      partition["provider"] = contracts[i]->Provider();
 
-			arr.append(partition);
-		}
-		
-		Json::Value volume;
-		volume["blockSize"] = Json::Value::UInt(blockSize);
-		volume["blockCount"] = Json::Value::UInt(ssize / blockSize);
-		volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
-		volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
-		volume["partitions"] = arr;
+      arr.append(partition);
+    }
+    
+    Json::Value volume;
+    volume["blockSize"] = Json::Value::UInt(blockSize);
+    volume["blockCount"] = Json::Value::UInt(ssize / blockSize);
+    volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
+    volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
+    volume["partitions"] = arr;
 
-		std::string result = volume.toStyledString();
+    std::string result = volume.toStyledString();
 
-		FILE * file = fopen((volumeName + ".config").c_str(), "w");
-		if (!file)
-		{
-			printf("Failed to create volume config file.\n");
-			return false;
-		}
+    std::string path = "/etc/drive/" + volumeName;
 
-		fwrite(result.c_str(), 1, result.size(), file);
+    mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-		fclose(file);
+    path.append("/volume.conf");
+
+    FILE * file = fopen(path.c_str(), "w");
+    if (!file)
+    {
+      printf("Failed to create volume config file.\n");
+      return false;
+    }
+
+    fwrite(result.c_str(), 1, result.size(), file);
+
+    fclose(file);
     
     return true;
-	}
+  }
 
 
-	bool VolumeManager::DeleteVolume(const std::string & name)
-	{
-		auto volume = LoadVolume(name);
-		if (!volume)
-		{
-			printf("Failed to load volume.\n");
-			return false;
-		}
+  bool VolumeManager::DeleteVolume(const std::string & name)
+  {
+    auto volume = LoadVolume(name);
+    if (!volume)
+    {
+      printf("Failed to load volume.\n");
+      return false;
+    }
 
-		if (!volume->Delete())
-		{
-			printf("Failed to delete volume.\n");
-			return false;
-		}
+    if (!volume->Delete())
+    {
+      printf("Failed to delete volume.\n");
+      return false;
+    }
 
-		unlink((name + ".config").c_str());
+    std::string path = "/etc/drive/" + name + "/volume.conf";
+    unlink(path.c_str());
 
     return true;
-	}
+  }
 }

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sudo modprobe nbd > /dev/null 2>&1
+
+sudo /usr/local/bin/bdfsclient "http://192.168.1.101:7800" >> /var/log/bdfsclient.log

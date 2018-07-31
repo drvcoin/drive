@@ -45,22 +45,22 @@ namespace dfs
 {
   std::map<std::string, VolumeMeta *> ActionHandler::volumeInfo;
   std::map<std::string, bool> ActionHandler::nbdInfo;
-	
-  // ubd callbacks	
-	static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
-	{
-		return ((Volume*)context)->ReadDecrypt(buf, size, offset) ? 0 : -1;
-	}
+  
+  // ubd callbacks  
+  static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
+  {
+    return ((Volume*)context)->ReadDecrypt(buf, size, offset) ? 0 : -1;
+  }
 
-	static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
-	{
-		return ((Volume*)context)->WriteEncrypt(buf, size, offset) ? 0 : -1;
-	}
+  static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
+  {
+    return ((Volume*)context)->WriteEncrypt(buf, size, offset) ? 0 : -1;
+  }
 
-	static void xmp_disc(void * context)
-	{
-		(void)(context);
-	}
+  static void xmp_disc(void * context)
+  {
+    (void)(context);
+  }
 
   static void xmp_cleanup(void * context)
   {
@@ -71,17 +71,17 @@ namespace dfs
     }
   }
 
-	static int xmp_flush(void * context)
-	{
-		(void)(context);
-		return 0;
-	}
+  static int xmp_flush(void * context)
+  {
+    (void)(context);
+    return 0;
+  }
 
-	static int xmp_trim(size_t from, size_t len, void * context)
-	{
-		(void)(context);
-		return 0;
-	}
+  static int xmp_trim(size_t from, size_t len, void * context)
+  {
+    (void)(context);
+    return 0;
+  }
 
   void ActionHandler::Unmount(const std::string &nbdPath, bool matchAll=false)
   {
