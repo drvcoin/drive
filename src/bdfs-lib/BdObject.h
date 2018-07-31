@@ -58,5 +58,7 @@ namespace bdfs
     bool Call(const char * method, CArgs & args, Callback callback);
     bool Call(const char * method, CArgs & args, RawCallback callback);
     bool Call(const char * method, CArgs & args, const void * body, size_t len, Callback callback);
+
+    uint32_t GetTimeout() const;
   };
 }

@@ -304,9 +304,6 @@ int main(int argc, char * * argv)
 {
   Options::Init(argc, argv);
 
-  VolumeManager::defaultConfig.ConnectTimeout(5);
-  VolumeManager::defaultConfig.RequestTimeout(5);
-
   VolumeManager::kademliaUrl = Options::KademliaUrl;
 
   HandleOptions();

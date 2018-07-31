@@ -32,7 +32,7 @@ namespace dfs
   uint16_t Options::DataBlocks = 4;
   uint16_t Options::CodeBlocks = 4;
   uint64_t Options::Size =  1024; // MB;
-  std::string Options::KademliaUrl;
+  std::string Options::KademliaUrl = "http://192.168.1.101:7800";
   std::vector<std::string> Options::Paths;
   std::vector<std::string> Options::ExternalArgs;
 

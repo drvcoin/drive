@@ -130,6 +130,7 @@ namespace dfs
 
       {
         std::unique_lock<std::mutex> lock(this->mutex);
+        this->hasNotification = true;
         this->cond.notify_all();
       }
 
@@ -163,6 +164,7 @@ namespace dfs
 
     {
       std::unique_lock<std::mutex> lock(this->mutex);
+      this->hasNotification = true;
       this->cond.notify_one();
     }
 
@@ -194,6 +196,7 @@ namespace dfs
 
     {
       std::unique_lock<std::mutex> lock(this->mutex);
+      this->hasNotification = true;
       this->cond.notify_one();
     }
 
@@ -239,7 +242,14 @@ namespace dfs
       if (now - ts < this->flushPolicy)
       {
         std::unique_lock<std::mutex> lock(this->mutex);
-        this->cond.wait_for(lock, std::chrono::seconds(this->flushPolicy - (now - ts)));
+        if (!this->hasNotification)
+        {
+          this->cond.wait_for(lock, std::chrono::seconds(this->flushPolicy - (now - ts)));
+        }
+        else
+        {
+          this->hasNotification = false;
+        }
       }
       else
       {

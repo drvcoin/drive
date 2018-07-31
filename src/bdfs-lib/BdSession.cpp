@@ -63,7 +63,7 @@ namespace bdfs
     return sessions[base];
   }
 
-  std::shared_ptr<BdSession> BdSession::CreateSession(const char * base, HttpConfig * config)
+  std::shared_ptr<BdSession> BdSession::CreateSession(const char * base, HttpConfig * config, bool ownConfig)
   {
     WriteLock _(mutex);
     if (!queueStarted)
@@ -73,17 +73,29 @@ namespace bdfs
     }
     if (config == NULL)
     {
+      ownConfig = false;
       config = &defaultConfig;
     }
-    std::shared_ptr<BdSession> session(new BdSession(base, config));
+
+    auto session = std::shared_ptr<BdSession>(new BdSession(base, config, ownConfig));
     sessions[session->Base()] = session;
     return session;
   }
 
-  BdSession::BdSession(const char * base, HttpConfig * config) :
+  BdSession::BdSession(const char * base, HttpConfig * config, bool ownConfig) :
     config(config),
-    base(base)
+    base(base),
+    ownConfig(ownConfig)
   {
+  }
+
+  BdSession::~BdSession()
+  {
+    if (this->ownConfig && this->config)
+    {
+      delete this->config;
+      this->config = nullptr;
+    } 
   }
 
   std::string BdSession::__EncodeArgs(BdObject::CArgs & args)
@@ -180,5 +192,16 @@ namespace bdfs
   std::shared_ptr<BdObject> BdSession::CreateObject(const char * name, const char * path, const char * type)
   {
     return BdTypes::Create(base.c_str(), name, path, type);
+  }
+
+
+  uint32_t BdSession::GetTimeout() const
+  {
+    if (!this->config)
+    {
+      return 1;
+    }
+
+    return 1000 * (this->config->ConnectTimeout() + this->config->RequestTimeout()) * (1 + this->config->Relays().size());
   }
 }

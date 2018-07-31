@@ -103,13 +103,105 @@ namespace bdfs
     return realSize;
   }
 
+
   void HttpRequest::Execute()
+  {
+    auto & relays = this->config->Relays();
+
+#if 0
+    if (this->config->ActiveRelay() >= static_cast<int>(relays.size()))
+    {
+      // Reset relay since all endpoints failed before. We should retry from beginning.
+      this->config->ActiveRelay(-1);
+      this->config->ActiveRelayEndpoint(-1);
+    }
+#endif
+
+#ifdef DEBUG_HTTP_RELAY
+    printf("HttpRequest::Execute: %s\n", this->url.c_str());
+#endif
+
+    int rtn = CURLE_OK;
+    bool tryingRelays = this->config->ActiveRelay() < 0;
+    while (this->config->ActiveRelay() < static_cast<int>(relays.size()))
+    {
+      int rtn = this->ExecuteImpl();
+      if (!tryingRelays)
+      {
+        break;
+      }
+
+      if (rtn != CURLE_COULDNT_RESOLVE_PROXY &&
+          rtn != CURLE_COULDNT_RESOLVE_HOST &&
+          rtn != CURLE_COULDNT_CONNECT &&
+          rtn != CURLE_REMOTE_ACCESS_DENIED &&
+          rtn != CURLE_OPERATION_TIMEDOUT &&
+          rtn != CURLE_SEND_ERROR)
+      {
+        // TODO: maybe we should handle more errors like ssl handshake to make sure we were
+        // trying to connect to the right server
+        break;
+      }
+
+      if (this->config->ActiveRelay() < 0 ||
+          this->config->ActiveRelayEndpoint() >= static_cast<int>(relays[this->config->ActiveRelay()].endpoints.size()))
+      {
+        do
+        {
+          this->config->ActiveRelay(this->config->ActiveRelay() + 1);
+          this->config->ActiveRelayEndpoint(0);
+        } while (this->config->ActiveRelay() < static_cast<int>(relays.size()) &&
+                 relays[this->config->ActiveRelay()].endpoints.size() == 0);
+      }
+      else
+      {
+        this->config->ActiveRelayEndpoint(this->config->ActiveRelayEndpoint() + 1);
+      }
+    }
+
+    completeCallback(rtn != CURLE_OK);
+  }
+
+
+  static std::string replaceHostInUrl(const std::string & url, const std::string & host)
+  {
+    size_t start = url.find("://");
+    if (start == std::string::npos)
+    {
+      return url;
+    }
+
+    start += sizeof("://") - 1;
+    if (start >= url.size())
+    {
+      return url;
+    }
+
+    size_t end = url.find_first_of(":/?", start);
+    if (end == start + 1)
+    {
+      return url;
+    }
+
+    std::stringstream ss;
+    ss << url.substr(0, start) << host;
+
+    if (end != std::string::npos)
+    {
+      ss << url.substr(end);
+    }
+
+    return ss.str();
+  }
+
+
+  int HttpRequest::ExecuteImpl()
   {
     CURL * curl = curl_easy_init();
     if (curl == NULL)
     {
       completeCallback(true);
-      return;
+      return -1;
     }
 #if !(defined(_WIN32) || defined(_WIN64))
   //  curl_easy_setopt(curl, CURLOPT_OPENSOCKETFUNCTION, HttpClient::CurlOpenSocketCallback);
@@ -120,7 +212,43 @@ namespace bdfs
     curl_easy_setopt(curl, CURLOPT_USERAGENT, config->UserAgent().c_str());
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    std::string altHost;
+    auto & relays = this->config->Relays();
+
+    if (this->config->ActiveRelay() >= 0 &&
+        this->config->ActiveRelay() < static_cast<int>(relays.size()) &&
+        this->config->ActiveRelayEndpoint() >= 0 &&
+        this->config->ActiveRelayEndpoint() < static_cast<int>(relays[this->config->ActiveRelay()].endpoints.size()))
+    {
+      auto & endpoint = relays[this->config->ActiveRelay()].endpoints[this->config->ActiveRelayEndpoint()];
+      if (!endpoint.host.empty() && endpoint.socksPort > 0)
+      {
+        char relay[BUFSIZ];
+        snprintf(relay, sizeof(relay), "socks5h://%s:%u", endpoint.host.c_str(), endpoint.socksPort);
+        curl_easy_setopt(curl, CURLOPT_PROXY, relay);
+
+        if (!relays[this->config->ActiveRelay()].name.empty())
+        {
+          altHost = relays[this->config->ActiveRelay()].name;
+        }
+      }
+    }
+
+    if (altHost.empty())
+    {
+#ifdef DEBUG_HTTP_RELAY
+      printf("Trying to connect to: %s\n", url.c_str());
+#endif      
+      curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    }
+    else
+    {
+      std::string altUrl = replaceHostInUrl(url, altHost);
+#ifdef DEBUG_HTTP_RELAY
+      printf("Trying to connect to: %s\n", altUrl.c_str());
+#endif      
+      curl_easy_setopt(curl, CURLOPT_URL, altUrl.c_str());
+    }
 
     if(!range.empty())
     {
@@ -195,7 +323,7 @@ namespace bdfs
 
     curl_easy_cleanup(curl);
 
-    completeCallback(res != CURLE_OK);
+    return res;
   }
 
   void HttpRequest::Get(JsonCallback callback)

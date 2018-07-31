@@ -153,6 +153,8 @@ namespace dfs
     std::condition_variable cond;
 
     std::atomic<bool> active;
+
+    std::atomic<bool> hasNotification{false};
   };
 }
 

@@ -37,45 +37,43 @@ namespace dfs
     isUnixSocketListening(false),
     requestLoop(&ClientManager::HandleRequest)
   {
-    VolumeManager::defaultConfig.ConnectTimeout(5);
-    VolumeManager::defaultConfig.RequestTimeout(5);
   }
 
-	bool ClientManager::Start()
-	{
-		(void) signal(SIGPIPE, SIG_IGN);
+  bool ClientManager::Start()
+  {
+    (void) signal(SIGPIPE, SIG_IGN);
 
-		if (!unixSocket.Listen("bdfsclient", 2))
-		{
-			printf("Failed to listen on Unix socket\n");
-			return false;
-		}
+    if (!unixSocket.Listen("bdfsclient", 2))
+    {
+      printf("Failed to listen on Unix socket\n");
+      return false;
+    }
 
-		if (!this->requestLoop.Start())
-		{
-			printf("Failed to start request loop\n");
-			return false;
-		}
+    if (!this->requestLoop.Start())
+    {
+      printf("Failed to start request loop\n");
+      return false;
+    }
 
     std::thread th(&ClientManager::Listen, this);
     th.detach();
   
-		return true;
-	}
+    return true;
+  }
 
-	bool ClientManager::Stop()
-	{
+  bool ClientManager::Stop()
+  {
     if(isUnixSocketListening)
     {
-		  unixSocket.Shutdown(SHUT_RDWR);
-		  unixSocket.Close();
+      unixSocket.Shutdown(SHUT_RDWR);
+      unixSocket.Close();
     }
     
     isUnixSocketListening = false;
-		this->requestLoop.Stop();
+    this->requestLoop.Stop();
 
-		return true;
-	}
+    return true;
+  }
 
   std::unique_ptr<char[]> ClientManager::ProcessRequest(std::unique_ptr<char[]> &buff, UnixDomainSocket *socket, bool &shouldReply)
   {
@@ -142,23 +140,23 @@ namespace dfs
     return bdcp::Create(bdcp::RESPONSE,args,status);
   }
 
-	bool ClientManager::HandleRequest(void * sender, UnixDomainSocket * socket)
-	{
-		ClientManager *_this = (ClientManager *)sender;
+  bool ClientManager::HandleRequest(void * sender, UnixDomainSocket * socket)
+  {
+    ClientManager *_this = (ClientManager *)sender;
 
     uint32_t length;
-	 
-		if (socket->RecvMessage(&length, sizeof(uint32_t)) <= 0)
-		{
-			printf("%s: failed to read message length.\n", __func__);
+   
+    if (socket->RecvMessage(&length, sizeof(uint32_t)) <= 0)
+    {
+      printf("%s: failed to read message length.\n", __func__);
       socket->Close();
-			return false;
-		}
+      return false;
+    }
 
     std::unique_ptr<char[]>buff = std::make_unique<char[]>(length);
     ((bdcp::BdHdr*)buff.get())->length = length;
 
-		if (socket->RecvMessage(buff.get()+sizeof(uint32_t), length-sizeof(uint32_t)) > 0)
+    if (socket->RecvMessage(buff.get()+sizeof(uint32_t), length-sizeof(uint32_t)) > 0)
     {
       bool shouldReply = true;
       auto resp = _this->ProcessRequest(buff,socket,shouldReply);
@@ -176,21 +174,21 @@ namespace dfs
     socket->Close();
     
     return true;
-	}
+  }
 
-	void ClientManager::Listen()
-	{
+  void ClientManager::Listen()
+  {
     isUnixSocketListening = true;
-		for(;;)
-		{
-			UnixDomainSocket * socket = this->unixSocket.Accept();
+    for(;;)
+    {
+      UnixDomainSocket * socket = this->unixSocket.Accept();
 
-			if (socket == NULL)
-			{
-				break;
-			}
+      if (socket == NULL)
+      {
+        break;
+      }
 
-			this->requestLoop.SendEvent(this, socket);
-		}
-	}
+      this->requestLoop.SendEvent(this, socket);
+    }
+  }
 }
