@@ -34,19 +34,19 @@
 
 int main(int argc, const char ** argv)
 {
-  bdhost::Options::Init(argc, argv);
+  bdkad::Options::Init(argc, argv);
 
   bdhttp::HttpModule::Initialize();
 
   bdhttp::HttpServer server;
 
-  if (!server.Start(bdhost::Options::port, nullptr))
+  if (!server.Start(bdkad::Options::http_port, nullptr))
   {
-    printf("[Main]: failed to start http server on port %u.\n", bdhost::Options::port);
+    printf("[Main]: failed to start http server on port %u.\n", bdkad::Options::http_port);
     return -1;
   }
 
-  bdhost::KademliaModule::Initialize();
+  bdkad::KademliaModule::Initialize();
 
   while (server.IsRunning())
   {

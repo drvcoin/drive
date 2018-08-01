@@ -29,7 +29,7 @@
 #include "Kademlia.h"
 
 
-namespace bdhost
+namespace bdkad
 {
   class KademliaModule
   {

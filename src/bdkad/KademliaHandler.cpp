@@ -20,48 +20,21 @@
   SOFTWARE.
 */
 
+#include <string>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-
-#include <chrono>
-#include <string>
-#include <assert.h>
 #include <json/json.h>
+
 #include "HttpHandlerRegister.h"
 #include "KademliaHandler.h"
-
-
-
-#include <stdio.h>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <thread>
-#include <chrono>
-#include <iterator>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include "Contact.h"
-#include "Config.h"
-#include "TransportFactory.h"
-#include "LinuxFileTransport.h"
-#include "TcpTransport.h"
 #include "Digest.h"
-#include "Kademlia.h"
-
-#include <arpa/inet.h>
-
-#include "Options.h"
 
 
 using namespace kad;
 
 
-
-namespace bdhost
+namespace bdkad
 {
   static const char PATH[] = "/api/host/Kademlia";
 
@@ -150,7 +123,20 @@ namespace bdhost
     uint64_t version = static_cast<uint64_t>(strtoull(context.parameter("version"), nullptr, 10));
     uint32_t ttl = static_cast<uint32_t>(strtoul(context.parameter("ttl"), nullptr, 10));
 
-    printf("%s %s %lu %u\n",key.c_str(), value.c_str(), version, ttl);
+    if (key.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'key' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    if (value.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'value' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
 
     sha1_t digest;
     Digest::Compute(key.c_str(), key.size(), digest);
@@ -193,6 +179,14 @@ namespace bdhost
     {
       key = json.asString();
     }
+
+    if (key.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'key' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
 
     sha1_t digest;
     Digest::Compute(key.c_str(), key.size(), digest);
@@ -239,6 +233,13 @@ namespace bdhost
       value = json.asString();
     }
 
+    if (value.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'value' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
     uint8_t * buffer = nullptr;
     size_t size = value.size();
     buffer = new uint8_t[size];
@@ -275,6 +276,27 @@ namespace bdhost
 
     std::string query(context.parameter("query"));
     uint32_t limit = static_cast<uint32_t>(strtoul(context.parameter("limit"), nullptr, 10));
+
+    Json::Value json;
+    Json::Reader reader;
+    if (reader.parse(query.c_str(), query.size(), json, false) && json.isString())
+    {
+      query = json.asString();
+    }
+
+    if (query.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'query' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    if (!limit)
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'limit' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
 
     sha1_t digest;
     Digest::Compute(query.c_str(), query.size(), digest);
