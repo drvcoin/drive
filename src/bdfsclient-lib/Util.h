@@ -23,6 +23,7 @@
 #pragma once
 
 #include <arpa/inet.h>
+#include <string>
 
 #define return_false_if(condition) \
   if (condition) { return false; }
@@ -33,3 +34,4 @@
 uint64_t htonll(uint64_t val);
 uint64_t ntohll(uint64_t val);
 bool nbd_ready(const char* devname, bool do_print = false);
+std::string execCmd(std::string cmd);
