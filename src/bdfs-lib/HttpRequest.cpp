@@ -123,39 +123,46 @@ namespace bdfs
 
     int rtn = CURLE_OK;
     bool tryingRelays = this->config->ActiveRelay() < 0;
-    while (this->config->ActiveRelay() < static_cast<int>(relays.size()))
+    if (this->config->ActiveRelay() >= static_cast<int>(relays.size()))
     {
-      int rtn = this->ExecuteImpl();
-      if (!tryingRelays)
+      rtn = this->ExecuteImpl();
+    }
+    else
+    {
+      while (this->config->ActiveRelay() < static_cast<int>(relays.size()))
       {
-        break;
-      }
-
-      if (rtn != CURLE_COULDNT_RESOLVE_PROXY &&
-          rtn != CURLE_COULDNT_RESOLVE_HOST &&
-          rtn != CURLE_COULDNT_CONNECT &&
-          rtn != CURLE_REMOTE_ACCESS_DENIED &&
-          rtn != CURLE_OPERATION_TIMEDOUT &&
-          rtn != CURLE_SEND_ERROR)
-      {
-        // TODO: maybe we should handle more errors like ssl handshake to make sure we were
-        // trying to connect to the right server
-        break;
-      }
-
-      if (this->config->ActiveRelay() < 0 ||
-          this->config->ActiveRelayEndpoint() >= static_cast<int>(relays[this->config->ActiveRelay()].endpoints.size()))
-      {
-        do
+        rtn = this->ExecuteImpl();
+        if (!tryingRelays)
         {
-          this->config->ActiveRelay(this->config->ActiveRelay() + 1);
-          this->config->ActiveRelayEndpoint(0);
-        } while (this->config->ActiveRelay() < static_cast<int>(relays.size()) &&
-                 relays[this->config->ActiveRelay()].endpoints.size() == 0);
-      }
-      else
-      {
-        this->config->ActiveRelayEndpoint(this->config->ActiveRelayEndpoint() + 1);
+          break;
+        }
+
+        if (rtn != CURLE_COULDNT_RESOLVE_PROXY &&
+            rtn != CURLE_COULDNT_RESOLVE_HOST &&
+            rtn != CURLE_COULDNT_CONNECT &&
+            rtn != CURLE_REMOTE_ACCESS_DENIED &&
+            rtn != CURLE_OPERATION_TIMEDOUT &&
+            rtn != CURLE_SEND_ERROR)
+        {
+          // TODO: maybe we should handle more errors like ssl handshake to make sure we were
+          // trying to connect to the right server
+          break;
+        }
+
+        if (this->config->ActiveRelay() < 0 ||
+            this->config->ActiveRelayEndpoint() >= static_cast<int>(relays[this->config->ActiveRelay()].endpoints.size()))
+        {
+          do
+          {
+            this->config->ActiveRelay(this->config->ActiveRelay() + 1);
+            this->config->ActiveRelayEndpoint(0);
+          } while (this->config->ActiveRelay() < static_cast<int>(relays.size()) &&
+                  relays[this->config->ActiveRelay()].endpoints.size() == 0);
+        }
+        else
+        {
+          this->config->ActiveRelayEndpoint(this->config->ActiveRelayEndpoint() + 1);
+        }
       }
     }
 
