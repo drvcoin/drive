@@ -79,12 +79,7 @@ namespace bdhost
 
     for (int i = 1; i < argc; ++i)
     {
-      if (strcmp(argv[i], "-r") == 0)
-      {
-        assert_argument_index(++i, "path");
-        repo = argv[i];
-      }
-      else if (strcmp(argv[i], "-c") == 0)
+      if (strcmp(argv[i], "-c") == 0)
       {
         assert_argument_index(++i, "contract");
         contract = argv[i];

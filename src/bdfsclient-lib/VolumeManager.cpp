@@ -205,10 +205,11 @@ namespace dfs
       return false;
     }
 
-    Json::Value arr;
+		Json::Value arr;
+    std::vector<bool> providersUsed;
 
-    for (size_t i = 0; i < dataBlocks + codeBlocks; ++i)
-    {
+		for (size_t i = 0; i < contracts.size(); ++i)
+		{
       auto ep = GetProviderEndpoint(contracts[i]->Provider());
       if (ep.url.empty())
       {
@@ -220,30 +221,49 @@ namespace dfs
 			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
       auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
         session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
+
+      auto reserveResult = folder->ReservePartition(blockSize/(1024)); // convert to MB
+			if (!reserveResult->Wait(folder->GetTimeout()) || !reserveResult->GetResult())
+			{
+				printf("Failed to reserve space on provider '%s'\n", contracts[i]->Provider().c_str());
+				continue;;
+			}
+
       auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
 			if (!result->Wait(folder->GetTimeout()) || !result->GetResult())
       {
-        printf("Failed to create on partition from contract '%s'\n", contracts[i]->Name().c_str());
-        return false;
+        continue;
       }
 
-      auto obj = result->GetResult();
+			auto obj = result->GetResult();
 
-      Json::Value partition;
-      partition["name"] = obj->Name();
-      partition["provider"] = contracts[i]->Provider();
+			Json::Value partition;
+			partition["name"] = obj->Name();
+			partition["provider"] = contracts[i]->Provider();
 
-      arr.append(partition);
+			arr.append(partition);
+      providersUsed.emplace_back(true);
+
+      if(providersUsed.size() == codeBlocks + dataBlocks)
+      {
+        break;
+      }
+		}
+
+    if(providersUsed.size() != codeBlocks + dataBlocks)
+    {
+      printf("Failed to reserve and create partition on desired providers\n");
+      return false;
     }
-    
-    Json::Value volume;
-    volume["blockSize"] = Json::Value::UInt(blockSize);
-    volume["blockCount"] = Json::Value::UInt(ssize / blockSize);
-    volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
-    volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
-    volume["partitions"] = arr;
+		
+		Json::Value volume;
+		volume["blockSize"] = Json::Value::UInt(blockSize);
+		volume["blockCount"] = Json::Value::UInt(ssize / blockSize);
+		volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
+		volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
+		volume["partitions"] = arr;
 
-    std::string result = volume.toStyledString();
+		std::string result = volume.toStyledString();
 
     std::string path = "/etc/drive/" + volumeName;
 

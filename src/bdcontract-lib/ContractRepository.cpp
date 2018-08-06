@@ -108,6 +108,19 @@ namespace bdcontract
 
     std::string filename = this->root + "/" + name;
 
+    return ContractRepository::Load(filename.c_str());
+  }
+
+
+  std::unique_ptr<Contract> ContractRepository::Load(const char * name)
+  {
+    if (!name || name[0] == '\0')
+    {
+      return nullptr;
+    }
+
+    std::string filename = name;
+
     FILE * file = fopen(filename.c_str(), "r");
     if (!file)
     {
