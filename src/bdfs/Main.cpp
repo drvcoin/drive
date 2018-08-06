@@ -175,6 +175,12 @@ void HandleOptions()
         }
 
         printf("Mounting '%s' to '%s'\n",respParams[0].c_str(),Options::Paths[0].c_str());
+
+        std::string user = execCmd("id -u -n");
+        user = user.substr(0,user.size()-1);
+        std::string group = execCmd("id -g -n");
+        group = group.substr(0,group.size()-1);
+        std::string chownCmd = "sudo chown " + user + ":" + group + " " + Options::Paths[0];
         
         std::string cmd = "sudo mount";
         for(auto arg : Options::ExternalArgs)
@@ -184,6 +190,7 @@ void HandleOptions()
         cmd += " " + respParams[0];
         cmd += " " + Options::Paths[0];
         system(cmd.c_str());
+        system(chownCmd.c_str());
       }
       break;
     }
