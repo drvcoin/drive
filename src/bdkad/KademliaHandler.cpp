@@ -258,7 +258,7 @@ namespace bdkad
 
     auto result = AsyncResultPtr(new AsyncResult<bool>());
 
-    KademliaHandler::controller->Publish(key, data, 999, 1, result);
+    KademliaHandler::controller->Publish(key, data, 864000, 1, result);
 
     if (!result->Wait(60000) || !AsyncResultHelper::GetResult<bool>(result.get()))
     {
