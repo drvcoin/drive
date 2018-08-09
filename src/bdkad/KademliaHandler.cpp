@@ -240,21 +240,21 @@ namespace bdkad
       return;
     }
 
-    uint8_t * buffer = nullptr;
-    size_t size = value.size();
-    buffer = new uint8_t[size];
-    memcpy(buffer, value.c_str(), size);
+    if (!json.isObject() || !json["type"].isString() || !json["name"].isString())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Wrong format of published data", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
 
+    std::string keyStr;
+    keyStr = json["type"].asString() + ":" + json["name"].asString();
 
-    char * d = (char*)buffer;
-    printf("value: %s\n", d);
-    sha1_t dig;
-    Digest::Compute(d, size, dig);
-    Digest::Print(dig);
-    KeyPtr key = std::make_shared<Key>(dig);
+    sha1_t digest;
+    Digest::Compute(keyStr.c_str(), keyStr.size(), digest);
+    KeyPtr key = std::make_shared<Key>(digest);
 
-
-    auto data = std::make_shared<Buffer>(buffer, size, false, true);
+    auto data = std::make_shared<Buffer>((uint8_t*)value.c_str(), value.size(), true, true);
 
     auto result = AsyncResultPtr(new AsyncResult<bool>());
 
