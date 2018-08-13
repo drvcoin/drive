@@ -49,7 +49,7 @@ namespace bdfs
 
     AsyncResultPtr<bool> PublishStorage(const char * node, const char * contract, const size_t storage, const size_t reputation);
 
-    AsyncResultPtr<Json::Value> QueryStorage(const char * query);
+    AsyncResultPtr<Json::Value> QueryStorage(const char * query, size_t limit);
 
     AsyncResultPtr<bool> PublishRelay(const RelayInfo & reg);
 
