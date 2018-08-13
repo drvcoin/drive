@@ -27,13 +27,11 @@
 #include <chrono>
 #include <string>
 #include <assert.h>
+#include "Global.h"
 #include "Util.h"
 #include "HttpHandlerRegister.h"
 #include "Partition.h"
 #include "PartitionHandler.h"
-#include "ContractRepository.h"
-
-extern void PublishStorage();
 
 namespace bdhost
 {
@@ -82,10 +80,6 @@ namespace bdhost
     {
       this->OnCreatePartition(context);
     }
-    else if (action == "Reserve")
-    {
-      this->OnReservePartition(context);
-    }
     else
     {
       context.setResponseCode(500);
@@ -99,7 +93,9 @@ namespace bdhost
     // TODO: add reference to contract and prevent creation on executed contract
     // TODO: validate consumer and provider identity from contract
 
-    auto contract = bdcontract::ContractRepository::Load(context.parameter("contract"));
+    assert(g_contracts);
+
+    auto contract = g_contracts->LoadContract(context.parameter("contract"));
     if (!contract)
     {
       context.setResponseCode(500);
@@ -149,30 +145,6 @@ namespace bdhost
         << "}";
 
     context.writeResponse(res.str());
-  }
-
-
-  void PartitionHandler::OnReservePartition(bdhttp::HttpContext & context)
-  {
-    // TODO: free reserved space after some timeout
-    // TODO: validate consumer and provider identity from contract
-    uint64_t reserveSize = static_cast<uint64_t>(strtoull(context.parameter("size"), nullptr, 10));
-    if (reserveSize == 0)
-    {
-      context.setResponseCode(500);
-      context.writeError("Failed", "Reserve size should not be 0", bdhttp::ErrorCode::ARGUMENT_INVALID);
-      return;
-    }
-
-		if(SetReservedSpace(reserveSize))
-		{
-			PublishStorage();
-      context.writeResponse("true");
-		}
-		else
-		{
-      context.writeResponse("false");
-		}
   }
 
 

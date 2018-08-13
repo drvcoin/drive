@@ -45,7 +45,5 @@ namespace bdhost
     void OnDelete(bdhttp::HttpContext & context, const std::string & name);
 
     void OnCreatePartition(bdhttp::HttpContext & context);
-
-    void OnReservePartition(bdhttp::HttpContext & context);
   };
 }
