@@ -159,7 +159,6 @@ namespace dfs
   bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
   {
     size_t blockSize = 64*1024;
-    auto providerCount = dataBlocks + codeBlocks;
     auto providerSize = size / dataBlocks;
 
     std::string query = "type:\"storage\" size:" + std::to_string(providerSize);
@@ -233,7 +232,7 @@ namespace dfs
     
     Json::Value volume;
     volume["blockSize"] = Json::Value::UInt(blockSize);
-    volume["blockCount"] = Json::Value::UInt(providerSize / blockSize);
+    volume["blockCount"] = Json::Value::UInt(providerSize * 1024 * 1024 / blockSize);
     volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
     volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
     volume["partitions"] = arr;
