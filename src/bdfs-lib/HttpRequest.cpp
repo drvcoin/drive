@@ -172,6 +172,10 @@ namespace bdfs
       }
     }
 
+#ifdef DEBUG_HTTP_RELAY
+    printf("HttpRequest::ExecuteImpl: curl_code=%d\n", rtn);
+#endif
+
     completeCallback(rtn != CURLE_OK);
   }
 
