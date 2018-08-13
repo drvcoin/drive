@@ -109,12 +109,12 @@ namespace dfs
         return nullptr;
       }
 
-			auto cfg = new bdfs::HttpConfig();
-			cfg->Relays(std::move(ep.relays));
-			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
-			auto name = config["name"].asString();
-			auto path = "host://Partitions/" + name;
-			auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
+      auto cfg = new bdfs::HttpConfig();
+      cfg->Relays(std::move(ep.relays));
+      auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
+      auto name = config["name"].asString();
+      auto path = "host://Partitions/" + name;
+      auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
 
       volume->SetPartition(i, new Partition(partition, blockCount, blockSize));
     }
@@ -150,8 +150,8 @@ namespace dfs
       return hostInfo;
     }
 
-		std::string hostInfoStr = std::string(static_cast<const char *>(buffer.Buf()), buffer.Size());
-		hostInfo.FromString(hostInfoStr);
+    std::string hostInfoStr = std::string(static_cast<const char *>(buffer.Buf()), buffer.Size());
+    hostInfo.FromString(hostInfoStr);
 
     return hostInfo;
   }
@@ -265,13 +265,13 @@ namespace dfs
     }
 
     Json::Value volume;
-		volume["blockSize"] = Json::Value::UInt(blockSize);
-		volume["blockCount"] = Json::Value::UInt(ssize / blockSize);
-		volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
-		volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
-		volume["partitions"] = partitionsArray;
+    volume["blockSize"] = Json::Value::UInt(blockSize);
+    volume["blockCount"] = Json::Value::UInt(ssize / blockSize);
+    volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
+    volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
+    volume["partitions"] = partitionsArray;
 
-		std::string result = volume.toStyledString();
+    std::string result = volume.toStyledString();
 
     std::string path = "/etc/drive/" + volumeName;
 

@@ -162,8 +162,8 @@ void HandleOptions()
           exit(0);
         }
 
-			  int timeout = 10;	
-				while(!nbd_ready(respParams[0].c_str()) && timeout--)
+        int timeout = 10;	
+        while(!nbd_ready(respParams[0].c_str()) && timeout--)
         {
           sleep(1);
         }
@@ -235,8 +235,8 @@ void HandleOptions()
           exit(0);
         }
 
-			  int timeout = 10;	
-				while(!nbd_ready(respParams[0].c_str()) && timeout--)
+        int timeout = 10;	
+        while(!nbd_ready(respParams[0].c_str()) && timeout--)
         {
           sleep(1);
         }
