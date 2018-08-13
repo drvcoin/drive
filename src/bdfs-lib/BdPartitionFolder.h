@@ -32,9 +32,11 @@ namespace bdfs
   class BdPartitionFolder : public BdObject
   {
   public:
-    
+ 
     BdPartitionFolder(const char * base, const char * name, const char * path, const char * type);
 
     AsyncResultPtr<std::shared_ptr<BdPartition>> CreatePartition(const char * contract, uint32_t blockSize);
+ 
+    AsyncResultPtr<bool> ReservePartition(const uint64_t size);
   };
 }

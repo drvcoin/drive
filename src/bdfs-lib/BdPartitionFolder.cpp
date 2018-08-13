@@ -64,4 +64,29 @@ namespace bdfs
 
     return rtn ? result : nullptr;
   }
+
+
+    AsyncResultPtr<bool> BdPartitionFolder::ReservePartition(const uint64_t size)
+    {
+      BdObject::CArgs args;
+      args["size"] = size;;
+
+      auto result = std::make_shared<AsyncResult<bool>>();
+
+      bool rtn = this->Call("Reserve", args,
+        [result](Json::Value & response, bool error)
+        {
+          if (error || !response.isBool())
+          {
+            result->Complete(false);
+          }
+          else
+          {
+            result->Complete(response.asBool());
+          }
+        }
+      );
+
+      return rtn ? result : nullptr;
+    }
 }
