@@ -24,5 +24,4 @@
 
 namespace bdhost
 {
-  bdcontract::ContractRepository * g_contracts = nullptr;
 }
