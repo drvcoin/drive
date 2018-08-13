@@ -266,7 +266,7 @@ namespace bdfs
   }
 
 
-  AsyncResultPtr<std::vector<RelayInfo>> BdKademlia::QueryRelays(const char * hints)
+  AsyncResultPtr<std::vector<RelayInfo>> BdKademlia::QueryRelays(const char * hints, size_t limit)
   {
     std::string query = "type:relay";
     if (hints)
@@ -276,6 +276,7 @@ namespace bdfs
 
     BdObject::CArgs args;
     args["query"] = query;
+    args["limit"] = Json::Value::UInt(limit);
 
     auto result = std::make_shared<AsyncResult<std::vector<RelayInfo>>>();
 

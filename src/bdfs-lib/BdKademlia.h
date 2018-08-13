@@ -53,6 +53,6 @@ namespace bdfs
 
     AsyncResultPtr<bool> PublishRelay(const RelayInfo & reg);
 
-    AsyncResultPtr<std::vector<RelayInfo>> QueryRelays(const char * hint);
+    AsyncResultPtr<std::vector<RelayInfo>> QueryRelays(const char * hint, size_t limit);
   };
 }

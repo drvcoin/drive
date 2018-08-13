@@ -85,7 +85,7 @@ namespace bdhost
     auto session = bdfs::BdSession::CreateSession(Options::kademlia.c_str(), &config);
     auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
 
-    auto result = kademlia->QueryRelays(nullptr);
+    auto result = kademlia->QueryRelays(nullptr, this->limit);
     if (!result->Wait())
     {
       return;
