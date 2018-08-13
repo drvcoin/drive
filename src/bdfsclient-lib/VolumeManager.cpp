@@ -160,15 +160,14 @@ namespace dfs
   {
     size_t blockSize = 64*1024;
     auto providerCount = dataBlocks + codeBlocks;
-    auto providerSize = size * 2 / providerCount;
-    uint64_t ssize = std::numeric_limits<uint64_t>::max();
+    auto providerSize = size / dataBlocks;
 
     std::string query = "type:\"storage\" size:" + std::to_string(providerSize);
 
     auto session = bdfs::BdSession::CreateSession(kademliaUrl.c_str(), &defaultConfig);
     auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(
       session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
-    auto qresult = kademlia->QueryStorage(query.c_str());
+    auto qresult = kademlia->QueryStorage(query.c_str(), dataBlocks + codeBlocks);
 
     if (!qresult->Wait())
     {
@@ -192,11 +191,7 @@ namespace dfs
       contract->SetSize(json["size"].asUInt() * 1024 * 1024);
       contract->SetReputation(json["reputation"].asUInt());
 
-      if (contract->Size() > blockSize)
-      {
-        ssize = std::min(contract->Size(), ssize);
-        contracts.emplace_back(std::move(contract));
-      }
+      contracts.emplace_back(std::move(contract));
     }
 
     if (contracts.size() < dataBlocks + codeBlocks)
@@ -238,7 +233,7 @@ namespace dfs
     
     Json::Value volume;
     volume["blockSize"] = Json::Value::UInt(blockSize);
-    volume["blockCount"] = Json::Value::UInt(ssize / blockSize);
+    volume["blockCount"] = Json::Value::UInt(providerSize / blockSize);
     volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
     volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
     volume["partitions"] = arr;

@@ -154,12 +154,13 @@ namespace bdfs
   }
 
 
-  AsyncResultPtr<Json::Value> BdKademlia::QueryStorage(const char * query)
+  AsyncResultPtr<Json::Value> BdKademlia::QueryStorage(const char * query, size_t limit)
   {
     assert(query);
 
     BdObject::CArgs args;
     args["query"] = std::string(query);
+    args["limit"] = Json::Value::UInt(limit);
 
     auto result = std::make_shared<AsyncResult<Json::Value>>();
     bool rtn = this->Call("Query", args,
