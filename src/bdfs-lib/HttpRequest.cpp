@@ -125,12 +125,18 @@ namespace bdfs
     bool tryingRelays = this->config->ActiveRelay() < 0;
     if (this->config->ActiveRelay() >= static_cast<int>(relays.size()))
     {
+#ifdef DEBUG_HTTP_RELAY
+      printf("HttpRequest::ExecuteImpl: activeRelay=%d activeEp=%d\n", this->config->ActiveRelay(), this->config->ActiveRelayEndpoint());
+#endif      
       rtn = this->ExecuteImpl();
     }
     else
     {
       while (this->config->ActiveRelay() < static_cast<int>(relays.size()))
       {
+#ifdef DEBUG_HTTP_RELAY
+        printf("HttpRequest::ExecuteImpl: trying activeRelay=%d activeEp=%d\n", this->config->ActiveRelay(), this->config->ActiveRelayEndpoint());
+#endif
         rtn = this->ExecuteImpl();
         if (!tryingRelays)
         {
@@ -150,7 +156,7 @@ namespace bdfs
         }
 
         if (this->config->ActiveRelay() < 0 ||
-            this->config->ActiveRelayEndpoint() >= static_cast<int>(relays[this->config->ActiveRelay()].endpoints.size()))
+            this->config->ActiveRelayEndpoint() >= static_cast<int>(relays[this->config->ActiveRelay()].endpoints.size()) - 1)
         {
           do
           {
@@ -165,6 +171,10 @@ namespace bdfs
         }
       }
     }
+
+#ifdef DEBUG_HTTP_RELAY
+    printf("HttpRequest::ExecuteImpl: curl_code=%d\n", rtn);
+#endif
 
     completeCallback(rtn != CURLE_OK);
   }

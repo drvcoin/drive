@@ -49,13 +49,14 @@ using namespace bdfs;
 static bdfs::HttpConfig defaultConfig;
 
 #define SENDRECV_TIMEOUT 30
+#define MAX_RECV_TIMEOUT 300
 
 
 std::unique_ptr<char[]> ReceiveBdcp(UnixDomainSocket *socket)
 {
   uint32_t length;
  
-  if (socket != nullptr && socket->RecvMessage(&length, sizeof(uint32_t)) <= 0)
+  if (socket != nullptr && socket->RecvMessage(&length, sizeof(uint32_t), MAX_RECV_TIMEOUT) <= 0)
   {
     socket->Close();
     return nullptr;
@@ -89,7 +90,7 @@ std::unique_ptr<char[]> SendReceive(const std::vector<std::string> &args, bdcp::
   else
   {
     returnBuff = ReceiveBdcp(&socket);
-    if(buff == nullptr)
+    if(returnBuff == nullptr)
     {
       printf("Error: Unable to readresponse from bdfsclient daemon.\n");
       exit(0);
