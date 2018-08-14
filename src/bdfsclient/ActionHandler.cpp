@@ -162,7 +162,7 @@ namespace dfs
     };
     
     Volume *pVolume = volume.release();
-    ubd_register(nbdPath.c_str(), pVolume->DataSize(), &ops, (void *)pVolume);
+    ubd_register(nbdPath.c_str(), pVolume->DataSize(), pVolume->GetTimeout(), &ops, (void *)pVolume);
     
     int counter = 10;
     while(!nbd_ready(nbdPath.c_str()) && counter--)

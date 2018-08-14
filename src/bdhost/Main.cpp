@@ -88,6 +88,8 @@ static void init_kad()
           printf("WARNING: failed to find any relays.\n");
         }
 
+        hostInfo.relays.clear();
+
         for (auto ptr : relays)
         {
           hostInfo.relays.push_back(*ptr);
