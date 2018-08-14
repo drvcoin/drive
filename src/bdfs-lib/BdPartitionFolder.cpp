@@ -36,10 +36,10 @@ namespace bdfs
   }
 
 
-  AsyncResultPtr<std::shared_ptr<BdPartition>> BdPartitionFolder::CreatePartition(const char * contract, uint32_t blockSize)
+  AsyncResultPtr<std::shared_ptr<BdPartition>> BdPartitionFolder::CreatePartition(const std::string & reserveId, uint32_t blockSize)
   {
     BdObject::CArgs args;
-    args["contract"] = contract;
+    args["reserveId"] = reserveId;
     args["block"] = Json::Value::UInt(blockSize);
 
     auto result = std::make_shared<AsyncResult<std::shared_ptr<BdPartition>>>();
@@ -66,23 +66,23 @@ namespace bdfs
   }
 
 
-    AsyncResultPtr<bool> BdPartitionFolder::ReservePartition(const uint64_t size)
+    AsyncResultPtr<std::string> BdPartitionFolder::ReservePartition(const uint64_t size)
     {
       BdObject::CArgs args;
       args["size"] = size;;
 
-      auto result = std::make_shared<AsyncResult<bool>>();
+      auto result = std::make_shared<AsyncResult<std::string>>();
 
       bool rtn = this->Call("Reserve", args,
-        [result](Json::Value & response, bool error)
+        [result, size](std::string && data, bool error)
         {
-          if (error || !response.isBool())
+          if (error)
           {
-            result->Complete(false);
+            result->Complete(std::string());
           }
           else
           {
-            result->Complete(response.asBool());
+            result->Complete(std::move(data));
           }
         }
       );

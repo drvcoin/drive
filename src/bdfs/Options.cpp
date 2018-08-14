@@ -31,7 +31,7 @@ namespace dfs
   std::string Options::Name;
   uint16_t Options::DataBlocks = 4;
   uint16_t Options::CodeBlocks = 4;
-  uint64_t Options::Size =  1024; // MB;
+  uint64_t Options::Size =  1*1024*1024*1024; // 1GB
   std::string Options::KademliaUrl = "http://192.168.1.101:7800";
   std::vector<std::string> Options::Paths;
   std::vector<std::string> Options::ExternalArgs;
@@ -138,7 +138,8 @@ namespace dfs
       else if (strcmp(arg, "-s") == 0)
       {
         errno = 0;
-        Options::Size = strtoull(argv[++i], nullptr, 10);
+        // Expect size in MB, save in Bytes
+        Options::Size = strtoull(argv[++i], nullptr, 10) * 1024 * 1024;
 
         if (errno)
         {

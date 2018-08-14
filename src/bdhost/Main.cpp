@@ -72,7 +72,7 @@ void PublishStorage()
     // Publish size and reputaiton of host
     auto contract = bdcontract::ContractRepository::Load(bdhost::Options::contract.c_str());
 
-    auto availableSize = (contract->Size()/(1024*1024)) - bdhost::GetReservedSpace();
+    auto availableSize = contract->Size() - bdhost::GetReservedSpace();
 
     auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::contract.c_str(), availableSize, contract->Reputation());
 

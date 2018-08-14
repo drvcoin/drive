@@ -24,6 +24,8 @@
 #include <streambuf>
 #include <json/json.h>
 #include <uuid/uuid.h>
+#include <sys/stat.h>
+
 #include "Options.h"
 #include "Util.h"
 #include "ContractRepository.h"
@@ -61,9 +63,11 @@ namespace bdhost
 
   const char * RESERVED_FILE = "reserved.json";
 
-  uint64_t GetReservedSpace()
+  uint64_t GetReservedSpace(std::string reserve_id)
   {
-    std::ifstream f(RESERVED_FILE);
+    reserve_id = reserve_id == "" ? RESERVED_FILE : reserve_id + "/" + RESERVED_FILE;
+
+    std::ifstream f(reserve_id);
     std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
     Json::Reader reader;
     Json::Value json;
@@ -77,25 +81,33 @@ namespace bdhost
     return json["size"].asUInt();
   }
 
-  bool SetReservedSpace(const uint64_t size)
+  std::string SetReservedSpace(const uint64_t size)
   {
-    static uint64_t contractSize = bdcontract::ContractRepository::Load(bdhost::Options::contract.c_str())->Size()/(1024 * 1024);
+    static uint64_t contractSize = bdcontract::ContractRepository::Load(bdhost::Options::contract.c_str())->Size();
 
-		auto reservedSpace = GetReservedSpace();
+    auto reservedSpace = GetReservedSpace();
 
     if(contractSize < (size + reservedSpace))
     {
       printf("Reserve size exceeds contractSize\n");
-      return false;
+      return "";
     }
 
-		Json::Value json;
-		json["size"] = Json::Value::UInt(size + reservedSpace);
+    Json::Value json;
+    json["size"] = Json::Value::UInt(size + reservedSpace);
 
     std::ofstream out(RESERVED_FILE);
-		out << json.toStyledString();
-		out.close();
+    out << json.toStyledString();
+    out.close();
 
-    return true;
+    std::string reserve_id = uuidgen();
+    mkdir(reserve_id.c_str(), 0755);
+    json["size"] = Json::Value::UInt(size + reservedSpace);
+
+    std::ofstream id_out(reserve_id + "/" + RESERVED_FILE);
+    id_out << json.toStyledString();
+    id_out.close();
+
+    return reserve_id;
   }
 }

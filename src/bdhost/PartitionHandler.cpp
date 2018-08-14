@@ -99,11 +99,12 @@ namespace bdhost
     // TODO: add reference to contract and prevent creation on executed contract
     // TODO: validate consumer and provider identity from contract
 
-    auto contract = bdcontract::ContractRepository::Load(context.parameter("contract"));
-    if (!contract)
+    std::string uuid = context.parameter("reserveId");
+    uint64_t reservedSize = !uuid.empty() ? GetReservedSpace(uuid) : 0;
+    if(reservedSize == 0)
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Contract not found", bdhttp::ErrorCode::CONTRACT_NOT_FOUND);
+      context.writeError("Failed", "Invalid reserveId.", bdhttp::ErrorCode::ARGUMENT_INVALID);
       return;
     }
 
@@ -115,7 +116,7 @@ namespace bdhost
       return;
     }
 
-    uint64_t blockCount = contract->Size() / blockSize;
+    uint64_t blockCount =  reservedSize / blockSize;
 
     if (blockCount == 0)
     {
@@ -123,8 +124,6 @@ namespace bdhost
       context.writeError("Failed", "Block size is too large", bdhttp::ErrorCode::ARGUMENT_INVALID);
       return;
     }
-
-    std::string uuid = uuidgen();
 
     mkdir(uuid.c_str(), 0755);
 
@@ -164,15 +163,13 @@ namespace bdhost
       return;
     }
 
-		if(SetReservedSpace(reserveSize))
-		{
-			PublishStorage();
-      context.writeResponse("true");
-		}
-		else
-		{
-      context.writeResponse("false");
-		}
+    std::string response = SetReservedSpace(reserveSize);
+    if(response != "")
+    {
+      PublishStorage();
+    }
+
+    context.writeResponse(response);
   }
 
 

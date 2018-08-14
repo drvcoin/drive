@@ -124,8 +124,8 @@ namespace dfs
 
 
   bdfs::HostInfo VolumeManager::GetProviderEndpoint(const std::string & name)
-	{
-		bdfs::HostInfo hostInfo;
+  {
+    bdfs::HostInfo hostInfo;
 
     if (kademliaUrl.empty())
     {
@@ -160,9 +160,8 @@ namespace dfs
   bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
   {
     size_t blockSize = 64*1024;
-    size_t providerCount = dataBlocks + codeBlocks;
-    auto providerSize = size * 2 / providerCount;
-    uint64_t ssize = std::numeric_limits<uint64_t>::max();
+    auto providerCount = dataBlocks + codeBlocks;
+    auto providerSize = size / dataBlocks;
 
     std::string query = "type:\"storage\" size:" + std::to_string(providerSize);
 
@@ -197,16 +196,10 @@ namespace dfs
         auto contract = std::make_unique<bdcontract::Contract>();
         contract->SetName(json["contract"].asString());
         contract->SetProvider(json["name"].asString());
-        contract->SetSize(json["size"].asUInt() * 1024 * 1024);
+        contract->SetSize(json["size"].asUInt());
         contract->SetReputation(json["reputation"].asUInt());
-
-        if (contract->Size() > blockSize)
-        {
-          ssize = std::min(contract->Size(), ssize);
-          contracts.emplace_back(std::move(contract));
-        }
+        contracts.emplace_back(std::move(contract));
       }
-
 
       for (size_t i = 0; i < contracts.size(); ++i)
       {
@@ -223,18 +216,30 @@ namespace dfs
 
         auto cfg = new bdfs::HttpConfig();
         cfg->Relays(std::move(ep.relays));
+        providersUsed.emplace(contracts[i]->Provider());
+
         auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
         auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
           session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
 
-        auto reserveResult = folder->ReservePartition(blockSize/(1024)); // convert to MB
-        if (!reserveResult->Wait(folder->GetTimeout()) || !reserveResult->GetResult())
+        std::string reserveId = "";
+        auto reserveResult = folder->ReservePartition(providerSize);
+        if (reserveResult->Wait(folder->GetTimeout()))
         {
-          printf("Failed to reserve space on provider '%s'\n", contracts[i]->Provider().c_str());
-          continue;;
+          auto &buf = reserveResult->GetResult();
+          if(buf.size() > 0)
+          {
+            reserveId = buf;
+          }
         }
 
-        auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
+        if(reserveId == "")
+        {
+          printf("Failed to reserve space on provider '%s'\n", contracts[i]->Provider().c_str());
+          continue;
+        }
+
+        auto result = folder->CreatePartition(reserveId, blockSize);
         if (!result->Wait(folder->GetTimeout()) || !result->GetResult())
         {
           continue;
@@ -247,17 +252,16 @@ namespace dfs
         partition["provider"] = contracts[i]->Provider();
 
         partitionsArray.append(partition);
-        providersUsed.emplace(contracts[i]->Provider());
 
-        if(providersUsed.size() == providerCount)
+        if(partitionsArray.size() == providerCount)
         {
           break;
         }
       }
 
-    } while(++retryCount <= 3 && providersUsed.size() != providerCount);
+    } while(++retryCount <= 3 && partitionsArray.size() != providerCount);
 
-    if(providersUsed.size() != providerCount)
+    if(partitionsArray.size() != providerCount)
     {
       printf("Failed to reserve and create partition on desired providers\n");
       //TODO: Unreserve/delete partitions from the partial providers used
@@ -266,7 +270,7 @@ namespace dfs
 
     Json::Value volume;
     volume["blockSize"] = Json::Value::UInt(blockSize);
-    volume["blockCount"] = Json::Value::UInt(ssize / blockSize);
+    volume["blockCount"] = Json::Value::UInt(providerSize / blockSize);
     volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
     volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
     volume["partitions"] = partitionsArray;
