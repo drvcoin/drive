@@ -84,5 +84,11 @@ namespace dfs
 
     return false;
   }
+
+
+  uint32_t Partition::GetTimeout() const
+  {
+    return ref->GetTimeout();
+  }
 }
 

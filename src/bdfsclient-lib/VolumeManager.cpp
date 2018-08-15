@@ -161,6 +161,7 @@ namespace dfs
   {
     size_t blockSize = 64*1024;
     auto providerSize = size / dataBlocks;
+    auto providerCount = dataBlocks + codeBlocks;
 
     std::string query = "type:\"storage\" size:" + std::to_string(providerSize);
 
@@ -269,7 +270,7 @@ namespace dfs
 
     Json::Value volume;
     volume["blockSize"] = Json::Value::UInt(blockSize);
-    volume["blockCount"] = Json::Value::UInt(providerSize * 1024 * 1024 / blockSize);
+    volume["blockCount"] = Json::Value::UInt(providerSize / blockSize);
     volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
     volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
     volume["partitions"] = partitionsArray;

@@ -173,7 +173,7 @@ namespace bdfs
     }
 
 #ifdef DEBUG_HTTP_RELAY
-    printf("HttpRequest::ExecuteImpl: curl_code=%d\n", rtn);
+    printf("HttpRequest::ExecuteImpl: curl_code=%d activeRelay=%d activeEp=%d\n", rtn, this->config->ActiveRelay(), this->config->ActiveRelayEndpoint());
 #endif
 
     completeCallback(rtn != CURLE_OK);
