@@ -42,7 +42,7 @@ LIBS = \
 	libbdfs.a \
   libbdcontract.a \
 	libjson.a \
-  $(ROOT)/../ubd/out/lib/ubd.a \
+  $(ROOT)/../ubd/out/bin/ubd.a \
   $(ROOT)/../cm256/out/lib/cm256.a
 
 
