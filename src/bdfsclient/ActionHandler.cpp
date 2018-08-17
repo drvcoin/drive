@@ -49,11 +49,17 @@ namespace dfs
   // ubd callbacks  
   static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
   {
+#ifdef __APPLE__
+    printf("xmp_read: offset=%lld size=%lld\n", offset, size);
+#endif
     return ((Volume*)context)->ReadDecrypt(buf, size, offset) ? 0 : -1;
   }
 
   static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
   {
+#ifdef __APPLE__
+    printf("xmp_write: offset=%lld size=%lld\n", offset, size);
+#endif
     return ((Volume*)context)->WriteEncrypt(buf, size, offset) ? 0 : -1;
   }
 

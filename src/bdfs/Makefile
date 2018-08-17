@@ -42,8 +42,13 @@ LIBS = \
   $(ROOT)/../cm256/out/lib/cm256.a
 
 TARGET = drive
-CCFLAGS = -std=c++17  -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib
+CCFLAGS = -std=c++17  -I$(ROOT)/../ubd/out/inc -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib -I$(ROOT)/../cm256/out/inc 
 
 SYSLIBS = -lcrypto -lcurl -ldl -pthread
+
+ifeq ($(OSTYPE),darwin)
+CCFLAGS += -I/usr/local/opt/openssl/include -I$(ROOT)/../nbd-osx/nbd
+LDFLAGS += -L/usr/local/opt/openssl/lib
+endif
 
 include $(ROOT)/Cpp.mk

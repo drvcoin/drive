@@ -22,22 +22,30 @@
 
 ROOT = $(realpath ..)
 
+include $(ROOT)/Config.mk
+
 DIRS = \
 	config \
 	jsoncpp \
-	mongoose \
 	bdcontract-lib \
-	bdcontract \
 	bdfs-lib \
 	bdfsclient-lib \
 	bdfs \
 	bdfsclient \
+
+ifneq ($(OSTYPE),darwin)
+
+DIRS += \
+	mongoose \
+	bdcontract \
 	httpserver \
 	bdhost \
 	bdkad \
 	service \
 	tools \
 	setup \
+
+endif
 
 .PHONY: all clean $(DIRS)
 

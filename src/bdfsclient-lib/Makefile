@@ -39,6 +39,10 @@ SRCS = \
 
 CCFLAGS =  -std=c++17 -fPIC -I../jsoncpp/include -I../mongoose -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../bdcontract-lib -I../bdfs-lib
 
+ifeq ($(OSTYPE),darwin)
+CCFLAGS += -I/usr/local/opt/openssl/include
+endif
+
 ifneq ($(DEBUG_HTTP),)
 CCFLAGS += -DDEBUG_HTTP
 endif

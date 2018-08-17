@@ -29,13 +29,26 @@ BINDIR = $(OUTDIR)/bin
 CFGDIR = $(OUTDIR)/cfg
 PKGDIR = $(OUTDIR)/package
 
+ifeq ($(OSTYPE),)
+THISOSTYPE := $(shell uname)
+ifeq ($(THISOSTYPE),Linux)
+OSTYPE = linux
+SOEXT = so
+else
+ifeq ($(THISOSTYPE),Darwin)
+OSTYPE = darwin
+SOEXT = dylib
+endif
+endif
+endif
+
 ifneq ($(TARGETLIB),)
 TARGETNAME = $(TARGETLIB)
 TARGETFILENAME = $(TARGETNAME).a
 else
 ifneq ($(TARGETSO),)
 TARGETNAME = $(TARGETSO)
-TARGETFILENAME = $(TARGETNAME).so
+TARGETFILENAME = $(TARGETNAME).$(SOEXT)
 else
 TARGETNAME = $(TARGETEXE)
 TARGETFILENAME = $(TARGETNAME)

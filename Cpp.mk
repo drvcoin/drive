@@ -31,7 +31,7 @@ DEPS = $(patsubst %,$(OBJDIR)/%,$(_DEPS1))
 HDRS = $(patsubst %,$(INCDIR)/%,$(HEADERS))
 
 OUTLIB = $(patsubst %,$(BINDIR)/%.a,$(TARGETLIB))
-OUTSO  = $(patsubst %,$(BINDIR)/%.so,$(TARGETSO))
+OUTSO  = $(patsubst %,$(BINDIR)/%.$(SOEXT),$(TARGETSO))
 OUTEXE = $(patsubst %,$(BINDIR)/%,$(TARGETEXE))
 
 CCFLAGS += -g -Wall
