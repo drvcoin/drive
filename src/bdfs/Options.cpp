@@ -23,6 +23,8 @@
 #include "Options.h"
 
 #include <string.h>
+#include <fstream>
+#include <streambuf>
 #include <stdarg.h>
 #include <json/json.h>
 
@@ -98,37 +100,18 @@ namespace dfs
 
   void Options::ReadConfig()
   {
-    static const char * configFile = "/etc/drive/bdfs.conf";
+    std::ifstream cfg("/etc/drive/bdfs.conf");
+    std::string data((std::istreambuf_iterator<char>(cfg)),
+                 std::istreambuf_iterator<char>());
 
-    FILE * file = fopen(configFile, "r");
-    if (!file)
+    if(!data.size())
     {
       return;
     }
 
-    size_t size = BUFSIZ;
-    char * buffer = static_cast<char *>(malloc(size));
-    size_t offset = 0;
-
-    size_t bytes;
-    while ((bytes = fread(buffer + offset, 1, size - offset, file)) == size - offset)
-    {
-      char * buf = static_cast<char *>(realloc(buffer, size + BUFSIZ));
-      if (!buf)
-      {
-        break;
-      }
-
-      buffer = buf;
-      offset = size;
-      size += BUFSIZ;
-    }
-
-    fclose(file);
-
     Json::Reader reader;
     Json::Value json;
-    if (!reader.parse(buffer, offset + bytes, json, false) ||
+    if (!reader.parse(data.c_str(), data.size(), json, false) ||
         !json.isObject())
     {
       return;
@@ -155,7 +138,7 @@ namespace dfs
 
     if(json["size"].isIntegral())
     {
-      Options::Size = json["size"].asUInt();
+      Options::Size = json["size"].asUInt()*1024*1024;
     }
 
   }

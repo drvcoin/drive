@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <signal.h>
 #include <sstream>
+#include <streambuf>
+#include <fstream>
 
 #include "cm256.h"
 #include "UnixDomainSocket.h"
@@ -46,19 +48,40 @@ void signalHandler(int signum)
 
 int main(int argc, char * * argv)
 {
-  if (argc > 1)
+  std::ifstream cfg("/etc/drive/bdfs.conf");
+  std::string data((std::istreambuf_iterator<char>(cfg)),
+               std::istreambuf_iterator<char>());
+
+  if(!data.size())
   {
-    VolumeManager::kademliaUrl.push_back(argv[1]);
+    return 0;
+  }
+
+  Json::Reader reader;
+  Json::Value json;
+  if (!reader.parse(data.c_str(), data.size(), json, false) ||
+      !json.isObject())
+  {
+    return 0;
+  }
+
+  if(json["kademlia"].isArray())
+  {
+    for(int i = 0; i < json["kademlia"].size(); i++)
+    {
+      auto kd = json["kademlia"][i].asString();
+      VolumeManager::kademliaUrl.emplace_back(kd);
+    }
   }
 
   signal(SIGINT, signalHandler);
   signal(SIGTERM, signalHandler);
-  
+
   if (cm256_init()) {
     exit(1);
   }
-  
-	auto nbdPaths = execCmd("ls -1 /dev/nbd*");
+
+  auto nbdPaths = execCmd("ls -1 /dev/nbd*");
   std::stringstream ss;
   ss.str(nbdPaths);
   std::string path;
@@ -66,7 +89,7 @@ int main(int argc, char * * argv)
   {
     ActionHandler::AddNbdPath(path);
   }
-  
+
   if(!client.Start())
   {
     printf("Error: Failed to start processing thread.\n");
