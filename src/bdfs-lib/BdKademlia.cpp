@@ -65,6 +65,7 @@ namespace bdfs
     bool rtn = this->Call("SetValue", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isBool())
         {
           result->Complete(false);
@@ -92,6 +93,7 @@ namespace bdfs
     bool rtn = this->Call("GetValue", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isString())
         {
           result->Complete(Buffer());
@@ -138,6 +140,7 @@ namespace bdfs
     bool rtn = this->Call("Publish", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isBool())
         {
           result->Complete(false);
@@ -165,6 +168,7 @@ namespace bdfs
     bool rtn = this->Call("Query", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isArray())
         {
           result->Complete(Json::Value());
@@ -204,6 +208,7 @@ namespace bdfs
     bool rtn = this->Call("Publish", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isBool())
         {
           result->Complete(false);
@@ -283,6 +288,7 @@ namespace bdfs
     bool rtn = this->Call("Query", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isArray())
         {
           result->Complete(std::vector<RelayInfo>());

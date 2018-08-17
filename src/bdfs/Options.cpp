@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdarg.h>
+#include <json/json.h>
 
 namespace dfs
 {
@@ -32,7 +33,7 @@ namespace dfs
   uint16_t Options::DataBlocks = 4;
   uint16_t Options::CodeBlocks = 4;
   uint64_t Options::Size =  1*1024*1024*1024; // 1GB
-  std::string Options::KademliaUrl = "http://192.168.1.101:7800";
+  std::vector<std::string> Options::KademliaUrl;
   std::vector<std::string> Options::Paths;
   std::vector<std::string> Options::ExternalArgs;
 
@@ -95,8 +96,74 @@ namespace dfs
     exit(format == NULL ? 0 : 1);
   }
 
+  void Options::ReadConfig()
+  {
+    static const char * configFile = "/etc/drive/bdfs.conf";
+
+    FILE * file = fopen(configFile, "r");
+    if (!file)
+    {
+      return;
+    }
+
+    size_t size = BUFSIZ;
+    char * buffer = static_cast<char *>(malloc(size));
+    size_t offset = 0;
+
+    size_t bytes;
+    while ((bytes = fread(buffer + offset, 1, size - offset, file)) == size - offset)
+    {
+      char * buf = static_cast<char *>(realloc(buffer, size + BUFSIZ));
+      if (!buf)
+      {
+        break;
+      }
+
+      buffer = buf;
+      offset = size;
+      size += BUFSIZ;
+    }
+
+    fclose(file);
+
+    Json::Reader reader;
+    Json::Value json;
+    if (!reader.parse(buffer, offset + bytes, json, false) ||
+        !json.isObject())
+    {
+      return;
+    }
+
+    if(json["kademlia"].isArray())
+    {
+      for(int i = 0; i < json["kademlia"].size(); i++)
+      {
+        auto kd = json["kademlia"][i].asString();
+        Options::KademliaUrl.emplace_back(kd);
+      }
+    }
+
+    if(json["codeBlocks"].isIntegral())
+    {
+      Options::CodeBlocks = json["codeBlocks"].asUInt();
+    }
+
+    if(json["dataBlocks"].isIntegral())
+    {
+      Options::DataBlocks = json["dataBlocks"].asUInt();
+    }
+
+    if(json["size"].isIntegral())
+    {
+      Options::Size = json["size"].asUInt();
+    }
+
+  }
+
   void Options::Init(int argc, char ** argv)
   {
+    ReadConfig();
+
     for (int i = 1; i < argc; i++)
     {
       char * arg = argv[i];
@@ -148,7 +215,7 @@ namespace dfs
       }
       else if (strcmp(arg, "-k") == 0)
       {
-        Options::KademliaUrl = argv[++i];
+        Options::KademliaUrl.insert(Options::KademliaUrl.begin(), argv[++i]);
       }
       else if (arg[0] == '-')
       {

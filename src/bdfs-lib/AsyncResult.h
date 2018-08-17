@@ -73,6 +73,9 @@ namespace bdfs
       }
     }
 
+    bool HasError() const { return this->hasError; }
+    void SetError(bool error) { this->hasError = error; }
+
     template<typename V>
     void Complete(V && value)
     {
@@ -95,6 +98,8 @@ namespace bdfs
     T result = {};
 
     DeleteDelegate customDelete;
+
+    bool hasError;
   };
 
 

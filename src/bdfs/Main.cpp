@@ -312,6 +312,12 @@ int main(int argc, char * * argv)
 {
   Options::Init(argc, argv);
 
+  if(Options::KademliaUrl.size() == 0)
+  {
+    printf("Kademlia url's not found.\n");
+    return 0;
+  }
+
   VolumeManager::kademliaUrl = Options::KademliaUrl;
 
   HandleOptions();

@@ -48,7 +48,7 @@ int main(int argc, char * * argv)
 {
   if (argc > 1)
   {
-    VolumeManager::kademliaUrl = argv[1];
+    VolumeManager::kademliaUrl.push_back(argv[1]);
   }
 
   signal(SIGINT, signalHandler);
