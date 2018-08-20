@@ -20,30 +20,24 @@
 # SOFTWARE.
 #
 
-ROOT = $(realpath ..)
+ROOT = $(realpath ../../..)
 
-DIRS = \
-	config \
-	jsoncpp \
-	mongoose \
-	bdcontract-lib \
-	bdcontract \
-	bdfs-lib \
-	bdfsclient-lib \
-	bdfs \
-	bdfsclient \
-	httpserver \
-	bdhost \
-	bdkad \
-	service \
-	tools \
-	setup \
+include $(ROOT)/Config.mk
 
-.PHONY: all clean $(DIRS)
+COPY = \
+  bdhostd \
+  bdhost.service
 
-all: $(DIRS)
+COPY_ = $(patsubst %,$(OUTDIR)/bin/%,$(COPY))
 
-clean: $(DIRS)
+all: mkdir $(COPY_)
 
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+$(COPY_): $(OUTDIR)/bin/%: %
+	@echo "copy: $@"
+	@cp -f $< $@
+
+mkdir:
+	@mkdir -p $(OUTDIR)/bin
+
+clean:
+	@for d in $(COPY_); do ( rm -f $$d ); done

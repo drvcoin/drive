@@ -20,24 +20,13 @@
 # SOFTWARE.
 #
 
-ROOT = $(realpath ..)
+ROOT = $(realpath ../..)
+
+include $(ROOT)/Config.mk
 
 DIRS = \
-	config \
-	jsoncpp \
-	mongoose \
-	bdcontract-lib \
-	bdcontract \
-	bdfs-lib \
-	bdfsclient-lib \
-	bdfs \
-	bdfsclient \
-	httpserver \
-	bdhost \
-	bdkad \
-	service \
-	tools \
-	setup \
+  bdkad \
+  bdhost \
 
 .PHONY: all clean $(DIRS)
 

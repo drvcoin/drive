@@ -20,30 +20,37 @@
 # SOFTWARE.
 #
 
-ROOT = $(realpath ..)
+ROOT = $(realpath ../../..)
 
-DIRS = \
-	config \
-	jsoncpp \
-	mongoose \
-	bdcontract-lib \
-	bdcontract \
-	bdfs-lib \
-	bdfsclient-lib \
-	bdfs \
-	bdfsclient \
-	httpserver \
-	bdhost \
-	bdkad \
-	service \
-	tools \
-	setup \
+include $(ROOT)/Config.mk
 
-.PHONY: all clean $(DIRS)
+all:
+	@echo Done $(PACKAGE_VERSION)
 
-all: $(DIRS)
+VPATH = $(BINDIR) $(CFGDIR)
 
-clean: $(DIRS)
+TARGET = drive-bdhost
 
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+PKGCFG = \
+  control
+
+PKG = \
+  prerm \
+  postrm \
+  preinst \
+  postinst
+
+BIN = \
+  bdhost \
+  bdhostd \
+
+LIBPRI = \
+
+SVC = \
+  bdhost.service \
+
+CFG = \
+#  default_contacts.json \
+#  bdkad.conf \
+
+include $(ROOT)/Setup.mk
