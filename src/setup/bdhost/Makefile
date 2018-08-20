@@ -47,7 +47,7 @@ BIN = \
   bdhostd \
   bdrelay-client \
 
-LIBPRI = \
+LIB = \
   libquic.so \
   libboringssl.so \
 

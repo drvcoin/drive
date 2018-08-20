@@ -21,6 +21,7 @@
 */
 
 #include "Partition.h"
+#include "Options.h"
 
 #include <memory.h>
 #include <sys/stat.h>
@@ -33,8 +34,10 @@ namespace bdhost
     blockSize(blockSize),
     partitionMap(blockCount)
   {
-    mkdir(this->partitionId.c_str(), 0777);
-    partitionMapFile = this->partitionId + "/.partmap";
+    partitionPath = std::string(WORK_DIR) + this->partitionId;
+
+    mkdir(partitionPath.c_str(), 0777);
+    partitionMapFile = partitionPath + "/.partmap";
     FILE * fr = fopen(partitionMapFile.c_str(), "r");
     if (fr != NULL)
     {
@@ -69,7 +72,7 @@ namespace bdhost
     if (partitionMap[index])
     {
       char fileName[1024];
-      snprintf(fileName, sizeof(fileName), "%s/block-%lx", partitionId.c_str(), index);
+      snprintf(fileName, sizeof(fileName), "%s/block-%lx", partitionPath.c_str(), index);
       struct stat st;
       return_false_if(stat(fileName, &st) == -1);
       return_false_if((size_t)st.st_size != blockSize);
@@ -81,7 +84,7 @@ namespace bdhost
   {
     uint8_t buffer[4096] = {0};
     char fileName[1024];
-    snprintf(fileName, sizeof(fileName), "%s/block-%lx", partitionId.c_str(), index);
+    snprintf(fileName, sizeof(fileName), "%s/block-%lx", partitionPath.c_str(), index);
     FILE * file = fopen(fileName, "r+");
     if (file == NULL)
     {
@@ -114,7 +117,7 @@ namespace bdhost
     if (partitionMap[index])
     {
       char fileName[1024];
-      snprintf(fileName, sizeof(fileName), "%s/block-%lx", partitionId.c_str(), index);
+      snprintf(fileName, sizeof(fileName), "%s/block-%lx", partitionPath.c_str(), index);
       FILE * file = fopen(fileName, "r");
       return_false_if_msg(file == NULL, "Error: failed to open file '%s' for reading.\n", fileName);
       fseek(file, offset, SEEK_SET);
@@ -141,7 +144,7 @@ namespace bdhost
     }
 
     char fileName[1024];
-    snprintf(fileName, sizeof(fileName), "%s/block-%lx", partitionId.c_str(), index);
+    snprintf(fileName, sizeof(fileName), "%s/block-%lx", partitionPath.c_str(), index);
     FILE * file = fopen(fileName, "r+");
     if (file == NULL)
     {
