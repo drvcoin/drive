@@ -26,6 +26,7 @@ include $(ROOT)/Config.mk
 
 DIRS := \
   bdkad \
+  bdhost \
 
 .PHONY: all clean $(DIRS)
 

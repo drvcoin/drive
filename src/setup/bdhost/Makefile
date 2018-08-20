@@ -20,19 +20,37 @@
 # SOFTWARE.
 #
 
-ROOT = $(realpath ../..)
+ROOT = $(realpath ../../..)
 
 include $(ROOT)/Config.mk
 
-DIRS = \
-  bdkad \
+all:
+	@echo Done $(PACKAGE_VERSION)
+
+VPATH = $(BINDIR) $(CFGDIR)
+
+TARGET = drive-bdhost
+
+PKGCFG = \
+  control
+
+PKG = \
+  prerm \
+  postrm \
+  preinst \
+  postinst
+
+BIN = \
   bdhost \
+  bdhostd \
 
-.PHONY: all clean $(DIRS)
+LIBPRI = \
 
-all: $(DIRS)
+SVC = \
+  bdhost.service \
 
-clean: $(DIRS)
+CFG = \
+#  default_contacts.json \
+#  bdkad.conf \
 
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+include $(ROOT)/Setup.mk

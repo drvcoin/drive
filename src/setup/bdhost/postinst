@@ -1,0 +1,11 @@
+#!/bin/sh
+mkdir -p /var/drive/bdhost
+mkdir -p /etc/drive
+
+systemctl daemon-reload
+
+systemctl enable bdhost.service
+
+
+
+#service bdhost restart

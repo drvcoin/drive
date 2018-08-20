@@ -20,19 +20,24 @@
 # SOFTWARE.
 #
 
-ROOT = $(realpath ../..)
+ROOT = $(realpath ../../..)
 
 include $(ROOT)/Config.mk
 
-DIRS = \
-  bdkad \
-  bdhost \
+COPY = \
+  bdhostd \
+  bdhost.service
 
-.PHONY: all clean $(DIRS)
+COPY_ = $(patsubst %,$(OUTDIR)/bin/%,$(COPY))
 
-all: $(DIRS)
+all: mkdir $(COPY_)
 
-clean: $(DIRS)
+$(COPY_): $(OUTDIR)/bin/%: %
+	@echo "copy: $@"
+	@cp -f $< $@
 
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+mkdir:
+	@mkdir -p $(OUTDIR)/bin
+
+clean:
+	@for d in $(COPY_); do ( rm -f $$d ); done

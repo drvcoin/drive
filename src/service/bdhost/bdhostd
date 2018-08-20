@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/bin/bdhost -p 3000 -e http://localhost:7800 -r /var/drive/bdhost/contracts -c contract-1

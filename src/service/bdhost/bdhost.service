@@ -1,0 +1,10 @@
+[Unit]
+Description=Drive Host Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/bdhostd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

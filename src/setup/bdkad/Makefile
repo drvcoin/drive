@@ -45,7 +45,7 @@ BIN = \
   bdkadd \
 
 LIBPRI = \
-  libjson.so \
+#  libjson.so \
 
 SVC = \
   bdkad.service \
