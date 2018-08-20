@@ -27,7 +27,9 @@ include $(ROOT)/Config.mk
 all:
 	@echo Done $(PACKAGE_VERSION)
 
-VPATH = $(BINDIR) $(CFGDIR)
+RELAYPATH = $(ROOT)/../bdrelay/out/bin
+QUICPATH = $(ROOT)/../libquic/out/linux.x86_64/release/bin
+VPATH = $(BINDIR) $(CFGDIR) $(RELAYPATH) $(QUICPATH)
 
 TARGET = drive-bdhost
 
@@ -43,14 +45,16 @@ PKG = \
 BIN = \
   bdhost \
   bdhostd \
+  bdrelay-client \
 
 LIBPRI = \
+  libquic.so \
+  libboringssl.so \
 
 SVC = \
   bdhost.service \
 
 CFG = \
-#  default_contacts.json \
-#  bdkad.conf \
+  bdhost.conf \
 
 include $(ROOT)/Setup.mk
