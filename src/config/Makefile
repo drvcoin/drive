@@ -27,6 +27,7 @@ include $(ROOT)/Config.mk
 COPY = \
   default_contacts.json \
   bdkad.conf \
+  bdhost.conf \
 
 COPY_ = $(patsubst %,$(OUTDIR)/cfg/%,$(COPY))
 

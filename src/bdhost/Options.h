@@ -25,6 +25,8 @@
 #include <string>
 #include <stdint.h>
 
+#define WORK_DIR "/var/drive/"
+
 namespace bdhost
 {
   class Options
