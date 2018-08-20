@@ -38,7 +38,7 @@ namespace bdhost
 
   std::string Options::repo = ".";
 
-  std::string Options::contract = "contract";
+  uint64_t Options::size = 1LLU * 1024 * 1024 * 1024; // 1GB
 
   std::string Options::relayExe = "./relay-client";
 
@@ -63,10 +63,9 @@ namespace bdhost
     printf("  -p <port>       port to listen on (default:80)\n");
     printf("  -e <url>        endpoint url to register (default:http://localhost)\n");
     printf("  -k <kad>        kademlia service url (default:http://localhost:7800)\n");
+    printf("  -s <size>       storage size to publish in bytes (default: 1073741824)\n");
     printf("  -a <relay_exe>  relay executable path (default:relay-client)\n");
     printf("  -m <max_relays> maximum relay count (default:0)\n");
-    printf("  -r <path>       root path of contract repository (default:.)\n");
-    printf("  -c <contract>   relevant contract name inside repository (default:contract)\n");
     printf("\n");
     exit(message == NULL ? 0 : 1);
   }
@@ -84,10 +83,14 @@ namespace bdhost
         assert_argument_index(++i, "path");
         repo = argv[i];
       }
-      else if (strcmp(argv[i], "-c") == 0)
+      else if (strcmp(argv[i], "-s") == 0)
       {
-        assert_argument_index(++i, "contract");
-        contract = argv[i];
+        assert_argument_index(++i, "size");
+        size = static_cast<uint64_t>(strtoull(argv[i], nullptr, 10));
+        if (size < 1024 * 1024)
+        {
+          Usage("size is invalid or too small: %llu\n", (unsigned long long)size);
+        }
       }
       else if (strcmp(argv[i], "-n") == 0)
       {

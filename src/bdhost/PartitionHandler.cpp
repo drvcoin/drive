@@ -27,8 +27,8 @@
 #include <chrono>
 #include <string>
 #include <assert.h>
-#include "Global.h"
 #include "Util.h"
+#include "Options.h"
 #include "HttpHandlerRegister.h"
 #include "Partition.h"
 #include "PartitionHandler.h"
@@ -93,15 +93,8 @@ namespace bdhost
     // TODO: add reference to contract and prevent creation on executed contract
     // TODO: validate consumer and provider identity from contract
 
-    assert(g_contracts);
-
-    auto contract = g_contracts->LoadContract(context.parameter("contract"));
-    if (!contract)
-    {
-      context.setResponseCode(500);
-      context.writeError("Failed", "Contract not found", bdhttp::ErrorCode::CONTRACT_NOT_FOUND);
-      return;
-    }
+    // TODO: client is using contract id for the request which we do not use anymore
+    //       change the client to use reservation id
 
     uint64_t blockSize = static_cast<uint64_t>(strtoull(context.parameter("block"), nullptr, 10));
     if (blockSize == 0)
@@ -111,7 +104,7 @@ namespace bdhost
       return;
     }
 
-    uint64_t blockCount = contract->Size() / blockSize;
+    uint64_t blockCount = Options::size / blockSize;
 
     if (blockCount == 0)
     {

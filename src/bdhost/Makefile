@@ -28,7 +28,6 @@ include $(ROOT)/Config.mk
 
 SRCS = \
 	BitSet.cpp \
-	Global.cpp \
 	Main.cpp \
 	Options.cpp \
 	Partition.cpp \

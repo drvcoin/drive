@@ -34,7 +34,6 @@
 #include "BdKademlia.h"
 #include "RelayManager.h"
 #include "HostInfo.h"
-#include "Global.h"
 
 /*
 static int Init(const std::string & name)
@@ -112,9 +111,7 @@ static void init_kad()
         }
 
         // Publish size and reputaiton of host
-        auto contract = bdhost::g_contracts->LoadContract(bdhost::Options::contract.c_str());
-
-        auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::contract.c_str(), contract->Size()/(1024*1024), contract->Reputation());
+        auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), bdhost::Options::size / (1024*1024), 0);
 
         if (!result_query->Wait() || !result_query->GetResult())
         {
@@ -135,8 +132,6 @@ int main(int argc, const char ** argv)
   bdhost::Options::Init(argc, argv);
 
   init_kad();
-
-  bdhost::g_contracts = new bdcontract::ContractRepository(bdhost::Options::repo.c_str());
 
   bdhttp::HttpModule::Initialize();
 
