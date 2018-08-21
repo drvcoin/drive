@@ -66,7 +66,7 @@ namespace bdhost
   {
     reserve_id = reserve_id == "" ? RESERVED_FILE : reserve_id + "/" + RESERVED_FILE;
 
-    std::ifstream f(WORK_DIR + reserve_id);
+    std::ifstream f(Options::workDir + reserve_id);
     std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
     Json::Reader reader;
     Json::Value json;
@@ -93,13 +93,13 @@ namespace bdhost
     Json::Value json;
     json["size"] = Json::Value::UInt(size + reservedSpace);
 
-    std::string reservePath = std::string(WORK_DIR) + std::string(RESERVED_FILE);
+    std::string reservePath = Options::workDir + std::string(RESERVED_FILE);
     std::ofstream out(reservePath.c_str());
     out << json.toStyledString();
     out.close();
 
     std::string reserveId = uuidgen();
-    reservePath = std::string(WORK_DIR) + reserveId;
+    reservePath = Options::workDir + reserveId;
     mkdir(reservePath.c_str(), 0755);
     json["size"] = Json::Value::UInt(size + reservedSpace);
 

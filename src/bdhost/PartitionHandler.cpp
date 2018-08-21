@@ -126,7 +126,7 @@ namespace bdhost
       return;
     }
 
-    std::string uuidPath = std::string(WORK_DIR) + uuid;
+    std::string uuidPath = Options::workDir + uuid;
     mkdir(uuidPath.c_str(), 0755);
 
     FILE * config = fopen((uuidPath + "/.config").c_str(), "w");
@@ -184,7 +184,7 @@ namespace bdhost
 
     if (!name.empty() && name != "." && name != "..")
     {
-      std::string namePath = std::string(WORK_DIR) + name;
+      std::string namePath = Options::workDir + name;
       if (stat(namePath.c_str(), &st) == 0)
       {
         if (S_ISDIR(st.st_mode))
