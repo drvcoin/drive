@@ -1,0 +1,19 @@
+#!/bin/sh
+mkdir -p /var/drive/bdhost
+mkdir -p /etc/drive
+
+systemctl daemon-reload
+
+systemctl enable bdhost.service
+
+bdhostconf="/etc/drive/bdhost.conf"
+nodename=$(uuidgen)
+hostaddr=$(hostname -I | cut -d' ' -f1)
+
+sed -i "s/<NODENAME>/$nodename/" $bdhostconf
+sed -i "s/<HOSTADDR>/$hostaddr/" $bdhostconf
+
+echo "Current Drive Host configurations are following, change it if neccessary in $bdhostconf"
+cat $bdhostconf
+
+service bdhost restart

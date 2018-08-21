@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ -f /etc/drive/bdhost.conf ]; then
+  source /etc/drive/bdhost.conf
+fi
+
+/usr/bin/bdhost -n $NAME -p $PORT -e $ENDPOINT -k $KADEMLIA -a /usr/bin/bdrelay-client -m 2 -s $SIZE

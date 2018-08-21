@@ -34,31 +34,8 @@
 #include "BdKademlia.h"
 #include "RelayManager.h"
 #include "HostInfo.h"
-#include "Global.h"
-#include "ContractRepository.h"
 #include "Util.h"
-/*
-static int Init(const std::string & name)
-{
-  mkdir(name.c_str(), 0755);
 
-  FILE * config = fopen((name + "/.config").c_str(), "w");
-  if (!config)
-  {
-    return -1;
-  }
-
-  uint64_t blockCount = 256;
-  uint64_t blockSize = 1*1024*1024;
-
-  fwrite(&blockCount, 1, sizeof(blockCount), config);
-  fwrite(&blockSize, 1, sizeof(blockSize), config);
-
-  fclose(config);
-
-  return 0;
-}
-*/
 void PublishStorage()
 {
     bdfs::HttpConfig config;
@@ -70,11 +47,9 @@ void PublishStorage()
     auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
 
     // Publish size and reputaiton of host
-    auto contract = bdcontract::ContractRepository::Load(bdhost::Options::contract.c_str());
+    auto availableSize = bdhost::Options::size - bdhost::GetReservedSpace();
 
-    auto availableSize = contract->Size() - bdhost::GetReservedSpace();
-
-    auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::contract.c_str(), availableSize, contract->Reputation());
+    auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), availableSize, 0);
 
     if (!result_query->Wait() || !result_query->GetResult())
     {

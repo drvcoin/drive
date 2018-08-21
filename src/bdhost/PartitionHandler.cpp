@@ -28,6 +28,7 @@
 #include <string>
 #include <assert.h>
 #include "Util.h"
+#include "Options.h"
 #include "HttpHandlerRegister.h"
 #include "Partition.h"
 #include "PartitionHandler.h"
@@ -125,9 +126,10 @@ namespace bdhost
       return;
     }
 
-    mkdir(uuid.c_str(), 0755);
+    std::string uuidPath = std::string(WORK_DIR) + uuid;
+    mkdir(uuidPath.c_str(), 0755);
 
-    FILE * config = fopen((uuid + "/.config").c_str(), "w");
+    FILE * config = fopen((uuidPath + "/.config").c_str(), "w");
     if (!config)
     {
       context.setResponseCode(500);
@@ -179,20 +181,25 @@ namespace bdhost
     struct stat st = {0};
     uint64_t blockCount = 0;
     uint64_t blockSize = 0;
-    if (!name.empty() && name != "." && name != ".." && stat(name.c_str(), &st) == 0)
-    {
-      if (S_ISDIR(st.st_mode))
-      {
-        FILE * config = fopen((name + "/.config").c_str(), "r");
-        if (config)
-        {
-          if (fread(&blockCount, 1, sizeof(uint64_t), config) == sizeof(uint64_t) &&
-              fread(&blockSize, 1, sizeof(uint64_t), config) == sizeof(uint64_t))
-          {
-            found = true;
-          }
 
-          fclose(config);
+    if (!name.empty() && name != "." && name != "..")
+    {
+      std::string namePath = std::string(WORK_DIR) + name;
+      if (stat(namePath.c_str(), &st) == 0)
+      {
+        if (S_ISDIR(st.st_mode))
+        {
+          FILE * config = fopen((namePath + "/.config").c_str(), "r");
+          if (config)
+          {
+            if (fread(&blockCount, 1, sizeof(uint64_t), config) == sizeof(uint64_t) &&
+                fread(&blockSize, 1, sizeof(uint64_t), config) == sizeof(uint64_t))
+            {
+              found = true;
+            }
+
+            fclose(config);
+          }
         }
       }
     }
@@ -247,7 +254,7 @@ namespace bdhost
     memset(buffer, 0, size);
 
     Partition partition{name.c_str(), blockCount, blockSize};
-    
+
     if (partition.ReadBlock(blockId, buffer, size, offset))
     {
       context.addResponseHeader("Content-Type", "application/octet-stream");

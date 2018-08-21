@@ -36,7 +36,9 @@ namespace bdkad
 
     static uint16_t http_port;
 
-    static std::string k_root;
+    static std::string k_nodeName;
+    static std::string k_rootPath;
+    static std::string k_defcontPath;
 
     static uint32_t k_addr;
     static uint16_t k_port;

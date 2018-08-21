@@ -25,6 +25,8 @@
 #include <string>
 #include <stdint.h>
 
+#define WORK_DIR "/var/drive/"
+
 namespace bdhost
 {
   class Options
@@ -40,7 +42,7 @@ namespace bdhost
 
     static std::string repo;
 
-    static std::string contract;
+    static uint64_t size;
 
     static std::string relayExe;
 

@@ -28,7 +28,6 @@
 
 #include "Options.h"
 #include "Util.h"
-#include "ContractRepository.h"
 
 namespace bdhost
 {
@@ -67,7 +66,7 @@ namespace bdhost
   {
     reserve_id = reserve_id == "" ? RESERVED_FILE : reserve_id + "/" + RESERVED_FILE;
 
-    std::ifstream f(reserve_id);
+    std::ifstream f(WORK_DIR + reserve_id);
     std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
     Json::Reader reader;
     Json::Value json;
@@ -83,31 +82,31 @@ namespace bdhost
 
   std::string SetReservedSpace(const uint64_t size)
   {
-    static uint64_t contractSize = bdcontract::ContractRepository::Load(bdhost::Options::contract.c_str())->Size();
-
     auto reservedSpace = GetReservedSpace();
 
-    if(contractSize < (size + reservedSpace))
+    if(bdhost::Options::size < (size + reservedSpace))
     {
-      printf("Reserve size exceeds contractSize\n");
+      printf("Reserve size exceeds size of host.\n");
       return "";
     }
 
     Json::Value json;
     json["size"] = Json::Value::UInt(size + reservedSpace);
 
-    std::ofstream out(RESERVED_FILE);
+    std::string reservePath = std::string(WORK_DIR) + std::string(RESERVED_FILE);
+    std::ofstream out(reservePath.c_str());
     out << json.toStyledString();
     out.close();
 
-    std::string reserve_id = uuidgen();
-    mkdir(reserve_id.c_str(), 0755);
+    std::string reserveId = uuidgen();
+    reservePath = std::string(WORK_DIR) + reserveId;
+    mkdir(reservePath.c_str(), 0755);
     json["size"] = Json::Value::UInt(size + reservedSpace);
 
-    std::ofstream id_out(reserve_id + "/" + RESERVED_FILE);
+    std::ofstream id_out(reservePath + "/" + RESERVED_FILE);
     id_out << json.toStyledString();
     id_out.close();
 
-    return reserve_id;
+    return reserveId;
   }
 }

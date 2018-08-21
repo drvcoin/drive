@@ -78,10 +78,10 @@ namespace bdkad
   }
 
 
-  static void InitKey(const char * rootPath)
+  static void InitKey(const char * nodeName, const char * rootPath)
   {
     sha1_t digest;
-    Digest::Compute(rootPath, strlen(rootPath), digest);
+    Digest::Compute(nodeName, strlen(nodeName), digest);
 
     KeyPtr key = std::make_shared<Key>(digest);
 
@@ -96,7 +96,7 @@ namespace bdkad
 
   void KademliaModule::Initialize()
   {
-    printf("[KAD] Initialize kademlia node=%s addr=%08X port=%u\n", bdkad::Options::k_root.c_str(), bdkad::Options::k_addr, bdkad::Options::k_port);
+    printf("[KAD] Initialize kademlia node=%s addr=%08X port=%u\n", bdkad::Options::k_nodeName.c_str(), bdkad::Options::k_addr, bdkad::Options::k_port);
 
     SetVerbose("on");
 
@@ -104,10 +104,10 @@ namespace bdkad
     self.addr = bdkad::Options::k_addr;
     self.port = bdkad::Options::k_port;
 
-    mkdir(bdkad::Options::k_root.c_str(), 0755);
-    InitKey(bdkad::Options::k_root.c_str());
+    mkdir(bdkad::Options::k_rootPath.c_str(), 0755);
+    InitKey(bdkad::Options::k_nodeName.c_str(), bdkad::Options::k_rootPath.c_str());
 
-    Config::Initialize(bdkad::Options::k_root.c_str());
+    Config::Initialize(bdkad::Options::k_rootPath.c_str(),bdkad::Options::k_defcontPath.c_str());
 
     Key selfKey{Config::NodeId()->Buffer()};
 
