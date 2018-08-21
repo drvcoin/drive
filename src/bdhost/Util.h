@@ -37,4 +37,6 @@ namespace bdhost
   uint64_t ntohll(uint64_t val);
 
   std::string uuidgen();
+  uint64_t GetReservedSpace(std::string reserve_id = "");
+  std::string SetReservedSpace(const uint64_t size);
 }

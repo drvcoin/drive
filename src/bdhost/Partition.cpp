@@ -34,7 +34,7 @@ namespace bdhost
     blockSize(blockSize),
     partitionMap(blockCount)
   {
-    partitionPath = std::string(WORK_DIR) + this->partitionId;
+    partitionPath = Options::workDir + this->partitionId;
 
     mkdir(partitionPath.c_str(), 0777);
     partitionMapFile = partitionPath + "/.partmap";

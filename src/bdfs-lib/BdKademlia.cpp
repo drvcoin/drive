@@ -65,6 +65,7 @@ namespace bdfs
     bool rtn = this->Call("SetValue", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isBool())
         {
           result->Complete(false);
@@ -92,6 +93,7 @@ namespace bdfs
     bool rtn = this->Call("GetValue", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isString())
         {
           result->Complete(Buffer());
@@ -122,7 +124,6 @@ namespace bdfs
   AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const char * contract, const size_t storage, const size_t reputation = 1)
   {
     assert(node);
-    assert(storage);
 
     Json::Value value;
     value["type"] = "storage";
@@ -139,6 +140,7 @@ namespace bdfs
     bool rtn = this->Call("Publish", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isBool())
         {
           result->Complete(false);
@@ -166,6 +168,7 @@ namespace bdfs
     bool rtn = this->Call("Query", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isArray())
         {
           result->Complete(Json::Value());
@@ -205,6 +208,7 @@ namespace bdfs
     bool rtn = this->Call("Publish", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isBool())
         {
           result->Complete(false);
@@ -284,6 +288,7 @@ namespace bdfs
     bool rtn = this->Call("Query", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isArray())
         {
           result->Complete(std::vector<RelayInfo>());

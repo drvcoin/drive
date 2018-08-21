@@ -38,6 +38,8 @@ namespace bdhost
 
   std::string Options::repo = ".";
 
+  std::string Options::workDir = "/var/drive/";
+
   uint64_t Options::size = 1LLU * 1024 * 1024 * 1024; // 1GB
 
   std::string Options::relayExe = "./relay-client";
@@ -78,12 +80,7 @@ namespace bdhost
 
     for (int i = 1; i < argc; ++i)
     {
-      if (strcmp(argv[i], "-r") == 0)
-      {
-        assert_argument_index(++i, "path");
-        repo = argv[i];
-      }
-      else if (strcmp(argv[i], "-s") == 0)
+      if (strcmp(argv[i], "-s") == 0)
       {
         assert_argument_index(++i, "size");
         size = static_cast<uint64_t>(strtoull(argv[i], nullptr, 10));
@@ -101,6 +98,11 @@ namespace bdhost
       {
         assert_argument_index(++i, "url");
         endpoint = argv[i];
+      }
+      else if (strcmp(argv[i], "-w") == 0)
+      {
+        assert_argument_index(++i, "work_dir");
+        workDir = std::string(argv[i]) + "/";
       }
       else if (strcmp(argv[i], "-k") == 0)
       {

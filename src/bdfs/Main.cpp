@@ -163,8 +163,8 @@ void HandleOptions()
           exit(0);
         }
 
-			  int timeout = 10;	
-				while(!nbd_ready(respParams[0].c_str()) && timeout--)
+        int timeout = 10;	
+        while(!nbd_ready(respParams[0].c_str()) && timeout--)
         {
           sleep(1);
         }
@@ -236,8 +236,8 @@ void HandleOptions()
           exit(0);
         }
 
-			  int timeout = 10;	
-				while(!nbd_ready(respParams[0].c_str()) && timeout--)
+        int timeout = 10;	
+        while(!nbd_ready(respParams[0].c_str()) && timeout--)
         {
           sleep(1);
         }
@@ -275,7 +275,7 @@ void HandleOptions()
         printf("Creating volume '%s'...\n",Options::Name.c_str());
         bool success = VolumeManager::CreateVolume(Options::Name, Options::Size, Options::DataBlocks, Options::CodeBlocks);
         if(success)
-          printf("Config file : %s.config\n",Options::Name.c_str());
+          printf("Config file : /etc/drive/%s/%s.config\n", Options::Name.c_str(), Options::Name.c_str());
         else
           printf("Error creating volume '%s'.\n", Options::Name.c_str());
       }
@@ -311,6 +311,12 @@ void HandleOptions()
 int main(int argc, char * * argv)
 {
   Options::Init(argc, argv);
+
+  if(Options::KademliaUrl.size() == 0)
+  {
+    printf("Kademlia url's not found.\n");
+    return 0;
+  }
 
   VolumeManager::kademliaUrl = Options::KademliaUrl;
 

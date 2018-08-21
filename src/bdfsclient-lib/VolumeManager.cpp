@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <json/json.h>
 #include <thread>
+#include <unordered_set>
 
 #include "VolumeManager.h"
 #include "BdTypes.h"
@@ -44,7 +45,7 @@ namespace dfs
 {
   bdfs::HttpConfig VolumeManager::defaultConfig;
 
-  std::string VolumeManager::kademliaUrl;
+  std::vector<std::string> VolumeManager::kademliaUrl;
 
   std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name)
   {
@@ -108,12 +109,12 @@ namespace dfs
         return nullptr;
       }
 
-			auto cfg = new bdfs::HttpConfig();
-			cfg->Relays(std::move(ep.relays));
-			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
-			auto name = config["name"].asString();
-			auto path = "host://Partitions/" + name;
-			auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
+      auto cfg = new bdfs::HttpConfig();
+      cfg->Relays(std::move(ep.relays));
+      auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
+      auto name = config["name"].asString();
+      auto path = "host://Partitions/" + name;
+      auto partition = std::static_pointer_cast<bdfs::BdPartition>(session->CreateObject("Partition", path.c_str(), name.c_str()));
 
       volume->SetPartition(i, new Partition(partition, blockCount, blockSize));
     }
@@ -123,34 +124,38 @@ namespace dfs
 
 
   bdfs::HostInfo VolumeManager::GetProviderEndpoint(const std::string & name)
-	{
-		bdfs::HostInfo hostInfo;
+  {
+    bdfs::HostInfo hostInfo;
 
-    if (kademliaUrl.empty())
+    if (kademliaUrl.size() == 0)
     {
       return hostInfo;
     }
 
-    auto session = bdfs::BdSession::CreateSession(kademliaUrl.c_str(), &defaultConfig);
-    auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(
-      session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
-    auto result = kademlia->GetValue(("ep:" + name).c_str());
-
-    if (!result->Wait())
+    for(auto &kd : kademliaUrl)
     {
-      printf("Failed to connect to kademlia.\n");
+      auto session = bdfs::BdSession::CreateSession(kd.c_str(), &defaultConfig);
+      auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(
+        session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
+      auto result = kademlia->GetValue(("ep:" + name).c_str());
+
+      if (!result->Wait() || result->HasError())
+      {
+        printf("Failed to connect to kademlia.\n");
+        continue;
+      }
+
+      auto & buffer = result->GetResult();
+      if (buffer.Size() == 0)
+      {
+        printf("Failed to find endpoint for provider '%s'\n", name.c_str());
+        return hostInfo;
+      }
+
+      std::string hostInfoStr = std::string(static_cast<const char *>(buffer.Buf()), buffer.Size());
+      hostInfo.FromString(hostInfoStr);
       return hostInfo;
     }
-
-    auto & buffer = result->GetResult();
-    if (buffer.Size() == 0)
-    {
-      printf("Failed to find endpoint for provider '%s'\n", name.c_str());
-      return hostInfo;
-    }
-
-		std::string hostInfoStr = std::string(static_cast<const char *>(buffer.Buf()), buffer.Size());
-		hostInfo.FromString(hostInfoStr);
 
     return hostInfo;
   }
@@ -160,82 +165,129 @@ namespace dfs
   {
     size_t blockSize = 64*1024;
     auto providerSize = size / dataBlocks;
+    auto providerCount = dataBlocks + codeBlocks;
+    std::unordered_set<std::string> providersUsed;
+    Json::Value partitionsArray;
 
     std::string query = "type:\"storage\" size:" + std::to_string(providerSize);
 
-    auto session = bdfs::BdSession::CreateSession(kademliaUrl.c_str(), &defaultConfig);
-    auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(
-      session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
-    auto qresult = kademlia->QueryStorage(query.c_str(), dataBlocks + codeBlocks);
-
-    if (!qresult->Wait())
+    for(auto &kd : kademliaUrl)
     {
-      printf("Failed to connect to kademlia.\n");
-      return false;
-    }
+      auto session = bdfs::BdSession::CreateSession(kd.c_str(), &defaultConfig);
+      auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(
+        session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
 
-    auto &jsonArray = qresult->GetResult();
-    if (jsonArray.isNull())
-    {
-      printf("Failed to query for providers.\n");
-      return false;
-    }
-
-    std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
-    for(auto &json : jsonArray)
-    {
-      auto contract = std::make_unique<bdcontract::Contract>();
-      contract->SetName(json["contract"].asString());
-      contract->SetProvider(json["name"].asString());
-      contract->SetSize(json["size"].asUInt() * 1024 * 1024);
-      contract->SetReputation(json["reputation"].asUInt());
-
-      contracts.emplace_back(std::move(contract));
-    }
-
-    if (contracts.size() < dataBlocks + codeBlocks)
-    {
-      printf("Not enough providers.\n");
-      return false;
-    }
-
-    Json::Value arr;
-
-    for (size_t i = 0; i < dataBlocks + codeBlocks; ++i)
-    {
-      auto ep = GetProviderEndpoint(contracts[i]->Provider());
-      if (ep.url.empty())
+      int retryCount = 1;
+      bool kadActive = false;
+      do
       {
-        return false;
-      }
+        auto qresult = kademlia->QueryStorage(query.c_str(), providerCount * retryCount);
 
-			auto cfg = new bdfs::HttpConfig();
-			cfg->Relays(std::move(ep.relays));
-			auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
-      auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
-        session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
-      auto result = folder->CreatePartition(contracts[i]->Name().c_str(), blockSize);
-			if (!result->Wait(folder->GetTimeout()) || !result->GetResult())
+        if (!qresult->Wait() || qresult->HasError())
+        {
+          printf("Failed to connect to kademlia.\n");
+          break;
+        }
+
+        kadActive = true;
+
+        auto &jsonArray = qresult->GetResult();
+        if (jsonArray.isNull())
+        {
+          printf("Failed to query for providers.\n");
+          return false;
+        }
+
+        std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
+        for(auto &json : jsonArray)
+        {
+          auto contract = std::make_unique<bdcontract::Contract>();
+          contract->SetName(json["contract"].asString());
+          contract->SetProvider(json["name"].asString());
+          contract->SetSize(json["size"].asUInt());
+          contract->SetReputation(json["reputation"].asUInt());
+          contracts.emplace_back(std::move(contract));
+        }
+
+        for (size_t i = 0; i < contracts.size(); ++i)
+        {
+          if(providersUsed.find(contracts[i]->Provider()) != providersUsed.end())
+          {
+            continue;
+          }
+
+          auto ep = GetProviderEndpoint(contracts[i]->Provider());
+          if (ep.url.empty())
+          {
+            continue;
+          }
+
+          auto cfg = new bdfs::HttpConfig();
+          cfg->Relays(std::move(ep.relays));
+          providersUsed.emplace(contracts[i]->Provider());
+
+          auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
+          auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
+            session->CreateObject("PartitionFolder", "host://Partitions", "Partitions"));
+
+          std::string reserveId = "";
+          auto reserveResult = folder->ReservePartition(providerSize);
+          if (reserveResult->Wait(folder->GetTimeout()))
+          {
+            auto &buf = reserveResult->GetResult();
+            if(buf.size() > 0)
+            {
+              reserveId = buf;
+            }
+          }
+
+          if(reserveId == "")
+          {
+            printf("Failed to reserve space on provider '%s'\n", contracts[i]->Provider().c_str());
+            continue;
+          }
+
+          auto result = folder->CreatePartition(reserveId, blockSize);
+          if (!result->Wait(folder->GetTimeout()) || !result->GetResult())
+          {
+            continue;
+          }
+
+          auto obj = result->GetResult();
+
+          Json::Value partition;
+          partition["name"] = obj->Name();
+          partition["provider"] = contracts[i]->Provider();
+
+          partitionsArray.append(partition);
+
+          if(partitionsArray.size() == providerCount)
+          {
+            break;
+          }
+        }
+
+      } while(++retryCount <= 3 && partitionsArray.size() != providerCount);
+
+      if(kadActive)
       {
-        printf("Failed to create on partition from contract '%s'\n", contracts[i]->Name().c_str());
-        return false;
+        break;
       }
-
-      auto obj = result->GetResult();
-
-      Json::Value partition;
-      partition["name"] = obj->Name();
-      partition["provider"] = contracts[i]->Provider();
-
-      arr.append(partition);
     }
-    
+
+    if(partitionsArray.size() != providerCount)
+    {
+      printf("Failed to reserve and create partition on desired providers\n");
+      //TODO: Unreserve/delete partitions from the partial providers used
+      return false;
+    }
+
     Json::Value volume;
     volume["blockSize"] = Json::Value::UInt(blockSize);
-    volume["blockCount"] = Json::Value::UInt(providerSize * 1024 * 1024 / blockSize);
+    volume["blockCount"] = Json::Value::UInt(providerSize / blockSize);
     volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
     volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
-    volume["partitions"] = arr;
+    volume["partitions"] = partitionsArray;
 
     std::string result = volume.toStyledString();
 

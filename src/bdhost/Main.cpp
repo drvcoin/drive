@@ -34,30 +34,28 @@
 #include "BdKademlia.h"
 #include "RelayManager.h"
 #include "HostInfo.h"
+#include "Util.h"
 
-/*
-static int Init(const std::string & name)
+void PublishStorage()
 {
-  mkdir(name.c_str(), 0755);
+    bdfs::HttpConfig config;
+    config.ConnectTimeout(5);
+    config.RequestTimeout(5);
 
-  FILE * config = fopen((name + "/.config").c_str(), "w");
-  if (!config)
-  {
-    return -1;
-  }
+    auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config);
 
-  uint64_t blockCount = 256;
-  uint64_t blockSize = 1*1024*1024;
+    auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
 
-  fwrite(&blockCount, 1, sizeof(blockCount), config);
-  fwrite(&blockSize, 1, sizeof(blockSize), config);
+    // Publish size and reputaiton of host
+    auto availableSize = bdhost::Options::size - bdhost::GetReservedSpace();
 
-  fclose(config);
+    auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), availableSize, 0);
 
-  return 0;
+    if (!result_query->Wait() || !result_query->GetResult())
+    {
+      printf("WARNING: failed to publish storage and reputation to kademlia\n");
+    }
 }
-*/
-
 
 static void init_kad()
 {
@@ -110,13 +108,7 @@ static void init_kad()
           printf("WARNING: failed to publish endpoints to kademlia\n");
         }
 
-        // Publish size and reputaiton of host
-        auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), bdhost::Options::size / (1024*1024), 0);
-
-        if (!result_query->Wait() || !result_query->GetResult())
-        {
-          printf("WARNING: failed to publish storage and reputation to kademlia\n");
-        }
+        PublishStorage();
 
         sleep(24 * 60 * 60);
       }

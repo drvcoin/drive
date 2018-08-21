@@ -23,7 +23,10 @@
 #include "Options.h"
 
 #include <string.h>
+#include <fstream>
+#include <streambuf>
 #include <stdarg.h>
+#include <json/json.h>
 
 namespace dfs
 {
@@ -31,8 +34,8 @@ namespace dfs
   std::string Options::Name;
   uint16_t Options::DataBlocks = 4;
   uint16_t Options::CodeBlocks = 4;
-  uint64_t Options::Size =  1024; // MB;
-  std::string Options::KademliaUrl = "http://192.168.1.101:7800";
+  uint64_t Options::Size =  1*1024*1024*1024; // 1GB
+  std::vector<std::string> Options::KademliaUrl;
   std::vector<std::string> Options::Paths;
   std::vector<std::string> Options::ExternalArgs;
 
@@ -56,7 +59,7 @@ namespace dfs
     printf("Options: create\n");
     printf("\n");
     printf("  -n {name}      Volume name\n");
-    printf("  -s {size}      Volume size in MB\n");
+    printf("  -s {size}      Volume size in Bytes\n");
     printf("  -k {url}       Kademlia server\n");
     printf("  -d {blocks}    Data blocks (1 .. 255)\n");
     printf("  -c {blocks}    Code blocks (1 .. 255)\n");
@@ -95,8 +98,78 @@ namespace dfs
     exit(format == NULL ? 0 : 1);
   }
 
+  uint64_t Options::ParseSizeStr(const std::string & ssize)
+  {
+    uint64_t s = 0;
+    std::string units = ssize.substr(ssize.size()-2, 2);
+    s = atoi(ssize.c_str());
+    if(units == "KB")
+    {
+      s *= 1024;
+    }
+    else if(units == "MB")
+    {
+      s *= 1024 * 1024;
+    }
+    else if(units == "GB")
+    {
+      s *= 1024 * 1024 * 1024;
+    }
+    return s;
+  }
+
+  void Options::ReadConfig()
+  {
+    std::ifstream cfg("/etc/drive/bdfs.conf");
+    std::string data((std::istreambuf_iterator<char>(cfg)),
+                 std::istreambuf_iterator<char>());
+
+    if(!data.size())
+    {
+      return;
+    }
+
+    Json::Reader reader;
+    Json::Value json;
+    if (!reader.parse(data.c_str(), data.size(), json, false) ||
+        !json.isObject())
+    {
+      return;
+    }
+
+    if(json["kademlia"].isArray())
+    {
+      for(int i = 0; i < json["kademlia"].size(); i++)
+      {
+        auto kd = json["kademlia"][i].asString();
+        Options::KademliaUrl.emplace_back(kd);
+      }
+    }
+
+    if(json["codeBlocks"].isIntegral())
+    {
+      Options::CodeBlocks = json["codeBlocks"].asUInt();
+    }
+
+    if(json["dataBlocks"].isIntegral())
+    {
+      Options::DataBlocks = json["dataBlocks"].asUInt();
+    }
+
+    if(json["size"].isIntegral())
+    {
+      Options::Size = json["size"].asUInt();
+    }
+    else if(json["size"].isString())
+    {
+      Options::Size = ParseSizeStr(json["size"].asString());
+    }
+  }
+
   void Options::Init(int argc, char ** argv)
   {
+    ReadConfig();
+
     for (int i = 1; i < argc; i++)
     {
       char * arg = argv[i];
@@ -138,6 +211,7 @@ namespace dfs
       else if (strcmp(arg, "-s") == 0)
       {
         errno = 0;
+        // Expect size bytes
         Options::Size = strtoull(argv[++i], nullptr, 10);
 
         if (errno)
@@ -147,7 +221,7 @@ namespace dfs
       }
       else if (strcmp(arg, "-k") == 0)
       {
-        Options::KademliaUrl = argv[++i];
+        Options::KademliaUrl.insert(Options::KademliaUrl.begin(), argv[++i]);
       }
       else if (arg[0] == '-')
       {
