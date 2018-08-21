@@ -59,7 +59,7 @@ namespace dfs
     printf("Options: create\n");
     printf("\n");
     printf("  -n {name}      Volume name\n");
-    printf("  -s {size}      Volume size in MB\n");
+    printf("  -s {size}      Volume size in Bytes\n");
     printf("  -k {url}       Kademlia server\n");
     printf("  -d {blocks}    Data blocks (1 .. 255)\n");
     printf("  -c {blocks}    Code blocks (1 .. 255)\n");
@@ -96,6 +96,26 @@ namespace dfs
     printf("  -?|h           Show this help screen\n");
     printf("\n");
     exit(format == NULL ? 0 : 1);
+  }
+
+  uint64_t Options::ParseSizeStr(const std::string & ssize)
+  {
+    uint64_t s = 0;
+    std::string units = ssize.substr(ssize.size()-2, 2);
+    s = atoi(ssize.c_str());
+    if(units == "KB")
+    {
+      s *= 1024;
+    }
+    else if(units == "MB")
+    {
+      s *= 1024 * 1024;
+    }
+    else if(units == "GB")
+    {
+      s *= 1024 * 1024 * 1024;
+    }
+    return s;
   }
 
   void Options::ReadConfig()
@@ -138,9 +158,12 @@ namespace dfs
 
     if(json["size"].isIntegral())
     {
-      Options::Size = json["size"].asUInt()*1024*1024;
+      Options::Size = json["size"].asUInt();
     }
-
+    else if(json["size"].isString())
+    {
+      Options::Size = ParseSizeStr(json["size"].asString());
+    }
   }
 
   void Options::Init(int argc, char ** argv)
@@ -188,8 +211,8 @@ namespace dfs
       else if (strcmp(arg, "-s") == 0)
       {
         errno = 0;
-        // Expect size in MB, save in Bytes
-        Options::Size = strtoull(argv[++i], nullptr, 10) * 1024 * 1024;
+        // Expect size bytes
+        Options::Size = strtoull(argv[++i], nullptr, 10);
 
         if (errno)
         {

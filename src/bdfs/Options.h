@@ -43,5 +43,6 @@ namespace dfs
 
     static void Init(int argc, char ** argv);
     static void ReadConfig();
+    static uint64_t ParseSizeStr(const std::string & ssize);
   };
 }
