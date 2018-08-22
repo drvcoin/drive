@@ -25,16 +25,31 @@ ROOT = $(realpath ../..)
 include $(ROOT)/Config.mk
 
 COPY = \
-  default_contacts.json \
-  bdkad.conf \
-  bdhost.conf \
+  bdkad.conf
+
+COPYEX = \
+	default_contacts.json \
+	bdhost.conf
+
+
+ifneq ($(OFFICIAL_BUILD),)
+COPY += $(COPYEX)
+else
+TESTCOPY = $(COPYEX)
+endif
 
 COPY_ = $(patsubst %,$(OUTDIR)/cfg/%,$(COPY))
 
-all: mkdir $(COPY_)
+TESTCOPY_ = $(patsubst %,$(OUTDIR)/cfg/%,$(TESTCOPY))
+
+all: mkdir $(COPY_) $(TESTCOPY_)
+
+$(TESTCOPY_): $(OUTDIR)/cfg/%: %.test
+	@echo "copy: $<"
+	@cp -f $< $@
 
 $(COPY_): $(OUTDIR)/cfg/%: %
-	@echo "copy: $@"
+	@echo "copy: $<"
 	@cp -f $< $@
 
 mkdir:
@@ -42,3 +57,4 @@ mkdir:
 
 clean:
 	@for d in $(COPY_); do ( rm -f $$d ); done
+	@for d in $(TESTCOPY_); do ( rm -f $$d ); done
