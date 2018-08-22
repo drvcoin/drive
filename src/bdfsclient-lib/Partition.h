@@ -42,6 +42,8 @@ namespace dfs
 
     bool Delete();
 
+    uint32_t GetTimeout() const;
+
   private:
 
     uint64_t blockCount;

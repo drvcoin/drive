@@ -23,11 +23,10 @@
 #pragma once
 
 #include "HttpHandler.h"
-
 #include "Kademlia.h"
 
 
-namespace bdhost
+namespace bdkad
 {
   class KademliaHandler : public bdhttp::HttpHandler
   {
@@ -45,5 +44,8 @@ namespace bdhost
 
     void OnGetValue(bdhttp::HttpContext & context);
 
+    void OnPublish(bdhttp::HttpContext & context);
+
+    void OnQuery(bdhttp::HttpContext & context);
   };
 }

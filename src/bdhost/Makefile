@@ -28,11 +28,11 @@ include $(ROOT)/Config.mk
 
 SRCS = \
 	BitSet.cpp \
-	Global.cpp \
 	Main.cpp \
 	Options.cpp \
 	Partition.cpp \
 	PartitionHandler.cpp \
+	RelayManager.cpp \
 	Util.cpp \
 
 VPATH = $(BINDIR)

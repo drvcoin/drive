@@ -41,6 +41,8 @@ namespace bdcontract
 
     std::vector<std::string> GetContractNames() const;
 
+    static std::unique_ptr<Contract> Load(const char * name);;
+
   private:
 
     std::string root;

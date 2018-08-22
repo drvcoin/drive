@@ -36,6 +36,7 @@ SRCS = \
 	BdSession.cpp \
 	BdTypes.cpp \
 	Buffer.cpp \
+	HostInfo.cpp \
 	HttpCookies.cpp \
 	HttpRequest.cpp \
   UnixDomainSocket.cpp \
@@ -45,6 +46,10 @@ CCFLAGS = -I../jsoncpp/include -I../mongoose -fPIC -std=c++17
 
 ifneq ($(DEBUG_HTTP),)
 CCFLAGS += -DDEBUG_HTTP
+endif
+
+ifneq ($(DEBUG_HTTP_RELAY),)
+CCFLAGS += -DDEBUG_HTTP_RELAY
 endif
 
 include $(ROOT)/Cpp.mk

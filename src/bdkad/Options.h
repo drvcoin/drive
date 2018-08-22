@@ -25,7 +25,7 @@
 #include <string>
 #include <stdint.h>
 
-namespace bdhost
+namespace bdkad
 {
   class Options
   {
@@ -34,17 +34,17 @@ namespace bdhost
 
     static std::string name;
 
-    static uint16_t port;
+    static uint16_t http_port;
 
-    static const char * k_root;
+    static std::string k_nodeName;
+    static std::string k_rootPath;
+    static std::string k_defcontPath;
 
     static uint32_t k_addr;
     static uint16_t k_port;
 
-    static uint32_t k_bootaddr;
-    static uint16_t k_bootport;
-
     static bool Usage(const char * message = nullptr, ...);
     static bool Init(int argc, const char ** argv);
+    static bool LoadConfig(const char * path);
   };
 }

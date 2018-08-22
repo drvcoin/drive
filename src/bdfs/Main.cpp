@@ -49,6 +49,7 @@ using namespace bdfs;
 static bdfs::HttpConfig defaultConfig;
 
 #define SENDRECV_TIMEOUT 30
+#define MAX_RECV_TIMEOUT 300
 
 
 std::unique_ptr<char[]> ReceiveBdcp(PiperIPC *ipc)
@@ -245,8 +246,11 @@ int main(int argc, char * * argv)
 {
   Options::Init(argc, argv);
 
-  VolumeManager::defaultConfig.ConnectTimeout(5);
-  VolumeManager::defaultConfig.RequestTimeout(5);
+  if(Options::KademliaUrl.size() == 0)
+  {
+    printf("Kademlia url's not found.\n");
+    return 0;
+  }
 
   VolumeManager::kademliaUrl = Options::KademliaUrl;
 

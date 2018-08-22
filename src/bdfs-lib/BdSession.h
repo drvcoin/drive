@@ -37,20 +37,24 @@ namespace bdfs
     HttpConfig * config;
     std::string base;
     std::string st;
+    bool ownConfig;
+
     std::string __EncodeArgs(BdObject::CArgs & args);
 
     static SharedMutex mutex;
     static HttpConfig defaultConfig;
     static std::map<std::string, std::shared_ptr<BdSession> > sessions;
 
-    BdSession(const char * base, HttpConfig * config);
+    BdSession(const char * base, HttpConfig * config, bool ownConfig);
 
     HttpRequest * CreateRequest(std::string & path, const char * method, BdObject::CArgs & args, Json::Value & data);
 
   public:
     static std::shared_ptr<BdSession> GetSession(const char * base);
     static std::shared_ptr<BdSession> GetSession(const std::string & base);
-    static std::shared_ptr<BdSession> CreateSession(const char * base, HttpConfig * config);
+    static std::shared_ptr<BdSession> CreateSession(const char * base, HttpConfig * config, bool ownConfig = false);
+
+    ~BdSession();
 
     std::string & Base() { return base; }
 
@@ -59,5 +63,7 @@ namespace bdfs
     bool Call(std::string & path, const char * method, BdObject::CArgs & args, const void * body, size_t bodyLen, BdObject::Callback callback);
 
     std::shared_ptr<BdObject> CreateObject(const char * name, const char * path, const char * type);
+
+    uint32_t GetTimeout() const;
   };
 }

@@ -33,7 +33,9 @@
 
 # Editor related temporary files
 *.swp
+*.code-workspace
 .clang_complete
+.vscode
 
 # Generated files
 out

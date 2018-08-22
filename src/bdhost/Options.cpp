@@ -38,6 +38,14 @@ namespace bdhost
 
   std::string Options::repo = ".";
 
+  std::string Options::workDir = "/var/drive/";
+
+  uint64_t Options::size = 1LLU * 1024 * 1024 * 1024; // 1GB
+
+  std::string Options::relayExe = "./relay-client";
+
+  size_t Options::maxRelayCount = 0;
+
 
   bool Options::Usage(const char * message, ...)
   {
@@ -57,7 +65,9 @@ namespace bdhost
     printf("  -p <port>       port to listen on (default:80)\n");
     printf("  -e <url>        endpoint url to register (default:http://localhost)\n");
     printf("  -k <kad>        kademlia service url (default:http://localhost:7800)\n");
-    printf("  -r <path>       root path of contract repository (default:.)\n");
+    printf("  -s <size>       storage size to publish in bytes (default: 1073741824)\n");
+    printf("  -a <relay_exe>  relay executable path (default:relay-client)\n");
+    printf("  -m <max_relays> maximum relay count (default:0)\n");
     printf("\n");
     exit(message == NULL ? 0 : 1);
   }
@@ -70,10 +80,14 @@ namespace bdhost
 
     for (int i = 1; i < argc; ++i)
     {
-      if (strcmp(argv[i], "-r") == 0)
+      if (strcmp(argv[i], "-s") == 0)
       {
-        assert_argument_index(++i, "path");
-        repo = argv[i];
+        assert_argument_index(++i, "size");
+        size = static_cast<uint64_t>(strtoull(argv[i], nullptr, 10));
+        if (size < 1024 * 1024)
+        {
+          Usage("size is invalid or too small: %llu\n", (unsigned long long)size);
+        }
       }
       else if (strcmp(argv[i], "-n") == 0)
       {
@@ -85,15 +99,30 @@ namespace bdhost
         assert_argument_index(++i, "url");
         endpoint = argv[i];
       }
+      else if (strcmp(argv[i], "-w") == 0)
+      {
+        assert_argument_index(++i, "work_dir");
+        workDir = std::string(argv[i]) + "/";
+      }
       else if (strcmp(argv[i], "-k") == 0)
       {
         assert_argument_index(++i, "kad");
         kademlia = argv[i];
       }
+      else if (strcmp(argv[i], "-a") == 0)
+      {
+        assert_argument_index(++i, "relay_exe");
+        relayExe = argv[i];
+      }
       else if (strcmp(argv[i], "-p") == 0)
       {
         assert_argument_index(++i, "port");
         port = static_cast<uint16_t>(atoi(argv[i]));
+      }
+      else if (strcmp(argv[i], "-m") == 0)
+      {
+        assert_argument_index(++i, "max_relays");
+        maxRelayCount = static_cast<size_t>(atoi(argv[i]));
       }
       else
       {

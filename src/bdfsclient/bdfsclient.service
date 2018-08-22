@@ -1,0 +1,10 @@
+[Unit]
+Description=Drive Filesystem Client
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/bdfsclientd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

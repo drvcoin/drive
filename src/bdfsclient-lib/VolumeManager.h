@@ -21,8 +21,10 @@
 */
 
 #include <map>
+#include <vector>
 #include "HttpConfig.h"
 #include "Volume.h"
+#include "HostInfo.h"
 
 namespace dfs
 {
@@ -30,16 +32,17 @@ namespace dfs
   {
   public:
     static std::unique_ptr<Volume> LoadVolume(const std::string &name);
-    static bool CreateVolume(const std::string &volumeName, const std::string &repoName, const uint16_t dataBlocks, const uint16_t codeBlocks);
-    static bool DeleteVolume(const std::string &name);  
-  
-  
+
+    static bool CreateVolume(const std::string &volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks);
+
+    static bool DeleteVolume(const std::string &name);
+
     static bdfs::HttpConfig defaultConfig;
 
-    static std::string kademliaUrl;
+    static std::vector<std::string> kademliaUrl;
 
   private:
 
-    static std::string GetProviderEndpoint(const std::string & name);
+    static bdfs::HostInfo GetProviderEndpoint(const std::string & name);
   };
 }

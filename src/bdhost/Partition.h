@@ -34,6 +34,7 @@ namespace bdhost
   {
   private:
     std::string partitionId;
+    std::string partitionPath;
     uint64_t blockCount;
     size_t blockSize;
     std::string partitionFolder;

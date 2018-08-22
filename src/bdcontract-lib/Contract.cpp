@@ -29,9 +29,9 @@ namespace bdcontract
   {
     Json::Value json;
     json["name"] = this->name;
-    json["consumer"] = this->consumer;
     json["provider"] = this->provider;
     json["size"] = Json::Value::UInt(this->size);
+    json["reputation"] = Json::Value::UInt(this->reputation);
 
     return json.toStyledString();
   }
@@ -44,18 +44,18 @@ namespace bdcontract
     if (!reader.parse(str, len, json, false) ||
         !json.isObject() ||
         !json["name"].isString() ||
-        !json["consumer"].isString() ||
         !json["provider"].isString() ||
-        !json["size"].isIntegral())
+        !json["size"].isIntegral() ||
+        !json["reputation"].isIntegral())
     {
       return nullptr;
     }
 
     auto contract = std::make_unique<Contract>();
     contract->SetName(json["name"].asString());
-    contract->SetConsumer(json["consumer"].asString());
     contract->SetProvider(json["provider"].asString());
     contract->SetSize(json["size"].asUInt());
+    contract->SetReputation(json["reputation"].asUInt());
 
     return std::move(contract);
   }

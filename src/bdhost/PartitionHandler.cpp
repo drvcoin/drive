@@ -27,11 +27,14 @@
 #include <chrono>
 #include <string>
 #include <assert.h>
-#include "Global.h"
 #include "Util.h"
+#include "Options.h"
 #include "HttpHandlerRegister.h"
 #include "Partition.h"
 #include "PartitionHandler.h"
+#include "ContractRepository.h"
+
+extern void PublishStorage();
 
 namespace bdhost
 {
@@ -80,6 +83,10 @@ namespace bdhost
     {
       this->OnCreatePartition(context);
     }
+    else if (action == "Reserve")
+    {
+      this->OnReservePartition(context);
+    }
     else
     {
       context.setResponseCode(500);
@@ -93,13 +100,12 @@ namespace bdhost
     // TODO: add reference to contract and prevent creation on executed contract
     // TODO: validate consumer and provider identity from contract
 
-    assert(g_contracts);
-
-    auto contract = g_contracts->LoadContract(context.parameter("contract"));
-    if (!contract)
+    std::string uuid = context.parameter("reserveId");
+    uint64_t reservedSize = !uuid.empty() ? GetReservedSpace(uuid) : 0;
+    if(reservedSize == 0)
     {
       context.setResponseCode(500);
-      context.writeError("Failed", "Contract not found", bdhttp::ErrorCode::CONTRACT_NOT_FOUND);
+      context.writeError("Failed", "Invalid reserveId.", bdhttp::ErrorCode::ARGUMENT_INVALID);
       return;
     }
 
@@ -111,7 +117,7 @@ namespace bdhost
       return;
     }
 
-    uint64_t blockCount = contract->Size() / blockSize;
+    uint64_t blockCount =  reservedSize / blockSize;
 
     if (blockCount == 0)
     {
@@ -120,11 +126,10 @@ namespace bdhost
       return;
     }
 
-    std::string uuid = uuidgen();
+    std::string uuidPath = Options::workDir + uuid;
+    mkdir(uuidPath.c_str(), 0755);
 
-    mkdir(uuid.c_str(), 0755);
-
-    FILE * config = fopen((uuid + "/.config").c_str(), "w");
+    FILE * config = fopen((uuidPath + "/.config").c_str(), "w");
     if (!config)
     {
       context.setResponseCode(500);
@@ -148,26 +153,53 @@ namespace bdhost
   }
 
 
+  void PartitionHandler::OnReservePartition(bdhttp::HttpContext & context)
+  {
+    // TODO: free reserved space after some timeout
+    // TODO: validate consumer and provider identity from contract
+    uint64_t reserveSize = static_cast<uint64_t>(strtoull(context.parameter("size"), nullptr, 10));
+    if (reserveSize == 0)
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Reserve size should not be 0", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    std::string response = SetReservedSpace(reserveSize);
+    if(response != "")
+    {
+      PublishStorage();
+    }
+
+    context.writeResponse(response);
+  }
+
+
   void PartitionHandler::OnPartitionRequest(bdhttp::HttpContext & context, const std::string & name, const std::string & action)
   {
     bool found = false;
     struct stat st = {0};
     uint64_t blockCount = 0;
     uint64_t blockSize = 0;
-    if (!name.empty() && name != "." && name != ".." && stat(name.c_str(), &st) == 0)
-    {
-      if (S_ISDIR(st.st_mode))
-      {
-        FILE * config = fopen((name + "/.config").c_str(), "r");
-        if (config)
-        {
-          if (fread(&blockCount, 1, sizeof(uint64_t), config) == sizeof(uint64_t) &&
-              fread(&blockSize, 1, sizeof(uint64_t), config) == sizeof(uint64_t))
-          {
-            found = true;
-          }
 
-          fclose(config);
+    if (!name.empty() && name != "." && name != "..")
+    {
+      std::string namePath = Options::workDir + name;
+      if (stat(namePath.c_str(), &st) == 0)
+      {
+        if (S_ISDIR(st.st_mode))
+        {
+          FILE * config = fopen((namePath + "/.config").c_str(), "r");
+          if (config)
+          {
+            if (fread(&blockCount, 1, sizeof(uint64_t), config) == sizeof(uint64_t) &&
+                fread(&blockSize, 1, sizeof(uint64_t), config) == sizeof(uint64_t))
+            {
+              found = true;
+            }
+
+            fclose(config);
+          }
         }
       }
     }
@@ -222,7 +254,7 @@ namespace bdhost
     memset(buffer, 0, size);
 
     Partition partition{name.c_str(), blockCount, blockSize};
-    
+
     if (partition.ReadBlock(blockId, buffer, size, offset))
     {
       context.addResponseHeader("Content-Type", "application/octet-stream");

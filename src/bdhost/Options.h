@@ -40,6 +40,14 @@ namespace bdhost
 
     static std::string repo;
 
+    static std::string workDir;
+
+    static uint64_t size;
+
+    static std::string relayExe;
+
+    static size_t maxRelayCount;
+
     static bool Usage(const char * message = nullptr, ...);
     static bool Init(int argc, const char ** argv);
   };

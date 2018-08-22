@@ -20,50 +20,21 @@
   SOFTWARE.
 */
 
+#include <string>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-
-#include <chrono>
-#include <string>
-#include <assert.h>
 #include <json/json.h>
-#include "Global.h"
+
 #include "HttpHandlerRegister.h"
 #include "KademliaHandler.h"
-
-
-
-#include <stdio.h>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <thread>
-#include <chrono>
-#include <iterator>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include "Contact.h"
-#include "Config.h"
-#include "TransportFactory.h"
-#include "LinuxFileTransport.h"
-#include "TcpTransport.h"
 #include "Digest.h"
-#include "Kademlia.h"
-
-#include <arpa/inet.h>
-
-#include "Options.h"
-#include "Global.h"
 
 
 using namespace kad;
 
 
-
-namespace bdhost
+namespace bdkad
 {
   static const char PATH[] = "/api/host/Kademlia";
 
@@ -114,6 +85,14 @@ namespace bdhost
     {
       this->OnGetValue(context);
     }
+    else if (action == "Publish")
+    {
+      this->OnPublish(context);
+    }
+    else if (action == "Query")
+    {
+      this->OnQuery(context);
+    }
     else
     {
       context.setResponseCode(500);
@@ -124,7 +103,7 @@ namespace bdhost
 
   void KademliaHandler::OnSetValue(bdhttp::HttpContext & context)
   {
-    printf("Kademlia::SetValue\n");
+    printf("Kademlia::OnSetValue\n");
 
     std::string key(context.parameter("key"));
     std::string value(context.parameter("value"));
@@ -144,7 +123,20 @@ namespace bdhost
     uint64_t version = static_cast<uint64_t>(strtoull(context.parameter("version"), nullptr, 10));
     uint32_t ttl = static_cast<uint32_t>(strtoul(context.parameter("ttl"), nullptr, 10));
 
-    printf("%s %s %lu %u\n",key.c_str(), value.c_str(), version, ttl);
+    if (key.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'key' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    if (value.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'value' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
 
     sha1_t digest;
     Digest::Compute(key.c_str(), key.size(), digest);
@@ -160,24 +152,24 @@ namespace bdhost
     memcpy(buffer, value.c_str(), size);
 
     auto data = std::make_shared<Buffer>(buffer, size, false, true);
-    
+
     auto result = AsyncResultPtr(new AsyncResult<bool>());
-    
+
     KademliaHandler::controller->Store(keyptr, data, ttl, version, result);
-    
+
     if (!result->Wait(60000) || !AsyncResultHelper::GetResult<bool>(result.get()))
     {
       printf("ERROR: failed to set value.\n");
       context.setResponseCode(500);
       context.writeError("Failed", "Failed to set value", bdhttp::ErrorCode::GENERIC_ERROR);
-    } 
+    }
 
     context.writeResponse("true");
   }
 
   void KademliaHandler::OnGetValue(bdhttp::HttpContext & context)
   {
-    printf("Kademlia::GetValue\n");
+    printf("Kademlia::OnGetValue\n");
 
     std::string key(context.parameter("key"));
 
@@ -187,6 +179,14 @@ namespace bdhost
     {
       key = json.asString();
     }
+
+    if (key.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'key' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
 
     sha1_t digest;
     Digest::Compute(key.c_str(), key.size(), digest);
@@ -220,5 +220,110 @@ namespace bdhost
     }
   }
 
-}
+  void KademliaHandler::OnPublish(bdhttp::HttpContext & context)
+  {
+    printf("Kademlia::OnPublish\n");
 
+    std::string value(context.parameter("value"));
+
+    Json::Value json;
+    Json::Reader reader;
+    if (reader.parse(value.c_str(), value.size(), json, false) && json.isString())
+    {
+      value = json.asString();
+    }
+
+    if (value.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'value' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    if (!json.isObject() || !json["type"].isString() || !json["name"].isString())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Wrong format of published data", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    std::string keyStr;
+    keyStr = json["type"].asString() + ":" + json["name"].asString();
+
+    sha1_t digest;
+    Digest::Compute(keyStr.c_str(), keyStr.size(), digest);
+    KeyPtr key = std::make_shared<Key>(digest);
+
+    auto data = std::make_shared<Buffer>((uint8_t*)value.c_str(), value.size(), true, true);
+
+    auto result = AsyncResultPtr(new AsyncResult<bool>());
+
+    KademliaHandler::controller->Publish(key, data, 864000, 1, result);
+
+    if (!result->Wait(60000) || !AsyncResultHelper::GetResult<bool>(result.get()))
+    {
+      printf("ERROR: failed to set value.\n");
+      context.setResponseCode(500);
+      context.writeError("Failed", "Failed to set value", bdhttp::ErrorCode::GENERIC_ERROR);
+    }
+
+    context.writeResponse("true");
+  }
+
+  void KademliaHandler::OnQuery(bdhttp::HttpContext & context)
+  {
+    printf("Kademlia::OnQuery\n");
+
+    std::string query(context.parameter("query"));
+    uint32_t limit = static_cast<uint32_t>(strtoul(context.parameter("limit"), nullptr, 10));
+
+    Json::Value json;
+    Json::Reader reader;
+    if (reader.parse(query.c_str(), query.size(), json, false) && json.isString())
+    {
+      query = json.asString();
+    }
+
+    if (query.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'query' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    if (!limit)
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Paramter 'limit' missing or invalid", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    sha1_t digest;
+    Digest::Compute(query.c_str(), query.size(), digest);
+    KeyPtr key = std::make_shared<Key>(digest);
+
+    auto result = AsyncResultPtr(new  AsyncResult<BufferPtr>());
+
+    KademliaHandler::controller->Query(key, query, limit, result);
+
+    if (!result->Wait(60000))
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Internal Error", bdhttp::ErrorCode::GENERIC_ERROR);
+      return;
+    }
+
+    auto buffer = AsyncResultHelper::GetResult<BufferPtr>(result.get());
+
+    if (buffer && buffer->Size() > 0)
+    {
+      printf("RESULT: %s\n", std::string(reinterpret_cast<const char *>(buffer->Data()), buffer->Size()).c_str());
+      context.writeResponse(static_cast<const char *>(buffer->Data()), buffer->Size());
+    }
+    else
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Value not found", bdhttp::ErrorCode::GENERIC_ERROR);
+    }
+  }
+}

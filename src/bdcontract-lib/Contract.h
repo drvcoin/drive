@@ -32,14 +32,14 @@ namespace bdcontract
   public:
 
     const std::string & Name() const        { return this->name; }
-    const std::string & Consumer() const    { return this->consumer; }
     const std::string & Provider() const    { return this->provider; }
     uint64_t Size() const                   { return this->size; }
+    uint32_t Reputation() const             { return this->reputation; }
 
     void SetName(std::string val)           { this->name = std::move(val); }
-    void SetConsumer(std::string val)       { this->consumer = std::move(val); }
     void SetProvider(std::string val)       { this->provider = std::move(val); }
     void SetSize(uint64_t val)              { this->size = val; }
+    void SetReputation(uint32_t val)        { this->reputation = val; }
 
     std::string ToString() const;
 
@@ -50,10 +50,10 @@ namespace bdcontract
 
     std::string name;
 
-    std::string consumer;
-
     std::string provider;
 
     uint64_t size;
+
+    uint32_t reputation;
   };
 }

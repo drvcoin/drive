@@ -24,43 +24,23 @@
 
 #include <memory.h>
 #include <sys/stat.h>
-
-
-
-#include <stdio.h>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include <thread>
-#include <chrono>
-#include <iterator>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include "Contact.h"
+#include <arpa/inet.h>
+
 #include "Config.h"
 #include "TransportFactory.h"
-#include "LinuxFileTransport.h"
 #include "TcpTransport.h"
 #include "Digest.h"
 #include "Kademlia.h"
 
-#include <arpa/inet.h>
-
-
 #include "Options.h"
-#include "Global.h"
-
-
 #include "KademliaHandler.h"
 
 
 using namespace kad;
 
 
-
-namespace bdhost
+namespace bdkad
 {
 
   KademliaModule::KademliaModule()
@@ -71,108 +51,63 @@ namespace bdhost
   {
   }
 
-class TransportFactoryImpl : public TransportFactory
-{
-public:
-
-  std::unique_ptr<ITransport> Create() override
+  class TransportFactoryImpl : public TransportFactory
   {
-    return std::unique_ptr<ITransport>(new TcpTransport());
-  }
-};
+  public:
 
-static void SetVerbose(const std::string & option)
-{
-  if (option == "on")
+    std::unique_ptr<ITransport> Create() override
+    {
+      return std::unique_ptr<ITransport>(new TcpTransport());
+    }
+  };
+
+  static void SetVerbose(const std::string & option)
   {
-    Config::SetVerbose(true);
-  }
-  else if (option == "off")
-  {
-    Config::SetVerbose(false);
-  }
-  else
-  {
-    printf("ERROR: Unknown verbose option.\n");
-  }
-}
-
-
-static void InitKey(const char * rootPath)
-{ 
-  sha1_t digest;
-  Digest::Compute(rootPath, strlen(rootPath), digest);
-  
-  KeyPtr key = std::make_shared<Key>(digest);
-  
-  FILE * file = fopen((std::string(rootPath) + "/key").c_str(), "w");
-  
-  if (file)
-  { 
-    fwrite(key->Buffer(), 1, Key::KEY_LEN, file);
-    fclose(file);
-  }
-
-}
-
-static void InitBuckets(const char * rootPath, const Contact & bootContact)
-{ 
-  std::string bucketsPath = std::string(rootPath) + "/contacts";
-  
-  FILE * file = fopen(bucketsPath.c_str(), "r");
-  
-  if (file)
-  { 
-    fseek(file, 0, SEEK_END);
-    long size = ftell(file);
-    fclose(file);
-    
-    if (size > 0)
-    { 
-      return;
+    if (option == "on")
+    {
+      Config::SetVerbose(true);
+    }
+    else if (option == "off")
+    {
+      Config::SetVerbose(false);
+    }
+    else
+    {
+      printf("ERROR: Unknown verbose option.\n");
     }
   }
-  
-  file = fopen(bucketsPath.c_str(), "w");
-  
-  if (file)
-  { 
+
+
+  static void InitKey(const char * nodeName, const char * rootPath)
+  {
     sha1_t digest;
-    Digest::Compute("root", sizeof("root") - 1, digest);
-    
-    fwrite(digest, 1, sizeof(digest), file);
-    
-    fwrite(&bootContact, 1, sizeof(bootContact), file);
-    
-    fclose(file);
+    Digest::Compute(nodeName, strlen(nodeName), digest);
+
+    KeyPtr key = std::make_shared<Key>(digest);
+
+    FILE * file = fopen((std::string(rootPath) + "/key").c_str(), "w");
+
+    if (file)
+    {
+      fwrite(key->Buffer(), 1, Key::KEY_LEN, file);
+      fclose(file);
+    }
   }
-}
 
   void KademliaModule::Initialize()
   {
-    printf("[KAD] Initialize\n");
+    printf("[KAD] Initialize kademlia node=%s addr=%08X port=%u\n", bdkad::Options::k_nodeName.c_str(), bdkad::Options::k_addr, bdkad::Options::k_port);
 
     SetVerbose("on");
 
-    printf("root path: %s\n", bdhost::Options::k_root);
-
-    printf("kademlia node: addr = %08X port=%u\n", bdhost::Options::k_addr, bdhost::Options::k_port);
-    printf("kademlia bootstrap node: addr = %08X port=%u\n", bdhost::Options::k_bootaddr, bdhost::Options::k_bootport);
-
     Contact self;
-    self.addr = bdhost::Options::k_addr;
-    self.port = bdhost::Options::k_port;
+    self.addr = bdkad::Options::k_addr;
+    self.port = bdkad::Options::k_port;
 
-    Contact boot;
-    boot.addr = bdhost::Options::k_bootaddr;
-    boot.port = bdhost::Options::k_bootport;
+    mkdir(bdkad::Options::k_rootPath.c_str(), 0755);
+    InitKey(bdkad::Options::k_nodeName.c_str(), bdkad::Options::k_rootPath.c_str());
 
-    mkdir(bdhost::Options::k_root, 0755);
-    InitKey(bdhost::Options::k_root);
-    InitBuckets(bdhost::Options::k_root, boot);
-
-
-    Config::Initialize(bdhost::Options::k_root);
+    Config::Initialize(bdkad::Options::k_rootPath.c_str(),bdkad::Options::k_defcontPath.c_str());
 
     Key selfKey{Config::NodeId()->Buffer()};
 

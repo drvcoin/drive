@@ -59,7 +59,6 @@ namespace dfs
     return r;
   }
 
-
   static void xmp_cleanup(void * context)
   {
     if (context)

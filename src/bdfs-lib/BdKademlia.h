@@ -27,9 +27,11 @@
 #include <stdlib.h>
 #include <memory>
 #include <string>
+#include <vector>
 #include "BdObject.h"
 #include "Buffer.h"
 #include "AsyncResult.h"
+#include "RelayInfo.h"
 
 namespace bdfs
 {
@@ -37,10 +39,20 @@ namespace bdfs
   {
   public:
 
+  public:
+
     BdKademlia(const char * base, const char * name, const char * path, const char * type);
 
     AsyncResultPtr<bool> SetValue(const char * key, const void * value, size_t size, uint64_t version, uint32_t ttl);
 
     AsyncResultPtr<Buffer> GetValue(const char * key);
+
+    AsyncResultPtr<bool> PublishStorage(const char * node, const char * contract, const size_t storage, const size_t reputation);
+
+    AsyncResultPtr<Json::Value> QueryStorage(const char * query, size_t limit);
+
+    AsyncResultPtr<bool> PublishRelay(const RelayInfo & reg);
+
+    AsyncResultPtr<std::vector<RelayInfo>> QueryRelays(const char * hint, size_t limit);
   };
 }

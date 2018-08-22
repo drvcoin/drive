@@ -36,14 +36,10 @@ namespace dfs
 
   ClientManager::ClientManager()
   {
-    VolumeManager::defaultConfig.ConnectTimeout(5);
-    VolumeManager::defaultConfig.RequestTimeout(5);
   }
 
   bool ClientManager::Start()
   {
-    //std::thread th(&ClientManager::Listen, this);
-    //th.detach();
     Listen();
     return true;
   }

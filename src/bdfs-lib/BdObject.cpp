@@ -55,4 +55,12 @@ namespace bdfs
     if (session.get() == NULL) { return false; }
     return session->Call(this->path, method, args, body, len, callback);
   }
+
+
+  uint32_t BdObject::GetTimeout() const
+  {
+    std::shared_ptr<BdSession> session = BdSession::GetSession(base);
+    if (session.get() == NULL) { return 1; }
+    return session->GetTimeout();
+  }
 }

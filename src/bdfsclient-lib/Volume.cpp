@@ -91,6 +91,19 @@ namespace dfs
     return true;
   }
 
+  
+  uint32_t Volume::GetTimeout() const
+  {
+    uint32_t result = 0;
+    for (auto partition : this->partitions)
+    {
+      result += partition->GetTimeout();
+    }
+
+    return result;
+  }
+
+
   const uint8_t * Volume::GetZeroBuffer()
   {
     if (zeroBuffer == NULL)

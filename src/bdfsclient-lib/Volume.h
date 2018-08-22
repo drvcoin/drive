@@ -101,6 +101,8 @@ namespace dfs
 
     void EnableCache(std::unique_ptr<Cache> cache);
 
+    uint32_t GetTimeout() const;
+
     const uint64_t Rows() { return blockCount; }
     const uint64_t Columns() { return partitions.size(); }
     const uint64_t DataCount() { return dataCount; }

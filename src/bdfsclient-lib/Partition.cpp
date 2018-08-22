@@ -48,7 +48,7 @@ namespace dfs
   bool Partition::ReadBlock(uint64_t index, void * buffer, size_t size, size_t offset)
   {
     auto result = ref->Read(index, offset, size);
-    if (result->Wait(5000))
+    if (result->Wait(ref->GetTimeout()))
     {
       auto & buf = result->GetResult();
       if (buf.size() == size)
@@ -65,7 +65,7 @@ namespace dfs
   bool Partition::WriteBlock(uint64_t index, const void * buffer, size_t size, size_t offset)
   {
     auto result = ref->Write(index, offset, buffer, size);
-    if (result->Wait(5000))
+    if (result->Wait(ref->GetTimeout()))
     {
       return result->GetResult() == static_cast<ssize_t>(size);
     }
@@ -77,12 +77,18 @@ namespace dfs
   bool Partition::Delete()
   {
     auto result = ref->Delete();
-    if (result->Wait(5000))
+    if (result->Wait(ref->GetTimeout()))
     {
       return result->GetResult();
     }
 
     return false;
+  }
+
+
+  uint32_t Partition::GetTimeout() const
+  {
+    return ref->GetTimeout();
   }
 }
 
