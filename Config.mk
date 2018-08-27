@@ -47,3 +47,11 @@ INCDIR = $(OUTDIR)/inc
 LIBDIR = $(BLDDIR)/lib
 
 BUILD_ROOT = $(ROOT)/build
+
+# submodules
+
+ROOT_CM256 ?= $(ROOT)/src/cm256
+ROOT_UBD ?= $(ROOT)/src/ubd
+ROOT_KADEMLIA ?= $(ROOT)/src/kademlia
+
+

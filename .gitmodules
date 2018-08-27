@@ -1,0 +1,9 @@
+[submodule "src/cm256"]
+	path = src/cm256
+	url = git@github.com:drvcoin/cm256.git
+[submodule "src/ubd"]
+	path = src/ubd
+	url = git@github.com:drvcoin/ubd.git
+[submodule "src/kademlia"]
+	path = src/kademlia
+	url = git@github.com:drvcoin/kademlia.git

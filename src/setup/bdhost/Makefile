@@ -33,7 +33,7 @@ VPATH = $(BINDIR) $(CFGDIR) $(RELAYPATH) $(QUICPATH)
 
 ifeq (,$(wildcard $(RELAYPATH)))
 NO_RELAY ?= 1
-$(warning Relay support is disabled because the project is not found.)
+$(warning **** WARNING: Relay support is disabled because the project is not found.)
 endif
 
 TARGET = drive-bdhost

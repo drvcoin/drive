@@ -37,7 +37,7 @@ SRCS = \
   Partition.cpp \
   VolumeManager.cpp
 
-CCFLAGS =  -std=c++17 -fPIC -I../jsoncpp/include -I../mongoose -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../bdcontract-lib -I../bdfs-lib
+CCFLAGS =  -std=c++17 -fPIC -I../jsoncpp/include -I../mongoose -I$(ROOT_UBD)/out/inc -I$(ROOT_CM256)/src -I../bdcontract-lib -I../bdfs-lib
 
 ifneq ($(DEBUG_HTTP),)
 CCFLAGS += -DDEBUG_HTTP
