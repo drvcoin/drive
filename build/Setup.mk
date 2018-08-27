@@ -58,7 +58,8 @@ $(TARGETDEB): $(PKGCFG_) $(PKG_) $(BIN_) $(LIB_) $(LIBPRI_) $(LIBPERL_) $(NGX_) 
 	@dpkg --build $(OBJTGT)
 
 clean: $(DIRS) $(POSTCLEAN)
-	@rm -rf $(OBJTGT)
+	-@rm -rf $(OBJTGT)
+	-@rm -rf $(TARGETDEB)
 
 $(DIRS):
 	@$(MAKE) -C $@ $(MAKECMDGOALS)

@@ -31,58 +31,11 @@ DIRS = \
 	build \
 	src
 
-.PHONY: all clean sync tagver deploy createbranch install checkout pull fetch commit push ctags incver $(DIRS)
+.PHONY: all clean $(DIRS)
 
 all: $(DIRS)
 
-clean:
-	-@rm -rf out/
-
-reset:
-	@git reset --hard
+clean: $(DIRS)
 
 $(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS)
-
-sync:
-	@git pull --ff-only
-
-tagver:
-	@echo "tag: $(DRIVE_VERSION_FULL)"
-	@git tag -m "Tagging $(DRIVE_VERSION_FULL)" $(DRIVE_VERSION_FULL) && git push --tags
-
-deploy:
-	@echo "deploy: $(DEPLOYDIR)/external.$(DRIVE_VERSION_PLATFORM).$(BUILDARCH).tgz"
-	@mkdir -p $(DEPLOYDIR)
-	@tar -czf $(DEPLOYDIR)/external.$(DRIVE_VERSION_PLATFORM).$(BUILDARCH).tgz --exclude "*/obj/*" out
-
-createbranch:
-	@if [[ "$(branch)" == "" ]]; then echo "Usage: make createbranch branch={branch}"; exit 1; fi
-	git push origin origin:refs/heads/$(branch)
-	git fetch origin
-	git checkout --track -b $(branch) origin/$(branch)
-	git pull
-
-checkout:
-	@if [[ "$(branch)" == "" ]]; then echo "Usage: make checkout branch={branch}"; exit 1; fi
-	git checkout $(branch)
-	git pull
-
-pull:
-	git pull
-
-commit:
-	@if [[ "$(message)" == "" ]]; then echo -e "Usage: make commit message={message} [ args=... ]\n\nExample: make commit message=\"Fixing bug 1234\" args=-a"; exit 1; fi
-	git commit $(args) -m "$(message)"
-
-push:
-	git push origin HEAD
-
-ctags:
-	@pushd $(ROOT)/src > /dev/null; ctags --tag-relative=yes -R -f $(ROOT)/tags;
-
-fetch:
-	git fetch
-
-incver:
-	@pushd build; make incver; popd
+	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")

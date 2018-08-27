@@ -22,9 +22,29 @@
 
 ROOT = $(realpath ..)
 
+# Common projects
+
 DIRS = \
-	config \
 	jsoncpp \
+
+# Submodule projects
+
+ifneq (,$(wildcard cm256/src))
+DIRS += cm256
+endif
+
+ifneq (,$(wildcard ubd/src))
+DIRS += ubd
+endif
+
+ifneq (,$(wildcard kademlia/src))
+DIRS += kademlia
+endif
+
+# Main projects
+
+DIRS += \
+	config \
 	mongoose \
 	bdcontract-lib \
 	bdcontract \
@@ -37,7 +57,10 @@ DIRS = \
 	bdkad \
 	service \
 	tools \
-	setup \
+
+ifeq ($(NO_DEB),)
+DIRS += setup
+endif
 
 .PHONY: all clean $(DIRS)
 
