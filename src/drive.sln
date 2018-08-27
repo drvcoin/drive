@@ -18,6 +18,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bdfs-lib", "bdfs-lib\bdfs-l
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bdcontract-lib", "bdcontract-lib\bdcontract-lib.vcxproj", "{D2E633FC-C4E8-4114-ADB7-96D425439A7D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{98E83174-4AE0-4733-BB4E-F0A853ECA359} = {98E83174-4AE0-4733-BB4E-F0A853ECA359}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bdfsclient", "bdfsclient\bdfsclient.vcxproj", "{F8A0F77B-E778-4562-A973-22BED105A606}"
 	ProjectSection(ProjectDependencies) = postProject

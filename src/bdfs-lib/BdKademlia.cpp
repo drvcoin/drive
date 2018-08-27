@@ -258,9 +258,9 @@ namespace bdfs
         }
 
         RelayInfo::Endpoint endpoint = {
-          .host = ep["host"].asString(),
-          .socksPort = static_cast<uint16_t>(ep["socks"].asUInt()),
-          .quicPort = static_cast<uint16_t>(ep["quic"].asUInt())
+         ep["host"].asString(),
+         static_cast<uint16_t>(ep["socks"].asUInt()),
+         static_cast<uint16_t>(ep["quic"].asUInt())
         };
 
         output.endpoints.emplace_back(std::move(endpoint));

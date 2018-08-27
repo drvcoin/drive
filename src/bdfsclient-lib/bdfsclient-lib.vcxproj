@@ -124,6 +124,7 @@
     <ClInclude Include="BitSet.h" />
     <ClInclude Include="Cache.h" />
     <ClInclude Include="Partition.h" />
+    <ClInclude Include="Paths.h" />
     <ClInclude Include="PiperIPC.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="Volume.h" />
@@ -133,7 +134,8 @@
     <ClCompile Include="BitSet.cpp" />
     <ClCompile Include="Cache.cpp" />
     <ClCompile Include="Partition.cpp" />
-    <ClCompile Include="Util.cpp" />
+    <ClCompile Include="Paths.cpp" />
+    <ClCompile Include="Util-win.cpp" />
     <ClCompile Include="Volume.cpp" />
     <ClCompile Include="VolumeCell.cpp" />
     <ClCompile Include="VolumeColumn.cpp" />

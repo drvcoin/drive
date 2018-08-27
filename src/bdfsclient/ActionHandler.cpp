@@ -115,7 +115,8 @@ namespace dfs
     }
 
     // Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
-    volume->EnableCache(std::make_unique<dfs::Cache>("cache", volume.get(), 200, 10));
+    std::string cacheDir = GetWorkingDir() + SLASH + name + SLASH + "cache";
+    volume->EnableCache(std::make_unique<dfs::Cache>(cacheDir, volume.get(), 200, 10));
 
 
     static struct drv_operations ops;

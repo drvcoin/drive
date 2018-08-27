@@ -136,6 +136,7 @@
     <ClCompile Include="BdTypes.cpp" />
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="Event.cpp" />
+    <ClCompile Include="HostInfo.cpp" />
     <ClCompile Include="HttpCookies.cpp" />
     <ClCompile Include="HttpRequest.cpp" />
   </ItemGroup>
@@ -152,6 +153,7 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="EventLoop.h" />
+    <ClInclude Include="HostInfo.h" />
     <ClInclude Include="HttpConfig.h" />
     <ClInclude Include="HttpCookies.h" />
     <ClInclude Include="HttpRequest.h" />

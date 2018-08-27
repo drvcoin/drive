@@ -32,6 +32,7 @@
 #include "VolumeManager.h"
 #include "ActionHandler.h"
 #include "Util.h"
+#include "Paths.h"
 
 using namespace dfs;
 using namespace bdfs;
@@ -48,7 +49,7 @@ void signalHandler(int signum)
 
 int main(int argc, char * * argv)
 {
-  std::ifstream cfg("/etc/drive/bdfs.conf");
+  std::ifstream cfg(GetDriveConf());
   std::string data((std::istreambuf_iterator<char>(cfg)),
                std::istreambuf_iterator<char>());
 

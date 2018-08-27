@@ -20,25 +20,16 @@
   SOFTWARE.
 */
 
-#pragma once
+#include "Util.h"
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <cerrno>
+#include <memory>
+#include <sstream>
+#include <Windows.h>
 
-#include <string>
-
-#define return_false_if(condition) \
-  if (condition) { return false; }
-
-#define return_false_if_msg(condition, ...) \
-  if (condition) { printf(__VA_ARGS__); return false; }
-
-
-#ifdef _WIN32
-void MakeDir(const std::string & path);
-
-#else
-#include <arpa/inet.h>
-
-uint64_t htonll(uint64_t val);
-uint64_t ntohll(uint64_t val);
-bool nbd_ready(const char* devname, bool do_print = false);
-std::string execCmd(std::string cmd);
-#endif
+void MakeDir(const std::string & path)
+{
+  CreateDirectory(path.c_str(), NULL);
+}

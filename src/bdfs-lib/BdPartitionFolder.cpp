@@ -69,7 +69,7 @@ namespace bdfs
     AsyncResultPtr<std::string> BdPartitionFolder::ReservePartition(const uint64_t size)
     {
       BdObject::CArgs args;
-      args["size"] = size;;
+      args["size"] = Json::Value::UInt(size);
 
       auto result = std::make_shared<AsyncResult<std::string>>();
 

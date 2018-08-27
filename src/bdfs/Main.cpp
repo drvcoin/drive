@@ -200,14 +200,14 @@ void HandleOptions()
 
   case Action::Create:
   {
-    if (Options::Name == "" || Options::Repo == "")
+    if (Options::Name == "")
     {
       printf("Missing <volumeName> or <contractRepo>\n");
     }
     else
     {
       printf("Creating volume '%s'...\n", Options::Name.c_str());
-      bool success = VolumeManager::CreateVolume(Options::Name, Options::Repo, Options::DataBlocks, Options::CodeBlocks);
+      bool success = VolumeManager::CreateVolume(Options::Name, Options::Size, Options::DataBlocks, Options::CodeBlocks);
       if (success)
         printf("Config file : %s.config\n", Options::Name.c_str());
       else

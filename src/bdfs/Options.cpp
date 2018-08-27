@@ -28,6 +28,8 @@
 #include <stdarg.h>
 #include <json/json.h>
 
+#include "Paths.h"
+
 namespace dfs
 {
   Action::T Options::Action = Action::Unknown;
@@ -112,7 +114,7 @@ namespace dfs
 
   void Options::ReadConfig()
   {
-    std::ifstream cfg("/etc/drive/bdfs.conf");
+    std::ifstream cfg(GetDriveConf());
     std::string data((std::istreambuf_iterator<char>(cfg)),
                  std::istreambuf_iterator<char>());
 

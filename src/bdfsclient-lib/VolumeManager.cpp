@@ -36,11 +36,12 @@
 
 #include "cm256.h"
 #include "gf256.h"
-
+#include "Util.h"
 #include "BdKademlia.h"
 #include "BdPartitionFolder.h"
 #include "Buffer.h"
 #include "ContractRepository.h"
+#include "Paths.h"
 
 namespace dfs
 {
@@ -50,7 +51,7 @@ namespace dfs
 
   std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name)
   {
-    std::string path = "/etc/drive/" + name + "/volume.conf";
+    std::string path = GetWorkingDir() + SLASH + name + SLASH + "volume.conf";
     printf("path=%s\n", path.c_str());
     FILE * file = fopen(path.c_str(), "r");
     if (!file)
@@ -292,11 +293,12 @@ namespace dfs
 
     std::string result = volume.toStyledString();
 
-    std::string path = "/etc/drive/" + volumeName;
+    std::string path = GetWorkingDir() + SLASH + volumeName;
 
-    mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    MakeDir(path);
+    //mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-    path.append("/volume.conf");
+    path += SLASH + std::string("volume.conf");
 
     FILE * file = fopen(path.c_str(), "w");
     if (!file)
@@ -328,7 +330,7 @@ namespace dfs
       return false;
     }
 
-    std::string path = "/etc/drive/" + name + "/volume.conf";
+    std::string path = GetWorkingDir() + SLASH + name + SLASH + "volume.conf";
     _unlink(path.c_str());
 
     return true;
