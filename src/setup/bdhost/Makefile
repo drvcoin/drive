@@ -31,6 +31,11 @@ RELAYPATH = $(ROOT)/../bdrelay/out/bin
 QUICPATH = $(ROOT)/../libquic/out/linux.x86_64/release/bin
 VPATH = $(BINDIR) $(CFGDIR) $(RELAYPATH) $(QUICPATH)
 
+ifeq (,$(wildcard $(RELAYPATH)))
+NO_RELAY ?= 1
+$(warning Relay support is disabled because the project is not found.)
+endif
+
 TARGET = drive-bdhost
 
 PKGCFG = \
@@ -45,11 +50,15 @@ PKG = \
 BIN = \
   bdhost \
   bdhostd \
-  bdrelay-client \
+
+ifneq ($(NO_RELAY),1)
+BIN += bdrelay-client
 
 LIB = \
   libquic.so \
   libboringssl.so \
+
+endif
 
 SVC = \
   bdhost.service \
