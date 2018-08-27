@@ -96,8 +96,8 @@ namespace dfs
   }
 
 
-  Cache::Cache(std::string rootPath, Volume * volume, size_t limit, uint32_t flushPolicy)
-    : rootPath(std::move(rootPath))
+  Cache::Cache(std::string root, Volume * volume, size_t limit, uint32_t flushPolicy)
+    : rootPath(std::move(root))
     , limit(limit)
     , flushPolicy(flushPolicy)
     , volume(volume)
