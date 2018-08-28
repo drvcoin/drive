@@ -273,11 +273,7 @@ void HandleOptions()
       else 
       {
         printf("Creating volume '%s'...\n",Options::Name.c_str());
-        bool success = VolumeManager::CreateVolume(Options::Name, Options::Size, Options::DataBlocks, Options::CodeBlocks);
-        if(success)
-          printf("Config file : /etc/drive/%s/%s.config\n", Options::Name.c_str(), Options::Name.c_str());
-        else
-          printf("Error creating volume '%s'.\n", Options::Name.c_str());
+        VolumeManager::CreateVolume(Options::Name, Options::Size, Options::DataBlocks, Options::CodeBlocks);
       }
       break;
     }

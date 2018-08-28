@@ -80,7 +80,7 @@ namespace bdhost
     return json["size"].asUInt();
   }
 
-  std::string SetReservedSpace(const uint64_t size)
+  std::string ReserveSpace(const uint64_t size)
   {
     auto reservedSpace = GetReservedSpace();
 
@@ -108,5 +108,26 @@ namespace bdhost
     id_out.close();
 
     return reserveId;
+  }
+
+  void UnreserveSpace(const std::string & reserve_id)
+  {
+    auto totalReservedSpace = GetReservedSpace();
+    auto reservedSpace = GetReservedSpace(reserve_id);
+
+    Json::Value json;
+    json["size"] = Json::Value::UInt(totalReservedSpace + reservedSpace);
+
+    std::string reservePath = Options::workDir + std::string(RESERVED_FILE);
+    std::ofstream out(reservePath.c_str());
+    out << json.toStyledString();
+    out.close();
+
+    reservePath = Options::workDir + reserve_id;
+    json["size"] = Json::Value::UInt(0);
+
+    std::ofstream id_out(reservePath + "/" + RESERVED_FILE);
+    id_out << json.toStyledString();
+    id_out.close();
   }
 }

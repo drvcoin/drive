@@ -148,7 +148,7 @@ namespace dfs
     }
 
     // Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
-    std::string cacheDir = "/etc/drive/" + name + "/" + "cache";
+    std::string cacheDir = "/var/drive/" + name + "/" + "cache";
     volume->EnableCache(std::make_unique<dfs::Cache>(cacheDir, volume.get(), 200, 10));
     
     printf("Processing: %s\n", nbdPath.c_str());

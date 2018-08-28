@@ -47,5 +47,7 @@ namespace bdhost
     void OnCreatePartition(bdhttp::HttpContext & context);
 
     void OnReservePartition(bdhttp::HttpContext & context);
+
+    void OnUnreservePartition(bdhttp::HttpContext & context);
   };
 }

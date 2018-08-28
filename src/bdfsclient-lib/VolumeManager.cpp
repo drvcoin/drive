@@ -279,7 +279,6 @@ namespace dfs
     {
       printf("Failed to reserve and create partition on desired providers\n");
       //TODO: Unreserve/delete partitions from the partial providers used
-      return false;
     }
 
     Json::Value volume;
@@ -300,15 +299,27 @@ namespace dfs
     FILE * file = fopen(path.c_str(), "w");
     if (!file)
     {
-      printf("Failed to create volume config file.\n");
-      return false;
+      path = "/tmp/drive/" + volumeName;
+      std::string cmd = "mkdir -p " + path;
+      system(cmd.c_str());
+      path.append("/volume.conf");
+      file = fopen(path.c_str(), "w");
+
+      if (!file)
+      {
+        printf("Failed to create volume config file.\n");
+        return false;
+      }
+      printf("WARNING: Move config file to /etc/drive/\n");
     }
 
     fwrite(result.c_str(), 1, result.size(), file);
 
     fclose(file);
-    
-    return true;
+
+    printf("Config file: %s\n",path.c_str());
+
+    return (partitionsArray.size() == providerCount);
   }
 
 
