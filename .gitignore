@@ -37,5 +37,11 @@
 .clang_complete
 .vscode
 
+# Visual studio files
+*.user
+.vs
+
 # Generated files
 out
+x64
+x86
