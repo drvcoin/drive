@@ -35,7 +35,7 @@ C++17 is required to build the Drive project.
 The dependencies can be installed using the following command on Ubuntu:
 
 ```
-sudo apt-get install libssl-dev libcurl4-openssl-dev uuid-dev 
+sudo apt-get install libssl-dev libcurl4-openssl-dev uuid-dev
 ```
 
 #### Build Steps
@@ -114,7 +114,7 @@ For test builds, it is also required to modify the IP addres and port in `/etc/d
 To deploy the host service, copy `out/package/drive-bdhost_$version_$platform.deb` to the host nodes, and run the following command to install:
 
 ```
-sudo dpkg -i drive-bdkad_*.deb
+sudo dpkg -i drive-bdhost_*.deb
 ```
 
 If there is any missing dependency required, run the following command to fix that:
