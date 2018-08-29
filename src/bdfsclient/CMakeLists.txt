@@ -1,5 +1,7 @@
 #
-# Copyright (c) 2018 Drive Foundation
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,39 +21,41 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# =============================================================================
+#
 
-ifeq ($(ROOT),)
-$(error "Please define ROOT variable to point to the repository's root folder")
-endif
+cmake_minimum_required(VERSION 3.1)
 
-OUTDIR = $(ROOT)/out
-BINDIR = $(OUTDIR)/bin
-CFGDIR = $(OUTDIR)/cfg
-PKGDIR = $(OUTDIR)/package
+project(bdfsclient)
 
-ifneq ($(TARGETLIB),)
-TARGETNAME = $(TARGETLIB)
-TARGETFILENAME = $(TARGETNAME).a
-else
-ifneq ($(TARGETSO),)
-TARGETNAME = $(TARGETSO)
-TARGETFILENAME = $(TARGETNAME).so
-else
-TARGETNAME = $(TARGETEXE)
-TARGETFILENAME = $(TARGETNAME)
-endif
-endif
+set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
-OBJDIR = $(OUTDIR)/obj/$(TARGETNAME)
-INCDIR = $(OUTDIR)/inc
-LIBDIR = $(BLDDIR)/lib
+include(${ROOT}/Config.cmake)
 
-BUILD_ROOT = $(ROOT)/build
+add_executable(
+  bdfsclient 
 
-# submodules
+  Main.cpp
+  ClientManager.cpp
+  ActionHandler.cpp
+)
 
-ROOT_CM256 ?= $(ROOT)/src/cm256
-ROOT_UBD ?= $(ROOT)/src/ubd
-ROOT_KADEMLIA ?= $(ROOT)/src/kademlia
+include_directories(${ROOT_UBD}/src)
+include_directories(${ROOT_CM256}/src)
+include_directories(${ROOT}/src/jsoncpp/include)
+include_directories(${ROOT}/src/bdcontract-lib)
+include_directories(${ROOT}/src/bdfs-lib)
+include_directories(${ROOT}/src/bdfsclient-lib)
 
+bd_lib(bdfsclient bdfsclient-static ${LIBDIR}/libbdfsclient.a)
+bd_lib(bdfsclient bdfs-static ${LIBDIR}/libbdfs.a)
+bd_lib(bdfsclient bdcontract-static ${LIBDIR}/libbdcontract.a)
+bd_lib(bdfsclient jsoncpp ${LIBDIR}/libjsoncpp.a)
+bd_lib(bdfsclient ubd ${ROOT_UBD}/out/lib/libubd.a)
+bd_lib(bdfsclient cm256 ${ROOT_CM256}/out/lib/libcm256.a)
 
+bd_sys_lib(bdfsclient crypto)
+bd_sys_lib(bdfsclient curl)
+bd_sys_lib(bdfsclient dl)
+
+bd_use_pthread(bdfsclient)

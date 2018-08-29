@@ -1,16 +1,18 @@
-# 
-# Copyright (c) 2018 Drive Foundation
-# 
+#
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,32 +20,42 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# 
+#
+# =============================================================================
+#
 
-ROOT = $(realpath ../..)
+cmake_minimum_required(VERSION 3.1)
 
-TARGETEXE = drive
+project(bdkad)
 
-include $(ROOT)/Config.mk
+set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
-SRCS = \
-  Action.cpp \
-  Main.cpp \
-  Options.cpp 
+include(${ROOT}/Config.cmake)
 
-VPATH = $(BINDIR) $(ROOT_UBD)/out/bin $(ROOT_CM256)/out/bin
+add_executable(
+  bdkad
 
-LIBS = \
-  libbdfsclient.a \
-	libbdfs.a \
-	libbdcontract.a \
-	libjson.a \
-  ubd.a \
-  cm256.a
+	Main.cpp
+	Options.cpp
+	KademliaModule.cpp
+	KademliaHandler.cpp
+)
 
-TARGET = drive
-CCFLAGS = -std=c++17  -I$(ROOT_UBD)/out/inc -I$(ROOT_CM256)/src -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib
+include_directories(${ROOT_KADEMLIA}/src/kad)
+include_directories(${ROOT}/src/jsoncpp/include)
+include_directories(${ROOT}/src/mongoose)
+include_directories(${ROOT}/src/bdcontract-lib)
+include_directories(${ROOT}/src/httpserver)
 
-SYSLIBS = -lcrypto -lcurl -ldl -pthread
+bd_lib(bdkad bdcontract-static ${LIBDIR}/libbdcontract.a)
+bd_lib(bdkad bdhttp ${LIBDIR}/libbdhttp.a)
+bd_lib(bdkad mongoose ${LIBDIR}/libmongoose.a)
+bd_lib(bdkad jsoncpp ${LIBDIR}/libjsoncpp.a)
+bd_lib(bdkad kad ${ROOT_KADEMLIA}/out/lib/libkad.a)
 
-include $(ROOT)/Cpp.mk
+bd_sys_lib(bdkad crypto)
+bd_sys_lib(bdkad curl)
+bd_sys_lib(bdkad uuid)
+bd_sys_lib(bdkad dl)
+
+bd_use_pthread(bdkad)

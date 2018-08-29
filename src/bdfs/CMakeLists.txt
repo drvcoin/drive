@@ -1,5 +1,7 @@
 #
-# Copyright (c) 2018 Drive Foundation
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,51 +21,41 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# =============================================================================
+#
 
-ROOT = $(realpath ../../..)
+cmake_minimum_required(VERSION 3.1)
 
-include $(ROOT)/Config.mk
+project(drive)
 
-all:
-	@echo Done $(PACKAGE_VERSION)
+set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
-RELAYPATH = $(ROOT)/../bdrelay/out/bin
-QUICPATH = $(ROOT)/../libquic/out/linux.x86_64/release/bin
-VPATH = $(BINDIR) $(CFGDIR) $(RELAYPATH) $(QUICPATH)
+include(${ROOT}/Config.cmake)
 
-ifeq (,$(wildcard $(RELAYPATH)))
-NO_RELAY ?= 1
-$(warning **** WARNING: Relay support is disabled because the project is not found.)
-endif
+add_executable(
+  drive
 
-TARGET = drive-bdhost
+  Action.cpp
+  Main.cpp
+  Options.cpp 
+)
 
-PKGCFG = \
-  control
+include_directories(${ROOT_UBD}/src)
+include_directories(${ROOT_CM256}/src)
+include_directories(${ROOT}/src/jsoncpp/include)
+include_directories(${ROOT}/src/bdcontract-lib)
+include_directories(${ROOT}/src/bdfs-lib)
+include_directories(${ROOT}/src/bdfsclient-lib)
 
-PKG = \
-  prerm \
-  postrm \
-  preinst \
-  postinst
+bd_lib(drive bdfsclient-static ${LIBDIR}/libbdfsclient.a)
+bd_lib(drive bdfs-static ${LIBDIR}/libbdfs.a)
+bd_lib(drive bdcontract-static ${LIBDIR}/libbdcontract.a)
+bd_lib(drive jsoncpp ${LIBDIR}/libjsoncpp.a)
+bd_lib(drive ubd ${ROOT_UBD}/out/lib/libubd.a)
+bd_lib(drive cm256 ${ROOT_CM256}/out/lib/libcm256.a)
 
-BIN = \
-  bdhost \
-  bdhostd \
+bd_sys_lib(drive crypto)
+bd_sys_lib(drive curl)
+bd_sys_lib(drive dl)
 
-ifneq ($(NO_RELAY),1)
-BIN += bdrelay-client
-
-LIB = \
-  libquic.so \
-  libboringssl.so \
-
-endif
-
-SVC = \
-  bdhost.service \
-
-CFG = \
-  bdhost.conf \
-
-include $(ROOT)/Setup.mk
+bd_use_pthread(drive)

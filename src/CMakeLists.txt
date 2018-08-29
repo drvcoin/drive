@@ -1,5 +1,7 @@
 #
-# Copyright (c) 2018 Drive Foundation
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,20 +21,45 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# =============================================================================
+#
 
-ROOT = $(realpath ../..)
+cmake_minimum_required(VERSION 3.1)
 
-include $(ROOT)/Config.mk
+project(drive_src)
 
-DIRS := \
-  bdkad \
-  bdhost \
+set(ROOT ${PROJECT_SOURCE_DIR}/..)
 
-.PHONY: all clean $(DIRS)
+add_subdirectory(jsoncpp)
 
-all: $(DIRS)
+if (EXISTS ${PROJECT_SOURCE_DIR}/cm256)
+  add_subdirectory(cm256)
+endif (EXISTS ${PROJECT_SOURCE_DIR}/cm256)
 
-clean: $(DIRS)
+if (EXISTS ${PROJECT_SOURCE_DIR}/ubd)
+  add_subdirectory(ubd)
+endif (EXISTS ${PROJECT_SOURCE_DIR}/ubd)
 
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+if (EXISTS ${PROJECT_SOURCE_DIR}/kademlia)
+  add_subdirectory(kademlia)
+endif (EXISTS ${PROJECT_SOURCE_DIR}/kademlia)
+
+add_subdirectory(mongoose)
+add_subdirectory(bdcontract-lib)
+add_subdirectory(bdcontract)
+add_subdirectory(bdfs-lib)
+add_subdirectory(bdfsclient-lib)
+add_subdirectory(bdfs)
+add_subdirectory(bdfsclient)
+add_subdirectory(httpserver)
+add_subdirectory(bdhost)
+add_subdirectory(bdkad)
+add_subdirectory(config)
+add_subdirectory(service)
+
+if (UNIX)
+  if (NOT DEFINED NO_DEB)
+    add_subdirectory(setup)
+  endif (NOT DEFINED NO_DEB)
+endif (UNIX)
+
