@@ -89,4 +89,30 @@ namespace bdfs
 
       return rtn ? result : nullptr;
     }
+
+
+    AsyncResultPtr<bool> BdPartitionFolder::UnreservePartition(const std::string & reserveId)
+    {
+      BdObject::CArgs args;
+      args["reserveId"] = reserveId;;
+
+      auto result = std::make_shared<AsyncResult<bool>>();
+
+      bool rtn = this->Call("Unreserve", args,
+        [result](Json::Value & response, bool error)
+        {
+          result->SetError(error);
+          if (error || !response.isBool())
+          {
+            result->Complete(false);
+          }
+          else
+          {
+            result->Complete(response.asBool());
+          }
+        }
+      );
+
+      return rtn ? result : nullptr;
+    }
 }

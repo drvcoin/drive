@@ -69,6 +69,7 @@ namespace dfs
     printf("\n");
     printf("  -n {name}      Volume name\n");
     printf("  -k {url}       Kademlia server\n");
+    printf("  -f {path}      Volume config file\n");
     printf("  -?|h           Show this help screen\n");
     printf("\n");
     printf("Options: mount\n");
@@ -223,6 +224,10 @@ namespace dfs
       {
         Options::KademliaUrl.insert(Options::KademliaUrl.begin(), argv[++i]);
       }
+      else if (strcmp(arg, "-f") == 0)
+      {
+        Options::Paths.push_back(argv[++i]);
+      }
       else if (arg[0] == '-')
       {
         Usage("\nError: Unrecognized option: %s\n", arg);
@@ -237,7 +242,7 @@ namespace dfs
             Usage("\nError: Unknown action: %s\n", argv[i]);
           }
         }
-        else //if (Options::Action == Action::Mount)
+        else
         {
           Options::Paths.push_back(arg);
         }
