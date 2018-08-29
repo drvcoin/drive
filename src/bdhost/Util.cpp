@@ -116,7 +116,7 @@ namespace bdhost
     auto reservedSpace = GetReservedSpace(reserve_id);
 
     Json::Value json;
-    json["size"] = Json::Value::UInt(totalReservedSpace + reservedSpace);
+    json["size"] = Json::Value::UInt(totalReservedSpace - reservedSpace);
 
     std::string reservePath = Options::workDir + std::string(RESERVED_FILE);
     std::ofstream out(reservePath.c_str());

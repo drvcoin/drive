@@ -323,9 +323,11 @@ namespace bdhost
   void PartitionHandler::OnDelete(bdhttp::HttpContext & context, const std::string & name)
   {
     // TODO: release the reference to contract
+    UnreserveSpace(name);
+    PublishStorage();
 
     std::stringstream cmd;
-    cmd << "rm -rf " << name;
+    cmd << "rm -rf " << Options::workDir << name;
 
     system(cmd.str().c_str());
 

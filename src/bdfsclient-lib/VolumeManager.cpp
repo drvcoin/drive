@@ -47,9 +47,10 @@ namespace dfs
 
   std::vector<std::string> VolumeManager::kademliaUrl;
 
-  std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name)
+  std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name, const std::string & configPath)
   {
-    std::string path = "/etc/drive/" + name + "/volume.conf";
+
+    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
     printf("path=%s\n", path.c_str());
     FILE * file = fopen(path.c_str(), "r");
     if (!file)
@@ -323,9 +324,9 @@ namespace dfs
   }
 
 
-  bool VolumeManager::DeleteVolume(const std::string & name)
+  bool VolumeManager::DeleteVolume(const std::string & name, const std::string & configPath)
   {
-    auto volume = LoadVolume(name);
+    auto volume = LoadVolume(name, configPath);
     if (!volume)
     {
       printf("Failed to load volume.\n");
@@ -338,7 +339,7 @@ namespace dfs
       return false;
     }
 
-    std::string path = "/etc/drive/" + name + "/volume.conf";
+    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
     unlink(path.c_str());
 
     return true;

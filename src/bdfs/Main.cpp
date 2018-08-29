@@ -286,7 +286,7 @@ void HandleOptions()
       }
       else 
       {
-        bool success = VolumeManager::DeleteVolume(Options::Name);
+        bool success = VolumeManager::DeleteVolume(Options::Name, Options::Paths.size() > 0 ? Options::Paths.front() : "");
         if(success)
           printf("Volume '%s' deleted.\n",Options::Name.c_str());
       }
