@@ -1,5 +1,7 @@
 #
-# Copyright (c) 2018 Drive Foundation
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,25 +21,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# =============================================================================
+#
 
-ROOT = $(realpath ../../..)
+cmake_minimum_required(VERSION 3.1)
 
-include $(ROOT)/Config.mk
+project(drive_src_service_bdkad)
 
-COPY = \
-  bdkadd \
-  bdkad.service
+set(ROOT ${PROJECT_SOURCE_DIR}/../../..)
 
-COPY_ = $(patsubst %,$(OUTDIR)/bin/%,$(COPY))
+include(${ROOT}/Config.cmake)
 
-all: mkdir $(COPY_)
+file(MAKE_DIRECTORY ${BINDIR})
 
-$(COPY_): $(OUTDIR)/bin/%: %
-	@echo "copy: $@"
-	@cp -f $< $@
+add_custom_target(service-bdkad ALL)
 
-mkdir:
-	@mkdir -p $(OUTDIR)/bin
+add_custom_command(TARGET service-bdkad PRE_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdkadd ${BINDIR}/
+  COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdkad.service ${BINDIR}/
+)
 
-clean:
-	@for d in $(COPY_); do ( rm -f $$d ); done
+set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+  ${BINDIR}/bdkadd
+  ${BINDIR}/bdkad.service
+)

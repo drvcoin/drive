@@ -1,16 +1,18 @@
-# 
-# Copyright (c) 2018 Drive Foundation
-# 
+#
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,37 +20,47 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# 
+#
+# =============================================================================
+#
 
-ROOT = $(realpath ../..)
+cmake_minimum_required(VERSION 3.1)
 
-TARGETEXE = bdfsclient
+project(libbdfs)
 
-include $(ROOT)/Config.mk
+set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
-HEADERS = \
-  ClientManager.h \
-  ActionHandler.h
+include(${ROOT}/Config.cmake)
 
-SRCS = \
-  Main.cpp \
-  ClientManager.cpp \
-  ActionHandler.cpp
+add_library(
+  bdfs-static STATIC
 
-VPATH = $(BINDIR)
+	AsyncResult.cpp
+	Base64Encoder.cpp
+	BdKademlia.cpp
+	BdObject.cpp
+	BdPartition.cpp
+	BdPartitionFolder.cpp
+	BdSession.cpp
+	BdTypes.cpp
+	Buffer.cpp
+	HostInfo.cpp
+	HttpCookies.cpp
+	HttpRequest.cpp
+  UnixDomainSocket.cpp
+  Event.cpp
+)
 
-LIBS = \
-  libbdfsclient.a \
-	libbdfs.a \
-  libbdcontract.a \
-	libjson.a \
-  $(ROOT_UBD)/out/bin/ubd.a \
-  $(ROOT_CM256)/out/bin/cm256.a
+set_target_properties(bdfs-static PROPERTIES OUTPUT_NAME bdfs)
 
+include_directories(${ROOT}/src/jsoncpp/include)
+include_directories(${ROOT}/src/mongoose)
 
-TARGET = bdfsclient
-CCFLAGS = -std=c++17 -msse4.1 -I$(ROOT_UBD)/out/inc -I$(ROOT_CM256)/src -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib
+if (DEFINED DEBUG_HTTP)
+  add_definitions(-DDEBUG_HTTP)
+endif (DEFINED DEBUG_HTTP)
 
-SYSLIBS = -lcrypto -lcurl -ldl -pthread
+if (DEFINED DEBUG_HTTP_RELAY)
+  add_definitions(-DDEBUG_HTTP_RELAY)
+endif (DEFINED DEBUG_HTTP_RELAY)
 
-include $(ROOT)/Cpp.mk

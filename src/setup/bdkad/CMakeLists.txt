@@ -1,5 +1,7 @@
 #
-# Copyright (c) 2018 Drive Foundation
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,54 +21,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# =============================================================================
+#
 
-ROOT = $(realpath ..)
+cmake_minimum_required(VERSION 3.1)
 
-# Common projects
+project(setup_bdkad)
 
-DIRS = \
-	jsoncpp \
+set(ROOT ${PROJECT_SOURCE_DIR}/../../..)
 
-# Submodule projects
+include(${ROOT}/Config.cmake)
 
-ifneq (,$(wildcard cm256/src))
-DIRS += cm256
-endif
+set(BDPKG_NAME drive-bdkad)
+set(BDPKG_CFG_DIR "/etc/drive")
 
-ifneq (,$(wildcard ubd/src))
-DIRS += ubd
-endif
+set(BDPKG_CONTROL control)
+set(BDPKG_EXTRA preinst postinst prerm postrm)
+set(BDPKG_BIN
+  ${BINDIR}/bdkad
+  ${BINDIR}/bdkadd
+)
+set(BDPKG_CFG
+  ${CFGDIR}/default_contacts.json
+  ${CFGDIR}/bdkad.conf
+)
+set(BDPKG_SVC
+  ${BINDIR}/bdkad.service
+)
 
-ifneq (,$(wildcard kademlia/src))
-DIRS += kademlia
-endif
+set(BDPKG_TARGET_DEPENDS bdkad config service-bdkad)
 
-# Main projects
-
-DIRS += \
-	config \
-	mongoose \
-	bdcontract-lib \
-	bdcontract \
-	bdfs-lib \
-	bdfsclient-lib \
-	bdfs \
-	bdfsclient \
-	httpserver \
-	bdhost \
-	bdkad \
-	service \
-	tools \
-
-ifeq ($(NO_DEB),)
-DIRS += setup
-endif
-
-.PHONY: all clean $(DIRS)
-
-all: $(DIRS)
-
-clean: $(DIRS)
-
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+include(${ROOT}/Setup.cmake)

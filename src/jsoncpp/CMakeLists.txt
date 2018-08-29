@@ -1,5 +1,7 @@
 #
-# Copyright (c) 2018 Drive Foundation
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,20 +21,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# =============================================================================
+#
 
-ROOT = $(realpath ../..)
+cmake_minimum_required(VERSION 3.1)
 
-include $(ROOT)/Config.mk
+project(libjsoncpp)
 
-DIRS = \
-  bdkad \
-  bdhost \
+set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
-.PHONY: all clean $(DIRS)
+include(${ROOT}/Config.cmake)
 
-all: $(DIRS)
+add_library(
+  jsoncpp STATIC
 
-clean: $(DIRS)
+  json_reader.cpp
+  json_value.cpp
+  json_writer.cpp
+)
 
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+include_directories(${PROJECT_SOURCE_DIR}/include)

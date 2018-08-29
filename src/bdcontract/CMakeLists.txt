@@ -24,18 +24,24 @@
 # =============================================================================
 #
 
-ROOT := $(realpath .)
-include $(ROOT)/Config.mk
+cmake_minimum_required(VERSION 3.1)
 
-DIRS = \
-	build \
-	src
+project(bdcontract)
 
-.PHONY: all clean $(DIRS)
+set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
-all: $(DIRS)
+include(${ROOT}/Config.cmake)
 
-clean: $(DIRS)
+add_executable(
+  bdcontract
 
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+  Main.cpp
+  Options.cpp
+)
+
+include_directories(${ROOT}/src/jsoncpp/include)
+include_directories(${ROOT}/src/bdcontract-lib)
+
+bd_lib(bdcontract bdcontract-static ${LIBDIR}/libbdcontract.a)
+bd_lib(bdcontract jsoncpp ${LIBDIR}/libjsoncpp.a)
+

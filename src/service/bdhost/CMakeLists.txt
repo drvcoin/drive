@@ -1,5 +1,7 @@
 #
-# Copyright (c) 2018 Drive Foundation
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,39 +21,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# =============================================================================
+#
 
-ROOT = $(realpath ../../..)
+cmake_minimum_required(VERSION 3.1)
 
-include $(ROOT)/Config.mk
+project(drive_src_service_bdhost)
 
-all:
-	@echo Done $(PACKAGE_VERSION)
+set(ROOT ${PROJECT_SOURCE_DIR}/../../..)
 
-VPATH = $(BINDIR) $(CFGDIR)
+include(${ROOT}/Config.cmake)
 
-TARGET = drive-bdkad
+file(MAKE_DIRECTORY ${BINDIR})
 
-PKGCFG = \
-  control
+add_custom_target(service-bdhost ALL)
 
-PKG = \
-  prerm \
-  postrm \
-  preinst \
-  postinst
+add_custom_command(TARGET service-bdhost PRE_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdhostd ${BINDIR}/
+  COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdhost.service ${BINDIR}/
+)
 
-BIN = \
-  bdkad \
-  bdkadd \
-
-LIBPRI = \
-#  libjson.so \
-
-SVC = \
-  bdkad.service \
-
-CFG = \
-  default_contacts.json \
-  bdkad.conf \
-
-include $(ROOT)/Setup.mk
+set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+  ${BINDIR}/bdhostd
+  ${BINDIR}/bdhost.service
+)

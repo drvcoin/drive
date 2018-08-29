@@ -1,5 +1,7 @@
 #
-# Copyright (c) 2018 Drive Foundation
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,42 +21,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# =============================================================================
+#
 
-ROOT = $(realpath ../..)
+cmake_minimum_required(VERSION 3.1)
 
-include $(ROOT)/Config.mk
+project(drive_root)
 
-COPY = \
-  bdkad.conf
+set(ROOT ${PROJECT_SOURCE_DIR})
 
-COPYEX = \
-	default_contacts.json \
-	bdhost.conf
-
-
-ifneq ($(OFFICIAL_BUILD),)
-COPY += $(COPYEX)
-else
-TESTCOPY = $(COPYEX)
-endif
-
-COPY_ = $(patsubst %,$(OUTDIR)/cfg/%,$(COPY))
-
-TESTCOPY_ = $(patsubst %,$(OUTDIR)/cfg/%,$(TESTCOPY))
-
-all: mkdir $(COPY_) $(TESTCOPY_)
-
-$(TESTCOPY_): $(OUTDIR)/cfg/%: %.test
-	@echo "copy: $<"
-	@cp -f $< $@
-
-$(COPY_): $(OUTDIR)/cfg/%: %
-	@echo "copy: $<"
-	@cp -f $< $@
-
-mkdir:
-	@mkdir -p $(OUTDIR)/cfg
-
-clean:
-	@for d in $(COPY_); do ( rm -f $$d ); done
-	@for d in $(TESTCOPY_); do ( rm -f $$d ); done
+add_subdirectory(src)

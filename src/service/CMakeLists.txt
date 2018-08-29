@@ -1,5 +1,7 @@
 #
-# Copyright (c) 2018 Drive Foundation
+# MIT License
+#
+# Copyright (c) 2018 drvcoin
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,22 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# =============================================================================
+#
 
-ROOT = $(realpath ../..)
+cmake_minimum_required(VERSION 3.1)
 
-include $(ROOT)/Config.mk
+project(drive_src_service)
 
-COPY = \
-#  bdkadutil \
+set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
-DIRS = \
-#  bdkadutil \
-
-.PHONY: all clean $(DIRS)
-
-all: $(DIRS)
-
-clean: $(DIRS)
-
-$(DIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) $$([ -f $@/Makefile.mk ] && echo -n "-f Makefile.mk")
+add_subdirectory(bdhost)
+add_subdirectory(bdkad)
