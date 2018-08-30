@@ -1,0 +1,6 @@
+{
+  "kademlia" : [ "http://localhost:7800" ],
+  "codeBlocks" : 4,
+  "dataBlocks" : 4,
+  "size" : "1GB"
+}

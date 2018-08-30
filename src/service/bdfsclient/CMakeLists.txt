@@ -26,10 +26,22 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-project(drive_src_service)
+project(drive_src_service_bdfsclient)
 
-set(ROOT ${PROJECT_SOURCE_DIR}/../..)
+set(ROOT ${PROJECT_SOURCE_DIR}/../../..)
 
-add_subdirectory(bdfsclient)
-add_subdirectory(bdhost)
-add_subdirectory(bdkad)
+include(${ROOT}/Config.cmake)
+
+file(MAKE_DIRECTORY ${BINDIR})
+
+add_custom_target(service-bdfsclient ALL)
+
+add_custom_command(TARGET service-bdfsclient PRE_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdfsclientd ${BINDIR}/
+  COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdfsclient.service ${BINDIR}/
+)
+
+set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+  ${BINDIR}/bdfsclientd
+  ${BINDIR}/bdfsclient.service
+)

@@ -30,5 +30,6 @@ project(drive_src_setup)
 
 set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
+add_subdirectory(bdfs)
 add_subdirectory(bdhost)
 add_subdirectory(bdkad)

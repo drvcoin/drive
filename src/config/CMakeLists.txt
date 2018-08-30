@@ -45,11 +45,13 @@ if (DEFINED OFFICIAL_BUILD)
   add_custom_command(TARGET config PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/default_contacts.json ${CFGDIR}/
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdhost.conf ${CFGDIR}/
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdfs.conf ${CFGDIR}/
   )
 else ()
   add_custom_command(TARGET config PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/default_contacts.json.test ${CFGDIR}/default_contacts.json
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdhost.conf.test ${CFGDIR}/bdhost.conf
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/bdfs.conf.test ${CFGDIR}/bdfs.conf
   )
 endif (DEFINED OFFICIAL_BUILD)
 
@@ -57,4 +59,5 @@ set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
   ${CFGDIR}/bdkad.conf
   ${CFGDIR}/default_contacts.json
   ${CFGDIR}/bdhost.conf
+  ${CFGDIR}/bdfs.conf
 )

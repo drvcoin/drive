@@ -26,10 +26,52 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-project(drive_src_service)
+project(setup_bdfs)
 
-set(ROOT ${PROJECT_SOURCE_DIR}/../..)
+set(ROOT ${PROJECT_SOURCE_DIR}/../../..)
 
-add_subdirectory(bdfsclient)
-add_subdirectory(bdhost)
-add_subdirectory(bdkad)
+include(${ROOT}/Config.cmake)
+
+set(BDPKG_NAME drive-bdfs)
+set(BDPKG_CFG_DIR "/etc/drive")
+
+set(BDPKG_CONTROL control)
+set(BDPKG_EXTRA preinst postinst prerm postrm)
+set(BDPKG_BIN
+  ${BINDIR}/drive
+  ${BINDIR}/bdfsclient
+  ${BINDIR}/bdfsclientd
+)
+set(BDPKG_CFG
+  ${CFGDIR}/bdfs.conf
+)
+set(BDPKG_SVC
+  ${BINDIR}/bdfsclient.service
+)
+
+# optional relay components
+set(RELAY_PATH ${ROOT}/../bdrelay/out/bin)
+set(QUIC_PATH ${ROOT}/../libquic/out/linux.x86_64/release/bin)
+
+if (NOT EXISTS ${RELAY_PATH})
+  if (NOT DEFINED NO_RELAY)
+    set(NO_RELAY 1)
+    message(WARNING "Relay support is disabled because the project is not found.")
+  endif (NOT DEFINED NO_RELAY)
+endif (NOT EXISTS ${RELAY_PATH})
+
+if (NOT "${NO_RELAY}" EQUAL "1")
+  set(BDPKG_BIN
+    ${BDPKG_BIN}
+    ${RELAY_PATH}/bdrelay-client
+  )
+  set(BDPKG_LIB
+    ${QUIC_PATH}/libboringssl.so
+    ${QUIC_PATH}/libquic.so
+  )
+endif (NOT "${NO_RELAY}" EQUAL "1")
+
+set(BDPKG_TARGET_DEPENDS bdhost config service-bdfsclient)
+
+include(${ROOT}/Setup.cmake)
+
