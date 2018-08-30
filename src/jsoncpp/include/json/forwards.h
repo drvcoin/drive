@@ -16,8 +16,8 @@ namespace Json {
    class Features;
 
    // value.h
-   typedef long int Int;
-   typedef unsigned long int UInt;
+   typedef long long int Int;
+   typedef unsigned long long int UInt;
    class StaticString;
    class Path;
    class PathArgument;
