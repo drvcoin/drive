@@ -30,7 +30,7 @@ Component | Linux | Windows | macOS
 
 #### Prerequisite
 
-C++17 is required to build the Drive project.
+C++14 and cmake are required to build the Drive project.
 
 The dependencies can be installed using the following command on Ubuntu:
 
@@ -55,9 +55,10 @@ git submodule update
 
 ##### Create the build
 
-Run the following command to create a test build on Ubuntu:
+Run the following commands to create a test build on Ubuntu:
 
-```
+```bash
+cmake .
 make
 ```
 
@@ -67,14 +68,16 @@ The difference between a test build and an official build is that the default se
 
 To create an official build instead, run the following command:
 
-```
-make OFFICIAL_BUILD=1
+```bash
+cmake -DOFFICIAL_BUILD=1 .
+make
 ```
 
 To build on other Linux redistributions that does not support `.deb` installation packages, run the following build command to skip the generation for `.deb` packages:
 
-```
-make NO_DEB=1
+```bash
+cmake -DNO_DEB=1 .
+make
 ```
 
 ### Run Drive
