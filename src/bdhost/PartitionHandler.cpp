@@ -87,6 +87,10 @@ namespace bdhost
     {
       this->OnReservePartition(context);
     }
+    else if (action == "Unreserve")
+    {
+      this->OnUnreservePartition(context);
+    }
     else
     {
       context.setResponseCode(500);
@@ -165,13 +169,30 @@ namespace bdhost
       return;
     }
 
-    std::string response = SetReservedSpace(reserveSize);
+    std::string response = ReserveSpace(reserveSize);
     if(response != "")
     {
       PublishStorage();
     }
 
     context.writeResponse(response);
+  }
+
+
+  void PartitionHandler::OnUnreservePartition(bdhttp::HttpContext & context)
+  {
+    std::string uuid = context.parameter("reserveId");
+    if(uuid.empty())
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Invalid reserveId.", bdhttp::ErrorCode::ARGUMENT_INVALID);
+      return;
+    }
+
+    UnreserveSpace(uuid);
+    PublishStorage();
+
+    context.writeResponse("true");
   }
 
 
@@ -302,9 +323,11 @@ namespace bdhost
   void PartitionHandler::OnDelete(bdhttp::HttpContext & context, const std::string & name)
   {
     // TODO: release the reference to contract
+    UnreserveSpace(name);
+    PublishStorage();
 
     std::stringstream cmd;
-    cmd << "rm -rf " << name;
+    cmd << "rm -rf " << Options::workDir << name;
 
     system(cmd.str().c_str());
 
