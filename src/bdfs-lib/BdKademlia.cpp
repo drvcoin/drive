@@ -21,6 +21,7 @@
 */
 
 #include <assert.h>
+#include <stdio.h>
 #include <json/json.h>
 #include "BdTypes.h"
 #include "Base64Encoder.h"
@@ -64,6 +65,7 @@ namespace bdfs
     bool rtn = this->Call("SetValue", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isBool())
         {
           result->Complete(false);
@@ -91,6 +93,7 @@ namespace bdfs
     bool rtn = this->Call("GetValue", args,
       [result](Json::Value & response, bool error)
       {
+        result->SetError(error);
         if (error || !response.isString())
         {
           result->Complete(Buffer());
@@ -111,6 +114,198 @@ namespace bdfs
           }
 
           result->Complete(std::move(buffer));
+        }
+      }
+    );
+
+    return rtn ? result : nullptr;
+  }
+
+  AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const char * contract, const size_t storage, const size_t reputation = 1)
+  {
+    assert(node);
+
+    Json::Value value;
+    value["type"] = "storage";
+    value["name"] = std::string(node);
+    value["contract"] = std::string(contract);
+    value["size"] = Json::Value::UInt(storage);
+    value["reputation"] = Json::Value::UInt(reputation);
+
+    BdObject::CArgs args;
+    args["value"] = value.toStyledString();;
+
+    auto result = std::make_shared<AsyncResult<bool>>();
+
+    bool rtn = this->Call("Publish", args,
+      [result](Json::Value & response, bool error)
+      {
+        result->SetError(error);
+        if (error || !response.isBool())
+        {
+          result->Complete(false);
+        }
+        else
+        {
+          result->Complete(response.asBool());
+        }
+      }
+    );
+
+    return rtn ? result : nullptr;
+  }
+
+
+  AsyncResultPtr<Json::Value> BdKademlia::QueryStorage(const char * query, size_t limit)
+  {
+    assert(query);
+
+    BdObject::CArgs args;
+    args["query"] = std::string(query);
+    args["limit"] = Json::Value::UInt(limit);
+
+    auto result = std::make_shared<AsyncResult<Json::Value>>();
+    bool rtn = this->Call("Query", args,
+      [result](Json::Value & response, bool error)
+      {
+        result->SetError(error);
+        if (error || !response.isArray())
+        {
+          result->Complete(Json::Value());
+        }
+        else
+        {
+          result->Complete(std::move(response));
+        }
+      }
+    );
+
+    return rtn ? result : nullptr;
+  }
+
+
+  AsyncResultPtr<bool> BdKademlia::PublishRelay(const RelayInfo & reg)
+  {
+    Json::Value value;
+    value["type"] = "relay";
+    value["name"] = reg.name;
+
+    for (const auto & endpoint : reg.endpoints)
+    {
+      Json::Value ep;
+      ep["host"] = endpoint.host;
+      ep["socks"] = Json::Value::UInt(endpoint.socksPort);
+      ep["quic"] = Json::Value::UInt(endpoint.quicPort);
+
+      value["endpoints"].append(ep);
+    }
+
+    BdObject::CArgs args;
+    args["value"] = value.toStyledString();
+
+    auto result = std::make_shared<AsyncResult<bool>>();
+
+    bool rtn = this->Call("Publish", args,
+      [result](Json::Value & response, bool error)
+      {
+        result->SetError(error);
+        if (error || !response.isBool())
+        {
+          result->Complete(false);
+        }
+        else
+        {
+          result->Complete(response.asBool());
+        }
+      }
+    );
+
+    return rtn ? result : nullptr;
+  }
+
+
+  static bool parseRelayInfo(Json::Value & obj, RelayInfo & output)
+  {
+    if (!obj.isObject() || obj.isNull())
+    {
+      return false;
+    }
+
+    if (!obj["type"].isString() || obj["type"].asString() != "relay")
+    {
+      return false;
+    }
+
+    if (obj["name"].isString())
+    {
+      output.name = obj["name"].asString();
+    }
+
+    auto & endpoints = obj["endpoints"];
+    if (endpoints.isArray() && !endpoints.isNull())
+    {
+      for (size_t i = 0; i < endpoints.size(); ++i)
+      {
+        auto & ep = endpoints[i];
+        if (!ep.isObject() || ep.isNull())
+        {
+          continue;
+        }
+
+        if (!ep["host"].isString() || !ep["socks"].isIntegral() || !ep["quic"].isIntegral())
+        {
+          continue;
+        }
+
+        RelayInfo::Endpoint endpoint = {
+         ep["host"].asString(),
+         static_cast<uint16_t>(ep["socks"].asUInt()),
+         static_cast<uint16_t>(ep["quic"].asUInt())
+        };
+
+        output.endpoints.emplace_back(std::move(endpoint));
+      }
+    }
+
+    return true;
+  }
+
+
+  AsyncResultPtr<std::vector<RelayInfo>> BdKademlia::QueryRelays(const char * hints, size_t limit)
+  {
+    std::string query = "type:relay";
+    if (hints)
+    {
+      query += std::string(" ") + hints;
+    }
+
+    BdObject::CArgs args;
+    args["query"] = query;
+    args["limit"] = Json::Value::UInt(limit);
+
+    auto result = std::make_shared<AsyncResult<std::vector<RelayInfo>>>();
+
+    bool rtn = this->Call("Query", args,
+      [result](Json::Value & response, bool error)
+      {
+        result->SetError(error);
+        if (error || !response.isArray())
+        {
+          result->Complete(std::vector<RelayInfo>());
+        }
+        else
+        {
+          std::vector<RelayInfo> regs;
+          for (size_t i = 0; i < response.size(); ++i)
+          {
+            RelayInfo info;
+            if (parseRelayInfo(response[i], info))
+            {
+              regs.emplace_back(std::move(info));
+            }
+          }
+
+          result->Complete(std::move(regs));
         }
       }
     );

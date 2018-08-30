@@ -20,9 +20,28 @@
   SOFTWARE.
 */
 
-#include "Global.h"
+#pragma once
 
-namespace bdhost
+#include <stdint.h>
+#include <string>
+#include <vector>
+
+#include "RelayInfo.h"
+
+namespace bdfs
 {
-  bdcontract::ContractRepository * g_contracts = nullptr;
+  struct HostInfo
+  {
+  public:
+
+    std::string ToString() const;
+
+    bool FromString(const std::string & str);
+
+  public:
+
+    std::string url;
+
+    std::vector<RelayInfo> relays;
+  };
 }

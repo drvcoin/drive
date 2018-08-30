@@ -22,14 +22,17 @@
 
 #include <stdio.h>
 #include <signal.h>
-#include <memory>
 #include <sstream>
 #include <array>
+#include <streambuf>
+#include <fstream>
 
 #include "cm256.h"
 #include "ClientManager.h"
 #include "VolumeManager.h"
 #include "ActionHandler.h"
+#include "Util.h"
+#include "Paths.h"
 
 using namespace dfs;
 using namespace bdfs;
@@ -44,27 +47,32 @@ void signalHandler(int signum)
   exit(signum);
 }
 
-std::string execCmd(std::string cmd)
-{
-  std::array<char, 128> buffer;
-  std::string result;
-  std::shared_ptr<FILE> pipe(_popen(cmd.c_str(), "r"), _pclose);
-  if (!pipe) throw std::runtime_error("_popen() failed!");
-  while (!feof(pipe.get()) && !ferror(pipe.get()))
-  {
-    if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
-    {
-      result += buffer.data();
-    }
-  }
-  return result;
-}
-
 int main(int argc, char * * argv)
 {
-  if (argc > 1)
+  std::ifstream cfg(GetDriveConf());
+  std::string data((std::istreambuf_iterator<char>(cfg)),
+               std::istreambuf_iterator<char>());
+
+  if(!data.size())
   {
-    VolumeManager::kademliaUrl = argv[1];
+    return 0;
+  }
+
+  Json::Reader reader;
+  Json::Value json;
+  if (!reader.parse(data.c_str(), data.size(), json, false) ||
+      !json.isObject())
+  {
+    return 0;
+  }
+
+  if(json["kademlia"].isArray())
+  {
+    for(int i = 0; i < json["kademlia"].size(); i++)
+    {
+      auto kd = json["kademlia"][i].asString();
+      VolumeManager::kademliaUrl.emplace_back(kd);
+    }
   }
   else
   {

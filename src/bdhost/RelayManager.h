@@ -20,10 +20,41 @@
   SOFTWARE.
 */
 
-#include <stdio.h>
+#pragma once
 
-int main(int argc, char ** argv)
+#include <map>
+#include <RelayInfo.h>
+
+namespace bdhost
 {
-  printf("Hello World!\n");
-  return 0;
+  class RelayManager
+  {
+  public:
+
+    explicit RelayManager(size_t limit);
+
+    ~RelayManager();
+
+    void Validate();
+
+    bool GetRelayInfos(std::vector<const bdfs::RelayInfo *> & output);
+
+  private:
+
+    static bool IsRelayAlive(int pid);
+
+    void Cleanup();
+
+    int StartRelayProcess(const bdfs::RelayInfo * info);
+
+  private:
+
+    size_t limit;
+
+    std::map<std::string, std::unique_ptr<bdfs::RelayInfo>> regs;
+
+    std::map<std::string, int> relays;
+
+    std::string relayPath;
+  };
 }

@@ -49,6 +49,7 @@ using namespace bdfs;
 static bdfs::HttpConfig defaultConfig;
 
 #define SENDRECV_TIMEOUT 30
+#define MAX_RECV_TIMEOUT 300
 
 
 std::unique_ptr<char[]> ReceiveBdcp(PiperIPC *ipc)
@@ -199,14 +200,14 @@ void HandleOptions()
 
   case Action::Create:
   {
-    if (Options::Name == "" || Options::Repo == "")
+    if (Options::Name == "")
     {
       printf("Missing <volumeName> or <contractRepo>\n");
     }
     else
     {
       printf("Creating volume '%s'...\n", Options::Name.c_str());
-      bool success = VolumeManager::CreateVolume(Options::Name, Options::Repo, Options::DataBlocks, Options::CodeBlocks);
+      bool success = VolumeManager::CreateVolume(Options::Name, Options::Size, Options::DataBlocks, Options::CodeBlocks);
       if (success)
         printf("Config file : %s.config\n", Options::Name.c_str());
       else
@@ -245,8 +246,11 @@ int main(int argc, char * * argv)
 {
   Options::Init(argc, argv);
 
-  VolumeManager::defaultConfig.ConnectTimeout(5);
-  VolumeManager::defaultConfig.RequestTimeout(5);
+  if(Options::KademliaUrl.size() == 0)
+  {
+    printf("Kademlia url's not found.\n");
+    return 0;
+  }
 
   VolumeManager::kademliaUrl = Options::KademliaUrl;
 

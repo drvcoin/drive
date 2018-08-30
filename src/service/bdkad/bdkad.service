@@ -1,0 +1,10 @@
+[Unit]
+Description=Drive Kademlia Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/bdkadd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

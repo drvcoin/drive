@@ -19,8 +19,14 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-
+#include <string>
+#include <fstream>
+#include <streambuf>
+#include <json/json.h>
 #include <uuid/uuid.h>
+#include <sys/stat.h>
+
+#include "Options.h"
 #include "Util.h"
 
 namespace bdhost
@@ -51,5 +57,56 @@ namespace bdhost
     char str[36];
     uuid_unparse(obj, str);
     return str;
+  }
+
+
+  const char * RESERVED_FILE = "reserved.json";
+
+  uint64_t GetReservedSpace(std::string reserve_id)
+  {
+    reserve_id = reserve_id == "" ? RESERVED_FILE : reserve_id + "/" + RESERVED_FILE;
+
+    std::ifstream f(Options::workDir + reserve_id);
+    std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    Json::Reader reader;
+    Json::Value json;
+    if (!reader.parse(str.c_str(), str.size(), json, false) ||
+        !json.isObject() ||
+        !json["size"].isIntegral())
+    {
+      return 0;
+    }
+
+    return json["size"].asUInt();
+  }
+
+  std::string SetReservedSpace(const uint64_t size)
+  {
+    auto reservedSpace = GetReservedSpace();
+
+    if(bdhost::Options::size < (size + reservedSpace))
+    {
+      printf("Reserve size exceeds size of host.\n");
+      return "";
+    }
+
+    Json::Value json;
+    json["size"] = Json::Value::UInt(size + reservedSpace);
+
+    std::string reservePath = Options::workDir + std::string(RESERVED_FILE);
+    std::ofstream out(reservePath.c_str());
+    out << json.toStyledString();
+    out.close();
+
+    std::string reserveId = uuidgen();
+    reservePath = Options::workDir + reserveId;
+    mkdir(reservePath.c_str(), 0755);
+    json["size"] = Json::Value::UInt(size + reservedSpace);
+
+    std::ofstream id_out(reservePath + "/" + RESERVED_FILE);
+    id_out << json.toStyledString();
+    id_out.close();
+
+    return reserveId;
   }
 }

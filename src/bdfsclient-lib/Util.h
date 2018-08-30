@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <string>
+
 #define return_false_if(condition) \
   if (condition) { return false; }
 
@@ -30,11 +32,13 @@
 
 
 #ifdef _WIN32
-//#include <WinSock2.h>
+void MakeDir(const std::string & path);
+
 #else
 #include <arpa/inet.h>
 
 uint64_t htonll(uint64_t val);
 uint64_t ntohll(uint64_t val);
 bool nbd_ready(const char* devname, bool do_print = false);
+std::string execCmd(std::string cmd);
 #endif

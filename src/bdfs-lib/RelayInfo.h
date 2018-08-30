@@ -20,9 +20,29 @@
   SOFTWARE.
 */
 
-#include "ContractRepository.h"
+#pragma once
 
-namespace bdhost
+#include <stdint.h>
+#include <string>
+#include <vector>
+
+namespace bdfs
 {
-  extern bdcontract::ContractRepository * g_contracts;
+  struct RelayInfo
+  {
+  public:
+
+    struct Endpoint
+    {
+      std::string host;
+      uint16_t socksPort = 0;
+      uint16_t quicPort = 0;
+    };
+
+  public:
+
+    std::string name;
+
+    std::vector<Endpoint> endpoints;
+  };
 }

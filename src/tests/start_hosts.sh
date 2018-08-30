@@ -8,11 +8,9 @@ while [[ $id -lt 8 ]]; do
 
   mkdir -p host-$id
 
-  pushd host-$id > /dev/null
+  hostIP=`ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/'`
 
-  ../bdhost -p $port -n host-$id -e "http://localhost:$port" -k "http://localhost:7800" -r ../contracts &
-
-  popd > /dev/null
+  ./bdhost -p $port -n host-$id -e "http://$hostIP:$port" -k "http://localhost:7800" -w "host-$id" -s 1000000000 &
 
   let id=$id+1
 

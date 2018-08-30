@@ -69,7 +69,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)\..\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)\..\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -136,6 +141,7 @@
     <ClCompile Include="BdTypes.cpp" />
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="Event.cpp" />
+    <ClCompile Include="HostInfo.cpp" />
     <ClCompile Include="HttpCookies.cpp" />
     <ClCompile Include="HttpRequest.cpp" />
   </ItemGroup>
@@ -152,6 +158,7 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="EventLoop.h" />
+    <ClInclude Include="HostInfo.h" />
     <ClInclude Include="HttpConfig.h" />
     <ClInclude Include="HttpCookies.h" />
     <ClInclude Include="HttpRequest.h" />

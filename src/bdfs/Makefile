@@ -31,18 +31,18 @@ SRCS = \
   Main.cpp \
   Options.cpp 
 
-VPATH = $(BINDIR)
+VPATH = $(BINDIR) $(ROOT_UBD)/out/bin $(ROOT_CM256)/out/bin
 
 LIBS = \
   libbdfsclient.a \
 	libbdfs.a \
 	libbdcontract.a \
 	libjson.a \
-  $(ROOT)/../ubd/out/lib/ubd.a \
-  $(ROOT)/../cm256/out/lib/cm256.a
+  ubd.a \
+  cm256.a
 
 TARGET = drive
-CCFLAGS = -std=c++17  -I$(ROOT)/../ubd/out/inc -I$(ROOT)/../cm256/out/inc -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib
+CCFLAGS = -std=c++17  -I$(ROOT_UBD)/out/inc -I$(ROOT_CM256)/src -I../jsoncpp/include -I../bdfs-lib -I../bdcontract-lib -I../bdfsclient-lib
 
 SYSLIBS = -lcrypto -lcurl -ldl -pthread
 

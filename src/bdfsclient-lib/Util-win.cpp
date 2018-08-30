@@ -20,9 +20,16 @@
   SOFTWARE.
 */
 
-#include "Global.h"
+#include "Util.h"
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <cerrno>
+#include <memory>
+#include <sstream>
+#include <Windows.h>
 
-namespace bdhost
+void MakeDir(const std::string & path)
 {
-
+  CreateDirectory(path.c_str(), NULL);
 }

@@ -28,30 +28,25 @@
 #include "Options.h"
 #include "HttpModule.h"
 #include "HttpServer.h"
-#include "Global.h"
 #include "KademliaModule.h"
 
 
 
 int main(int argc, const char ** argv)
 {
-  printf("main\n");
-
-  bdhost::Options::Init(argc, argv);
+  bdkad::Options::Init(argc, argv);
 
   bdhttp::HttpModule::Initialize();
 
   bdhttp::HttpServer server;
 
-  if (!server.Start(bdhost::Options::port, nullptr))
+  if (!server.Start(bdkad::Options::http_port, nullptr))
   {
-    printf("[Main]: failed to start http server on port %u.\n", bdhost::Options::port);
+    printf("[Main]: failed to start http server on port %u.\n", bdkad::Options::http_port);
     return -1;
   }
 
-  bdhost::KademliaModule::Initialize();
-
-  printf("kad initialized\n");
+  bdkad::KademliaModule::Initialize();
 
   while (server.IsRunning())
   {

@@ -1,0 +1,19 @@
+#!/bin/sh
+mkdir -p /var/drive/bdkad
+mkdir -p /etc/drive
+
+systemctl daemon-reload
+
+systemctl enable bdkad.service
+
+bdkadconf="/etc/drive/bdkad.conf"
+nodename=$(uuidgen)
+kadaddr=$(hostname -I | cut -d' ' -f1)
+
+sed -i "s/<NODENAME>/$nodename/" $bdkadconf
+sed -i "s/<KADADDR>/$kadaddr/" $bdkadconf
+
+echo "Current Kademlia configurations are following, change it if neccessary in $bdkadconf"
+cat $bdkadconf
+
+service bdkad restart

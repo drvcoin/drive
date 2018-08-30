@@ -27,20 +27,13 @@ TARGETEXE = bdkad
 include $(ROOT)/Config.mk
 
 SRCS = \
-	Global.cpp \
 	Main.cpp \
 	Options.cpp \
 	KademliaModule.cpp \
 	KademliaHandler.cpp \
 
 
-VPATH = $(BINDIR)
-
-ifneq ($(BUILDTYPE),debug)
-VPATH += $(ROOT)/../kademlia/out/linux.x86_64/release/bin
-else
-VPATH += $(ROOT)/../kademlia/out/linux.x86_64/debug/bin
-endif
+VPATH = $(BINDIR) $(ROOT_KADEMLIA)/out/bin
 
 LIBS = \
 	libbdcontract.a \
@@ -51,6 +44,6 @@ LIBS = \
 
 SYSLIBS = -lcrypto -lcurl -luuid -ldl -pthread
 
-CCFLAGS = -I$(ROOT)/../kademlia/out/include -I../jsoncpp/include -I../mongoose -I../bdcontract-lib -I../httpserver -fPIC -std=c++17
+CCFLAGS = -I$(ROOT_KADEMLIA)/out/inc -I../jsoncpp/include -I../mongoose -I../bdcontract-lib -I../httpserver -fPIC -std=c++17
 
 include $(ROOT)/Cpp.mk
