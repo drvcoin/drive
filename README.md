@@ -24,9 +24,9 @@ Component | Linux | Windows | macOS
 
 The detailed instructions for different platforms are covered in the following sections:
 
- - [Linux](#instructions-linux)
- - [Windows](#instructions-windows)
- - [macOS](#instructions-macos)
+ - [Linux](#instructions---linux)
+ - [Windows](#instructions---windows)
+ - [macOS](#instructions---macos)
 
 ## Instructions - Linux
 
