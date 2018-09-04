@@ -26,10 +26,30 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-project(drive_src_service)
+project(setup_bdfs)
 
-set(ROOT ${PROJECT_SOURCE_DIR}/../..)
+set(ROOT ${PROJECT_SOURCE_DIR}/../../..)
 
-add_subdirectory(bdfsclient)
-add_subdirectory(bdhost)
-add_subdirectory(bdkad)
+include(${ROOT}/Config.cmake)
+
+set(BDPKG_NAME drive-bdfs)
+set(BDPKG_CFG_DIR "/etc/drive")
+
+set(BDPKG_CONTROL control)
+set(BDPKG_EXTRA preinst postinst prerm postrm)
+set(BDPKG_BIN
+  ${BINDIR}/drive
+  ${BINDIR}/bdfsclient
+  ${BINDIR}/bdfsclientd
+)
+set(BDPKG_CFG
+  ${CFGDIR}/bdfs.conf
+)
+set(BDPKG_SVC
+  ${BINDIR}/bdfsclient.service
+)
+
+set(BDPKG_TARGET_DEPENDS bdfs bdfsclient config service-bdfsclient)
+
+include(${ROOT}/Setup.cmake)
+

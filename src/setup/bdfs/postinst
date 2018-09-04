@@ -1,0 +1,14 @@
+#!/bin/sh
+mkdir -p /var/drive/
+mkdir -p /etc/drive
+
+systemctl daemon-reload
+
+systemctl enable bdfsclient.service
+
+bdfsconf="/etc/drive/bdfs.conf"
+
+echo "Current Drive Daemon configurations is following, change it if neccessary in $bdfsconf"
+cat $bdfsconf
+
+service bdfsclient restart
