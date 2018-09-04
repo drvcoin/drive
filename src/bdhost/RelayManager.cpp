@@ -82,31 +82,35 @@ namespace bdhost
     }
 
     bdfs::HttpConfig config;
-    auto session = bdfs::BdSession::CreateSession(Options::kademlia.c_str(), &config);
-    auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
-
-    auto result = kademlia->QueryRelays(nullptr, this->limit);
-    if (!result->Wait())
+    for(auto & kd : Options::kademlia)
     {
-      return;
-    }
+      auto session = bdfs::BdSession::CreateSession(kd.c_str(), &config);
+      auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
 
-    auto & arr = result->GetResult();
-    for (auto & info : arr)
-    {
-      if (this->relays.find(info.name) != this->relays.end())
+      auto result = kademlia->QueryRelays(nullptr, this->limit);
+      if (!result->Wait() || result->HasError())
       {
         continue;
       }
 
-      int pid = this->StartRelayProcess(&info);
-      if (pid != 0)
+      auto & arr = result->GetResult();
+      for (auto & info : arr)
       {
-        auto ptr = std::make_unique<bdfs::RelayInfo>();
-        *ptr = std::move(info);
-        this->relays[ptr->name] = pid;
-        this->regs[ptr->name] = std::move(ptr);
+        if (this->relays.find(info.name) != this->relays.end())
+        {
+          continue;
+        }
+
+        int pid = this->StartRelayProcess(&info);
+        if (pid != 0)
+        {
+          auto ptr = std::make_unique<bdfs::RelayInfo>();
+          *ptr = std::move(info);
+          this->relays[ptr->name] = pid;
+          this->regs[ptr->name] = std::move(ptr);
+        }
       }
+      break;
     }
   }
 
