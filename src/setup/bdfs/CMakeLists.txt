@@ -49,29 +49,7 @@ set(BDPKG_SVC
   ${BINDIR}/bdfsclient.service
 )
 
-# optional relay components
-set(RELAY_PATH ${ROOT}/../bdrelay/out/bin)
-set(QUIC_PATH ${ROOT}/../libquic/out/linux.x86_64/release/bin)
-
-if (NOT EXISTS ${RELAY_PATH})
-  if (NOT DEFINED NO_RELAY)
-    set(NO_RELAY 1)
-    message(WARNING "Relay support is disabled because the project is not found.")
-  endif (NOT DEFINED NO_RELAY)
-endif (NOT EXISTS ${RELAY_PATH})
-
-if (NOT "${NO_RELAY}" EQUAL "1")
-  set(BDPKG_BIN
-    ${BDPKG_BIN}
-    ${RELAY_PATH}/bdrelay-client
-  )
-  set(BDPKG_LIB
-    ${QUIC_PATH}/libboringssl.so
-    ${QUIC_PATH}/libquic.so
-  )
-endif (NOT "${NO_RELAY}" EQUAL "1")
-
-set(BDPKG_TARGET_DEPENDS bdhost config service-bdfsclient)
+set(BDPKG_TARGET_DEPENDS bdfs bdfsclient config service-bdfsclient)
 
 include(${ROOT}/Setup.cmake)
 
