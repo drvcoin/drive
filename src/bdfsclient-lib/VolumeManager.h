@@ -37,6 +37,8 @@ namespace dfs
 
     static bool DeleteVolume(const std::string &name, const std::string &path);
 
+    static void Stop();
+
     static bdfs::HttpConfig defaultConfig;
 
     static std::vector<std::string> kademliaUrl;

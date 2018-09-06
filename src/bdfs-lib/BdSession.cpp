@@ -98,6 +98,15 @@ namespace bdfs
     } 
   }
 
+  void BdSession::Stop()
+  {
+    if (queueStarted)
+    {
+      queue.Stop();
+      queueStarted = false;
+    }
+  }
+
   std::string BdSession::__EncodeArgs(BdObject::CArgs & args)
   {
     char sep = '?';
