@@ -47,5 +47,8 @@ namespace bdkad
     void OnPublish(bdhttp::HttpContext & context);
 
     void OnQuery(bdhttp::HttpContext & context);
+
+    void OnGetActivityLog(bdhttp::HttpContext & context);
+
   };
 }

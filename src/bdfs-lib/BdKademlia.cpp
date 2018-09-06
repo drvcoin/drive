@@ -27,6 +27,8 @@
 #include "Base64Encoder.h"
 #include "BdKademlia.h"
 
+#include <chrono>
+
 namespace bdfs
 {
   BD_TYPE_REG(Kademlia, BdKademlia);
@@ -44,7 +46,7 @@ namespace bdfs
     assert(value);
 
     size_t encodedLen = Base64Encoder::GetEncodedLength(size);
-    
+
     std::string encoded;
     encoded.resize(encodedLen);
 
@@ -121,15 +123,20 @@ namespace bdfs
     return rtn ? result : nullptr;
   }
 
-  AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const char * contract, const size_t storage, const size_t reputation = 1)
+  AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const char * contract, const char * endpoint, const size_t totalStorage, const size_t availableStorage, const size_t reputation = 1)
   {
     assert(node);
 
+    auto timestamp = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+
     Json::Value value;
+    value["ts"] = Json::UInt(timestamp);
     value["type"] = "storage";
     value["name"] = std::string(node);
+    value["endpoint"] = std::string(endpoint);
     value["contract"] = std::string(contract);
-    value["size"] = Json::Value::UInt(storage);
+    value["totalSize"] = Json::Value::UInt(totalStorage);
+    value["availableSize"] = Json::Value::UInt(availableStorage);
     value["reputation"] = Json::Value::UInt(reputation);
 
     BdObject::CArgs args;
