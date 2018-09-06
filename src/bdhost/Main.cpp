@@ -49,7 +49,7 @@ void PublishStorage()
     // Publish size and reputaiton of host
     auto availableSize = bdhost::Options::size - bdhost::GetReservedSpace();
 
-    auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), availableSize, 0);
+    auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), bdhost::Options::endpoint.c_str(), bdhost::Options::size, availableSize, 0);
 
     if (!result_query->Wait() || !result_query->GetResult())
     {
@@ -97,7 +97,7 @@ static void init_kad()
         printf("Host info: %s\n", host.c_str());
 
         bdfs::HttpConfig config;
-        auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config); 
+        auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config);
 
         auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
 
