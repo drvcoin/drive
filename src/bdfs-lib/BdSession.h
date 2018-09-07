@@ -53,6 +53,7 @@ namespace bdfs
     static std::shared_ptr<BdSession> GetSession(const char * base);
     static std::shared_ptr<BdSession> GetSession(const std::string & base);
     static std::shared_ptr<BdSession> CreateSession(const char * base, HttpConfig * config, bool ownConfig = false);
+    static void Stop();
 
     ~BdSession();
 

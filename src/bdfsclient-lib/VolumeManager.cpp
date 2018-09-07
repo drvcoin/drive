@@ -344,4 +344,9 @@ namespace dfs
 
     return true;
   }
+
+  void VolumeManager::Stop()
+  {
+    bdfs::BdSession::Stop();
+  }
 }

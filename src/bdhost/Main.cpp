@@ -42,18 +42,30 @@ void PublishStorage()
     config.ConnectTimeout(5);
     config.RequestTimeout(5);
 
-    auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config);
-
-    auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
-
-    // Publish size and reputaiton of host
-    auto availableSize = bdhost::Options::size - bdhost::GetReservedSpace();
-
-    auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), bdhost::Options::endpoint.c_str(), bdhost::Options::size, availableSize, 0);
-
-    if (!result_query->Wait() || !result_query->GetResult())
+    for(auto &kd : bdhost::Options::kademlia)
     {
-      printf("WARNING: failed to publish storage and reputation to kademlia\n");
+      auto session = bdfs::BdSession::CreateSession(kd.c_str(), &config);
+
+      auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
+
+      // Publish size and reputaiton of host
+      auto availableSize = bdhost::Options::size - bdhost::GetReservedSpace();
+
+      auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), bdhost::Options::endpoint.c_str(), bdhost::Options::size, availableSize, 0);
+
+      if (!result_query->Wait(kademlia->GetTimeout()) || result_query->HasError())
+      {
+        continue;
+      }
+
+      if(!result_query->GetResult())
+      {
+        printf("WARNING: failed to publish storage and reputation to kademlia\n");
+      }
+      else
+      {
+        break;
+      }
     }
 }
 
@@ -97,15 +109,28 @@ static void init_kad()
         printf("Host info: %s\n", host.c_str());
 
         bdfs::HttpConfig config;
-        auto session = bdfs::BdSession::CreateSession(bdhost::Options::kademlia.c_str(), &config);
 
-        auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
-
-        auto result = kademlia->SetValue(key.c_str(), host.c_str(), host.size(), time(nullptr), 7 * 24 * 60 * 60);
-
-        if (!result->Wait() || !result->GetResult())
+        for(auto &kd : bdhost::Options::kademlia)
         {
-          printf("WARNING: failed to publish endpoints to kademlia\n");
+          auto session = bdfs::BdSession::CreateSession(kd.c_str(), &config);
+
+          auto kademlia = std::static_pointer_cast<bdfs::BdKademlia>(session->CreateObject("Kademlia", "host://Kademlia", "Kademlia"));
+
+          auto result = kademlia->SetValue(key.c_str(), host.c_str(), host.size(), time(nullptr), 7 * 24 * 60 * 60);
+
+          if (!result->Wait(kademlia->GetTimeout()) || result->HasError())
+          {
+            continue;
+          }
+
+          if(!result->GetResult())
+          {
+            printf("WARNING: failed to publish endpoints to kademlia\n");
+          }
+          else
+          {
+            break;
+          }
         }
 
         PublishStorage();
