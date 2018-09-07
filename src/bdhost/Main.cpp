@@ -51,7 +51,7 @@ void PublishStorage()
       // Publish size and reputaiton of host
       auto availableSize = bdhost::Options::size - bdhost::GetReservedSpace();
 
-      auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), availableSize, 0);
+      auto result_query = kademlia->PublishStorage(bdhost::Options::name.c_str(), bdhost::Options::name.c_str(), bdhost::Options::endpoint.c_str(), bdhost::Options::size, availableSize, 0);
 
       if (!result_query->Wait(kademlia->GetTimeout()) || result_query->HasError())
       {
