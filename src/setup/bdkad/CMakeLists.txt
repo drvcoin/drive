@@ -36,7 +36,7 @@ set(BDPKG_NAME drive-bdkad)
 set(BDPKG_CFG_DIR "/etc/drive")
 
 set(BDPKG_CONTROL control)
-set(BDPKG_EXTRA preinst postinst prerm postrm)
+set(BDPKG_EXTRA preinst postinst prerm postrm conffiles)
 set(BDPKG_BIN
   ${BINDIR}/bdkad
   ${BINDIR}/bdkadd
