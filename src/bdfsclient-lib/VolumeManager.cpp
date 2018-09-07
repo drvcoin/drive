@@ -171,7 +171,7 @@ namespace dfs
     std::unordered_set<std::string> providersUsed;
     Json::Value partitionsArray;
 
-    std::string query = "type:\"storage\" size:" + std::to_string(providerSize);
+    std::string query = "type:\"storage\" availableSize:" + std::to_string(providerSize);
 
     for(auto &kd : kademliaUrl)
     {
@@ -206,7 +206,7 @@ namespace dfs
           auto contract = std::make_unique<bdcontract::Contract>();
           contract->SetName(json["contract"].asString());
           contract->SetProvider(json["name"].asString());
-          contract->SetSize(json["size"].asUInt());
+          contract->SetSize(json["availableSize"].asUInt());
           contract->SetReputation(json["reputation"].asUInt());
           contracts.emplace_back(std::move(contract));
         }
@@ -310,7 +310,7 @@ namespace dfs
     fwrite(result.c_str(), 1, result.size(), file);
 
     fclose(file);
-    
+
     return true;
   }
 
