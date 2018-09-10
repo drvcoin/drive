@@ -26,42 +26,38 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-project(drive_src)
+project(bdblob)
 
-set(ROOT ${PROJECT_SOURCE_DIR}/..)
+set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
-add_subdirectory(jsoncpp)
+include(${ROOT}/Config.cmake)
 
-if (EXISTS ${PROJECT_SOURCE_DIR}/cm256)
-  add_subdirectory(cm256)
-endif (EXISTS ${PROJECT_SOURCE_DIR}/cm256)
+add_executable(
+  bdblob
 
-if (EXISTS ${PROJECT_SOURCE_DIR}/ubd)
-  add_subdirectory(ubd)
-endif (EXISTS ${PROJECT_SOURCE_DIR}/ubd)
+  commands/GetCommand.cpp
+  commands/ListCommand.cpp
+  commands/MkdirCommand.cpp
+  commands/PutCommand.cpp
+  commands/RmCommand.cpp
+  ArgumentParser.cpp
+  BlobApi.cpp
+  BlobConfig.cpp
+  BlobError.cpp
+  BufferedInputStream.cpp
+  BufferedOutputStream.cpp
+  Command.cpp
+  File.cpp
+  FileBlob.cpp
+  FileBlobProvider.cpp
+  Folder.cpp
+  IInputStream.cpp
+  IOutputStream.cpp
+  Main.cpp
+)
 
-if (EXISTS ${PROJECT_SOURCE_DIR}/kademlia)
-  add_subdirectory(kademlia)
-endif (EXISTS ${PROJECT_SOURCE_DIR}/kademlia)
+include_directories(".")
 
-add_subdirectory(mongoose)
-add_subdirectory(bdcontract-lib)
-add_subdirectory(bdcontract)
-add_subdirectory(bdfs-lib)
-add_subdirectory(bdfsclient-lib)
-add_subdirectory(bdfs)
-add_subdirectory(bdfsclient)
-add_subdirectory(bdblob)
-
-add_subdirectory(httpserver)
-add_subdirectory(bdhost)
-add_subdirectory(bdkad)
-add_subdirectory(config)
-add_subdirectory(service)
-
-if (UNIX)
-  if (NOT DEFINED NO_DEB)
-    add_subdirectory(setup)
-  endif (NOT DEFINED NO_DEB)
-endif (UNIX)
-
+if (NOT APPLE)
+bd_sys_lib(bdblob uuid)
+endif (NOT APPLE)
