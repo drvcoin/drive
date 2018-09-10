@@ -27,6 +27,7 @@
 #include <fstream>
 #include <array>
 
+#include <thread>
 #include "cm256.h"
 #include "UnixDomainSocket.h"
 #include "ClientManager.h"
@@ -38,17 +39,29 @@ using namespace dfs;
 using namespace bdfs;
 
 ClientManager client;
+sigset_t mySigs;
 
-void signalHandler(int signum)
+void setupSigHandler()
 {
-  printf("Interrupt received by signal ( %d ).\n",signum);
-  ActionHandler::Cleanup();
-  client.Stop();
-  exit(signum);
+  sigemptyset(&mySigs);
+  sigaddset(&mySigs, SIGINT);
+  sigaddset(&mySigs, SIGTERM);
+
+  pthread_sigmask(SIG_BLOCK, &mySigs, NULL);
+
+  std::thread([]{
+    int sig;
+    sigwait(&mySigs, &sig);
+    printf("Interrupted by signal (%d)\n", sig);
+    ActionHandler::Cleanup();
+    client.Stop();
+  }).detach();
 }
 
 int main(int argc, char * * argv)
 {
+  setupSigHandler();
+
   std::ifstream cfg("/etc/drive/bdfs.conf");
   std::string data((std::istreambuf_iterator<char>(cfg)),
                std::istreambuf_iterator<char>());
@@ -75,9 +88,6 @@ int main(int argc, char * * argv)
     }
   }
 
-  signal(SIGINT, signalHandler);
-  signal(SIGTERM, signalHandler);
-
   if (cm256_init()) {
     exit(1);
   }
@@ -91,17 +101,10 @@ int main(int argc, char * * argv)
     ActionHandler::AddNbdPath(path);
   }
 
-  if(!client.Start())
-  {
-    printf("Error: Failed to start processing thread.\n");
-  }
+  client.Run();
 
-  while(true)
-  {
-    sleep(1);
-  }
+  VolumeManager::Stop();
 
-  client.Stop();
-
+  printf("bdfsclient server exiting...\n");
   return 0;
 }

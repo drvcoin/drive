@@ -39,26 +39,37 @@ namespace dfs
   {
   }
 
-  bool ClientManager::Start()
+  void ClientManager::Run()
   {
     (void) signal(SIGPIPE, SIG_IGN);
 
     if (!unixSocket.Listen("bdfsclient", 2))
     {
       printf("Failed to listen on Unix socket\n");
-      return false;
+      return;
     }
 
     if (!this->requestLoop.Start())
     {
       printf("Failed to start request loop\n");
-      return false;
+      return;
     }
 
-    std::thread th(&ClientManager::Listen, this);
-    th.detach();
-  
-    return true;
+    // Listen loop
+    std::thread([&]{
+      isUnixSocketListening = true;
+      while(true)
+      {
+        UnixDomainSocket * socket = this->unixSocket.Accept();
+
+        if (socket == NULL)
+        {
+          break;
+        }
+
+        this->requestLoop.SendEvent(this, socket);
+      }
+    }).join();
   }
 
   bool ClientManager::Stop()
@@ -174,21 +185,5 @@ namespace dfs
     socket->Close();
     
     return true;
-  }
-
-  void ClientManager::Listen()
-  {
-    isUnixSocketListening = true;
-    for(;;)
-    {
-      UnixDomainSocket * socket = this->unixSocket.Accept();
-
-      if (socket == NULL)
-      {
-        break;
-      }
-
-      this->requestLoop.SendEvent(this, socket);
-    }
   }
 }

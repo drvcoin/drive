@@ -40,11 +40,10 @@ namespace dfs
 
     std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char []> &buff, UnixDomainSocket *socket, bool &shouldReply);
     static bool HandleRequest(void *sender, UnixDomainSocket *socket);
-    void Listen();
 
   public:
     ClientManager();
-    bool Start();
+    void Run();
     bool Stop();
   };
 }

@@ -26,6 +26,8 @@
 #include <sys/stat.h>
 #include <json/json.h>
 
+#include <thread>
+
 #include "HttpHandlerRegister.h"
 #include "KademliaHandler.h"
 #include "Digest.h"
@@ -92,6 +94,10 @@ namespace bdkad
     else if (action == "Query")
     {
       this->OnQuery(context);
+    }
+    else if (action == "GetActivityLog")
+    {
+      this->OnGetActivityLog(context);
     }
     else
     {
@@ -187,7 +193,6 @@ namespace bdkad
       return;
     }
 
-
     sha1_t digest;
     Digest::Compute(key.c_str(), key.size(), digest);
 
@@ -264,10 +269,43 @@ namespace bdkad
     {
       printf("ERROR: failed to set value.\n");
       context.setResponseCode(500);
-      context.writeError("Failed", "Failed to set value", bdhttp::ErrorCode::GENERIC_ERROR);
+      context.writeError("Failed", "Failed to publish value", bdhttp::ErrorCode::GENERIC_ERROR);
+      return;
     }
 
     context.writeResponse("true");
+
+    Json::Value copy = json;
+
+    std::thread([copy](){
+
+      Json::Value json = copy;
+
+      json["type"] = Json::Value("log:").asString() + json["type"].asString();
+      Json::FastWriter writer;
+      auto jsonStr = writer.write(json);
+
+      std::string keyStr;
+      keyStr = json["type"].asString() + ":" + json["name"].asString() + ":" + std::to_string(json["ts"].asUInt());
+
+      printf("Writing log to %s\n",keyStr.c_str());
+
+      sha1_t digest;
+      Digest::Compute(keyStr.c_str(), keyStr.size(), digest);
+      KeyPtr key = std::make_shared<Key>(digest);
+
+      auto data = std::make_shared<Buffer>((uint8_t*)jsonStr.c_str(), jsonStr.size(), true, true);
+
+      auto result = AsyncResultPtr(new AsyncResult<bool>());
+
+      KademliaHandler::controller->SaveLog(key, data, UINT32_MAX, 0, result);
+
+      if (!result->Wait(60000) || !AsyncResultHelper::GetResult<bool>(result.get()))
+      {
+        printf("WARNING: failed to log value.\n");
+      }
+    }).detach();
+
   }
 
   void KademliaHandler::OnQuery(bdhttp::HttpContext & context)
@@ -326,4 +364,57 @@ namespace bdkad
       context.writeError("Failed", "Value not found", bdhttp::ErrorCode::GENERIC_ERROR);
     }
   }
+
+  void KademliaHandler::OnGetActivityLog(bdhttp::HttpContext & context)
+  {
+    printf("Kademlia::OnGetActivityLog\n");
+
+    uint32_t starttime = static_cast<uint32_t>(strtoul(context.parameter("starttime"), nullptr, 10));
+    uint32_t endtime   = static_cast<uint32_t>(strtoul(context.parameter("endtime"), nullptr, 10));
+
+
+    std::string query("type:\"log:storage\"");
+
+    if (starttime)
+    {
+      query = query + " ts:" + std::to_string(starttime);
+    }
+
+    if (endtime)
+    {
+      query = query + " -ts:" + std::to_string(endtime);
+    }
+
+    uint32_t limit = UINT32_MAX;
+
+    sha1_t digest;
+    Digest::Compute(query.c_str(), query.size(), digest);
+    KeyPtr key = std::make_shared<Key>(digest);
+
+    auto result = AsyncResultPtr(new  AsyncResult<BufferPtr>());
+
+    KademliaHandler::controller->Query(key, query, limit, result);
+
+    if (!result->Wait(60000))
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Internal Error", bdhttp::ErrorCode::GENERIC_ERROR);
+      return;
+    }
+
+
+    auto buffer = AsyncResultHelper::GetResult<BufferPtr>(result.get());
+
+    if (buffer && buffer->Size() > 0)
+    {
+      printf("RESULT: %s\n", std::string(reinterpret_cast<const char *>(buffer->Data()), buffer->Size()).c_str());
+      context.writeResponse(static_cast<const char *>(buffer->Data()), buffer->Size());
+    }
+    else
+    {
+      context.setResponseCode(500);
+      context.writeError("Failed", "Value not found", bdhttp::ErrorCode::GENERIC_ERROR);
+    }
+  }
+
 }

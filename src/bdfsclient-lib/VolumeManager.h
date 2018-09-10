@@ -31,11 +31,13 @@ namespace dfs
   class VolumeManager
   {
   public:
-    static std::unique_ptr<Volume> LoadVolume(const std::string &name);
+    static std::unique_ptr<Volume> LoadVolume(const std::string &name, const std::string &configPath = "");
 
     static bool CreateVolume(const std::string &volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks);
 
-    static bool DeleteVolume(const std::string &name);
+    static bool DeleteVolume(const std::string &name, const std::string &path);
+
+    static void Stop();
 
     static bdfs::HttpConfig defaultConfig;
 

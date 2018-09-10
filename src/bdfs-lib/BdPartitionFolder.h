@@ -36,7 +36,9 @@ namespace bdfs
     BdPartitionFolder(const char * base, const char * name, const char * path, const char * type);
 
     AsyncResultPtr<std::shared_ptr<BdPartition>> CreatePartition(const std::string & reserveId, uint32_t blockSize);
- 
+
     AsyncResultPtr<std::string> ReservePartition(const uint64_t size);
+
+    AsyncResultPtr<bool> UnreservePartition(const std::string & reserveId);
   };
 }
