@@ -497,7 +497,7 @@ namespace bdblob
       if (end > offset)
       {
         std::string name = path.substr(offset, end - offset);
-        if (name == "..")
+        if (name == ".." && result.size() > 0)
         {
           result.pop_back();
         }
