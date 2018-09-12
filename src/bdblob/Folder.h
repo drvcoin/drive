@@ -28,6 +28,7 @@
 #include <memory>
 #include <vector>
 
+#include "BlobMetadata.h"
 #include "IInputStream.h"
 #include "IOutputStream.h"
 
@@ -53,6 +54,7 @@ namespace bdblob
       uint32_t createTime;
       uint32_t modifyTime;
       uint64_t size;
+      BlobMetadata metadata;
     };
 
   public:
@@ -86,6 +88,8 @@ namespace bdblob
     bool Serialize(IOutputStream & stream);
 
     bool Deserialize(IInputStream & stream);
+
+    bool UpdateMetadataCache(bool includeThis = false) const;
 
     size_t GetSerializedSize() const;
 

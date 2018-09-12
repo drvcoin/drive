@@ -63,9 +63,11 @@ int main(int argc, const char ** argv)
 
   dfs::VolumeManager::kademliaUrl.emplace_back("http://10.0.1.53:7800");
 
-  bdblob::BlobConfig::Initialize();
+  auto provider = std::unique_ptr<bdblob::BlobProvider>(new bdblob::FileBlobProvider("storage"));
+  provider->InitializeBlobMap("blob.cache");
 
-  auto provider = std::unique_ptr<bdblob::BlobProvider>(new bdblob::RemoteBlobProvider("storage"));
+  bdblob::BlobConfig::Initialize(provider.get());
+
   bdblob::g_api = new bdblob::BlobApi();
   bdblob::g_api->Initialize(std::move(provider), bdblob::BlobConfig::RootId());
 

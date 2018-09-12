@@ -76,7 +76,8 @@ namespace bdblob
       }
 
       this->root = std::make_shared<Folder>(this->provider.get(), std::string(), blob->Id(), nullptr);
-      BlobConfig::SetRootId(blob->Id());
+
+      BlobConfig::SetRootId(blob->Id(), this->provider.get());
     }
 
     return true;
@@ -179,7 +180,7 @@ namespace bdblob
 
     if (BlobConfig::RootId() != this->RootId())
     {
-      BlobConfig::SetRootId(this->RootId());
+      BlobConfig::SetRootId(this->RootId(), this->provider.get());
     }
 
     return true;
@@ -279,6 +280,7 @@ namespace bdblob
     if (!blob)
     {
       this->error = BlobError::IO_ERROR;
+      return false;
     }
 
     // Step 4: Update the folder entry to point to the new blob, and delete the old blob if existed.
@@ -296,7 +298,7 @@ namespace bdblob
 
     if (BlobConfig::RootId() != this->RootId())
     {
-      BlobConfig::SetRootId(this->RootId());
+      BlobConfig::SetRootId(this->RootId(), this->provider.get());
     }
 
     if (!oldBlobId.empty())
@@ -497,7 +499,7 @@ namespace bdblob
       if (end > offset)
       {
         std::string name = path.substr(offset, end - offset);
-        if (name == "..")
+        if (name == ".." && result.size() > 0)
         {
           result.pop_back();
         }
