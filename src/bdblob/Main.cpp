@@ -25,7 +25,9 @@
 #include <vector>
 #include "BlobConfig.h"
 #include "FileBlobProvider.h"
+#include "RemoteBlobProvider.h"
 #include "BlobApi.h"
+#include "VolumeManager.h"
 #include "commands/GetCommand.h"
 #include "commands/ListCommand.h"
 #include "commands/MkdirCommand.h"
@@ -59,9 +61,11 @@ int main(int argc, const char ** argv)
     return -1;
   }
 
+  dfs::VolumeManager::kademliaUrl.emplace_back("http://10.0.1.53:7800");
+
   bdblob::BlobConfig::Initialize();
 
-  auto provider = std::unique_ptr<bdblob::BlobProvider>(new bdblob::FileBlobProvider("storage"));
+  auto provider = std::unique_ptr<bdblob::BlobProvider>(new bdblob::RemoteBlobProvider("storage"));
   bdblob::g_api = new bdblob::BlobApi();
   bdblob::g_api->Initialize(std::move(provider), bdblob::BlobConfig::RootId());
 

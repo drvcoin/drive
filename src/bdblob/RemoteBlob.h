@@ -22,36 +22,37 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <string>
-
+#include <stdio.h>
+#include <memory>
+#include "IBlob.h"
+#include "Volume.h"
 
 namespace bdblob
 {
-  class BlobConfig
+  class RemoteBlob : public IBlob
   {
   public:
 
-    static uint64_t BlockSize()               { return blockSize; }
-    static void SetBlockSize(uint64_t val)    { blockSize = val; }
+    explicit RemoteBlob(std::unique_ptr<dfs::Volume> volumePtr, std::string id, uint64_t size);
 
-    static uint64_t CodeBlocks()               { return codeBlocks; }
-    static void SetCodeBlocks(uint64_t val)    { codeBlocks = val; }
+    ~RemoteBlob() override;
 
-    static uint64_t DataBlocks()               { return dataBlocks; }
-    static void SetDataBlocks(uint64_t val)    { dataBlocks = val; }
+    RemoteBlob(const RemoteBlob & rhs) = delete;
 
-    static const std::string & RootId()       { return *rootId; }
-    static void SetRootId(std::string val);
+    RemoteBlob & operator=(const RemoteBlob & rhs) = delete;
 
-    static void Initialize();
+    void Close() override;
+
+    uint64_t Read(uint64_t offset, void * buf, uint64_t len) override;
+
+    uint64_t Write(uint64_t offset, const void * data, uint64_t len) override;
+
+    bool IsOpened() const override;
 
   private:
 
-    static uint64_t blockSize;
-    static uint64_t codeBlocks;
-    static uint64_t dataBlocks;
+    FILE * fp = nullptr;
 
-    static std::string * rootId;
+    std::unique_ptr<dfs::Volume> volume;
   };
 }

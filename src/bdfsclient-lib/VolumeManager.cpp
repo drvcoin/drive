@@ -47,10 +47,12 @@ namespace dfs
 
   std::vector<std::string> VolumeManager::kademliaUrl;
 
-  std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name, const std::string & configPath)
+  #define BLOB_DIR  "/var/tmp/blob/"
+
+  std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name, const std::string & configPath, bool isBlob)
   {
 
-    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
+    std::string path = !configPath.empty() ? configPath : (isBlob ? std::string(BLOB_DIR) : std::string("/etc/drive/")) + name + std::string("/volume.conf");
     printf("path=%s\n", path.c_str());
     FILE * file = fopen(path.c_str(), "r");
     if (!file)
@@ -162,7 +164,7 @@ namespace dfs
   }
 
 
-  bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
+  bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks, bool isBlob)
   {
     size_t blockSize = 64*1024;
     auto providerSize = size / dataBlocks;
@@ -249,8 +251,9 @@ namespace dfs
           }
 
           auto result = folder->CreatePartition(reserveId, blockSize);
-          if (!result->Wait(folder->GetTimeout()) || !result->GetResult())
+          if (!result->Wait(folder->GetTimeout()) || result->HasError())
           {
+            printf("Failed to create partition on provider '%s'\n", contracts[i]->Provider().c_str());
             continue;
           }
 
@@ -291,7 +294,7 @@ namespace dfs
 
     std::string result = volume.toStyledString();
 
-    std::string path = "/etc/drive/" + volumeName;
+    std::string path = std::string("/etc/drive/") + std::string(isBlob ? "blob/" : "") + volumeName;
 
     mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
@@ -300,7 +303,7 @@ namespace dfs
     FILE * file = fopen(path.c_str(), "w");
     if (!file)
     {
-      path = "/tmp/drive/" + volumeName;
+      path = (isBlob ? std::string(BLOB_DIR) : std::string("/tmp/drive/"))+ volumeName;
       std::string cmd = "mkdir -p " + path;
       system(cmd.c_str());
       path.append("/volume.conf");
@@ -324,9 +327,9 @@ namespace dfs
   }
 
 
-  bool VolumeManager::DeleteVolume(const std::string & name, const std::string & configPath)
+  bool VolumeManager::DeleteVolume(const std::string & name, const std::string & configPath, bool isBlob)
   {
-    auto volume = LoadVolume(name, configPath);
+    auto volume = LoadVolume(name, configPath, isBlob);
     if (!volume)
     {
       printf("Failed to load volume.\n");
@@ -339,7 +342,7 @@ namespace dfs
       return false;
     }
 
-    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
+    std::string path = !configPath.empty() ? configPath : (isBlob ? std::string(BLOB_DIR) : std::string("/etc/drive/")) + name + std::string("/volume.conf");
     unlink(path.c_str());
 
     return true;
