@@ -44,6 +44,9 @@ add_executable(
   BlobApi.cpp
   BlobConfig.cpp
   BlobError.cpp
+  BlobMap.cpp
+  BlobMetadata.cpp
+  Buffer.cpp
   BufferedInputStream.cpp
   BufferedOutputStream.cpp
   Command.cpp

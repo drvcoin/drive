@@ -59,9 +59,11 @@ int main(int argc, const char ** argv)
     return -1;
   }
 
-  bdblob::BlobConfig::Initialize();
-
   auto provider = std::unique_ptr<bdblob::BlobProvider>(new bdblob::FileBlobProvider("storage"));
+  provider->InitializeBlobMap("blob.cache");
+
+  bdblob::BlobConfig::Initialize(provider.get());
+
   bdblob::g_api = new bdblob::BlobApi();
   bdblob::g_api->Initialize(std::move(provider), bdblob::BlobConfig::RootId());
 

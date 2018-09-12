@@ -24,7 +24,10 @@
 
 #include <memory>
 #include <string>
+#include <memory>
+#include <stdint.h>
 #include "IBlob.h"
+#include "BlobMap.h"
 
 namespace bdblob
 {
@@ -34,10 +37,27 @@ namespace bdblob
 
     virtual ~BlobProvider() = default;
 
-    virtual std::unique_ptr<IBlob> NewBlob(size_t size) = 0;
+    virtual std::unique_ptr<IBlob> NewBlob(uint64_t size) = 0;
 
     virtual std::unique_ptr<IBlob> OpenBlob(std::string id) = 0;
 
     virtual void DeleteBlob(std::string id) = 0;
+
+  public:
+
+    bool InitializeBlobMap(std::string path)
+    {
+      this->blobMap = std::make_unique<BlobMap>();
+      return this->blobMap->Initialize(std::move(path));
+    }
+
+    BlobMap * GetBlobMap() const
+    {
+      return this->blobMap.get();
+    }
+
+  private:
+
+    std::unique_ptr<BlobMap> blobMap = nullptr;
   };
 }

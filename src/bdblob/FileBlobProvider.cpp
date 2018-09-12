@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "FileBlob.h"
+#include "BlobMetadata.h"
 #include "FileBlobProvider.h"
 
 #ifndef PATH_MAX
@@ -67,27 +68,27 @@ namespace bdblob
   }
 
 
-  std::unique_ptr<IBlob> FileBlobProvider::NewBlob(size_t size)
+  std::unique_ptr<IBlob> FileBlobProvider::NewBlob(uint64_t size)
   {
     std::string id = uuidgen();
 
-    std::string folder = this->rootPath + "/" + id;
-    if (isFolderExist(folder.c_str()))
+    if (!isFolderExist(this->rootPath.c_str()))
     {
       return nullptr;
     }
 
-    mkdir(folder.c_str(), 0755);
-
-    std::string metaSize = folder + "/.size";
-    FILE * file = fopen(metaSize.c_str(), "wb");
-    if (file)
+    auto blobMap = this->GetBlobMap();
+    if (!blobMap)
     {
-      fwrite(&size, 1, sizeof(size_t), file);
-      fclose(file);
+      return nullptr;
     }
 
-    std::string blobFileName = folder + "/blob";
+    BlobMetadata metadata;
+    metadata.SetSize(size);
+
+    blobMap->SetMetadata(id, metadata);
+
+    std::string blobFileName = this->rootPath + "/" + id;
     FILE * blobFile = fopen(blobFileName.c_str(), "wb");
     if (blobFile)
     {
@@ -115,27 +116,21 @@ namespace bdblob
 
   std::unique_ptr<IBlob> FileBlobProvider::OpenBlob(std::string id)
   {
+    auto blobMap = this->GetBlobMap();
+    if (!blobMap)
+    {
+      return nullptr;
+    }
+
+    BlobMetadata metadata;
+    if (!blobMap->GetMetadata(id, metadata))
+    {
+      return nullptr;
+    }
+
     char path[PATH_MAX];
-    sprintf(path, "%s/%s/.size", this->rootPath.c_str(), id.c_str());
-    
-    FILE * metaFile = fopen(path, "rb");
-    if (!metaFile)
-    {
-      return nullptr;
-    }
-
-    size_t size = 0;
-    size_t bytes = fread(&size, 1, sizeof(size_t), metaFile);
-    fclose(metaFile);
-
-    if (bytes < sizeof(size_t))
-    {
-      return nullptr;
-    }
-
-    sprintf(path, "%s/%s/blob", this->rootPath.c_str(), id.c_str());
-
-    std::unique_ptr<IBlob> result(new FileBlob(path, std::move(id), size));
+    sprintf(path, "%s/%s", this->rootPath.c_str(), id.c_str());
+    std::unique_ptr<IBlob> result(new FileBlob(path, std::move(id), metadata.Size()));
     if (!result->IsOpened())
     {
       return nullptr;
@@ -148,12 +143,6 @@ namespace bdblob
   void FileBlobProvider::DeleteBlob(std::string id)
   {
     char path[PATH_MAX];
-
-    sprintf(path, "%s/%s/blob", this->rootPath.c_str(), id.c_str());
-    unlink(path);
-
-    sprintf(path, "%s/%s/.size", this->rootPath.c_str(), id.c_str());
-    unlink(path);
 
     sprintf(path, "%s/%s", this->rootPath.c_str(), id.c_str());
     unlink(path);
