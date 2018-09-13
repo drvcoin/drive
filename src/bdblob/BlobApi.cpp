@@ -294,6 +294,12 @@ namespace bdblob
       entry.createTime = createTime;
     }
 
+    auto blobMap = this->provider->GetBlobMap();
+    if (blobMap)
+    {
+      blobMap->GetMetadata(entry.id, entry.metadata);
+    }
+
     folder->UpdateEntry(filename, std::move(entry));
 
     if (BlobConfig::RootId() != this->RootId())
@@ -392,6 +398,54 @@ namespace bdblob
     }
 
     if (totalBytes < entry->size)
+    {
+      this->error = BlobError::IO_ERROR;
+      return false;
+    }
+
+    return true;
+  }
+
+
+  bool BlobApi::Get(std::string path, uint64_t offset, void * output, uint64_t * size)
+  {
+    this->ClearError();
+
+    assert(output && size);
+
+    if (*size == 0)
+    {
+      return true;
+    }
+
+    auto entry = this->Info(path);
+    if (!entry)
+    {
+      return false;
+    }
+
+    if (entry->type != Folder::EntryType::FILE)
+    {
+      this->error = BlobError::NOT_SUPPORTED;
+      return false;
+    }
+
+    auto blob = this->provider->OpenBlob(entry->id);
+    if (!blob)
+    {
+      this->error = BlobError::IO_ERROR;
+      return false;
+    }
+
+    if (offset >= entry->size)
+    {
+      *size = 0;
+      return true;
+    }
+
+    uint64_t remaining = std::min<uint64_t>(*size, entry->size - offset);
+    *size = blob->Read(offset, output, remaining);
+    if (*size < remaining)
     {
       this->error = BlobError::IO_ERROR;
       return false;

@@ -35,15 +35,32 @@ namespace bdblob
   {
   public:
 
-    void Register(std::string name, Argument::Type type, bool required, std::string abbrev, std::string description, bool isAnonymouse = false);
+    template<typename T>
+    void Register(std::string name, bool required, char abbrev, std::string description, bool isAnonymouse, T defaultValue)
+    {
+      assert(!name.empty());
+      assert(this->args.find(name) == this->args.end());
 
-    void Register(std::string name, bool required, std::string abbrev, std::string description, std::string defaultValue, bool isAnonymouse = false);
-    
-    void Register(std::string name, bool required, std::string abbrev, std::string description, const char * defaultValue, bool isAnonymouse = false);
-    
-    void Register(std::string name, bool required, std::string abbrev, std::string description, int64_t defaultValue, bool isAnonymouse = false);
+      auto ptr = new Argument<T>();
+      ptr->SetRequired(required);
+      ptr->SetDescription(description);
+      ptr->SetDefaultValue(std::move(defaultValue));
+      ptr->SetAnonymouse(isAnonymouse);
 
-    void Register(std::string name, bool required, std::string abbrev, std::string description, bool defaultValue, bool isAnonymouse = false);
+      if (abbrev != 0)
+      {
+        assert(this->abbrevs.find(abbrev) == this->abbrevs.end());
+        this->abbrevs[abbrev] = name;
+        ptr->SetAbbrev(abbrev);
+      }
+
+      if (isAnonymouse)
+      {
+        this->anonymouse.emplace_back(name);
+      }
+
+      this->args[std::move(name)] = std::unique_ptr<ArgumentBase>(ptr);
+    }
 
     void PrintUsage(std::string prefix) const;
 
@@ -51,24 +68,19 @@ namespace bdblob
 
     bool IsSet(std::string name) const;
 
-    template<typename T>
-    const T & GetValue(std::string name) const
-    {
-      auto itr = this->args.find(std::move(name));
-      assert(itr != this->args.end() && itr->second != nullptr);
-
-      return itr->second->GetValue<T>();
-    }
+    ArgumentBase * GetArgument(std::string name) const;
 
   private:
 
     bool ValidateRequired() const;
 
+    bool Parse(int argc, const char ** argv, std::map<std::string, std::string> & params) const;
+
   private:
 
-    std::map<std::string, std::string> abbrevs;
+    std::map<char, std::string> abbrevs;
 
-    std::map<std::string, std::unique_ptr<Argument>> args;
+    std::map<std::string, std::unique_ptr<ArgumentBase>> args;
 
     std::vector<std::string> anonymouse;
   };

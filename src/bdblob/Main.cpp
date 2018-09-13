@@ -26,6 +26,7 @@
 #include "BlobConfig.h"
 #include "FileBlobProvider.h"
 #include "BlobApi.h"
+#include "commands/CatCommand.h"
 #include "commands/GetCommand.h"
 #include "commands/ListCommand.h"
 #include "commands/MkdirCommand.h"
@@ -43,6 +44,7 @@ static void PrintUsage(const char * prefix)
   printf("Usage: %s <action>\n", prefix);
   printf("\n");
   printf("Actions:\n");
+  printf("  cat\t\t\tShow file content.\n");
   printf("  get\t\t\tDownload file.\n");
   printf("  ls\t\t\tList files or directories.\n");
   printf("  mkdir\t\t\tCreate directory.\n");
@@ -68,6 +70,7 @@ int main(int argc, const char ** argv)
   bdblob::g_api->Initialize(std::move(provider), bdblob::BlobConfig::RootId());
 
   std::vector<std::unique_ptr<bdblob::Command>> commands;
+  commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::CatCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::GetCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::ListCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::MkdirCommand(argv[0])));

@@ -71,12 +71,12 @@ namespace bdblob
     }
 
     Index index = {0};
-    index.offset = fseeko(this->file, 0, SEEK_END);
-    if (index.offset < 0)
+    if (fseeko(this->file, 0, SEEK_END) < 0)
     {
       return;
     }
 
+    index.offset = ftello(this->file);
     index.size = fwrite(data, 1, len, this->file);
     if (index.size < len)
     {

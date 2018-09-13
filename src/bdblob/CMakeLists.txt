@@ -35,11 +35,13 @@ include(${ROOT}/Config.cmake)
 add_executable(
   bdblob
 
+  commands/CatCommand.cpp
   commands/GetCommand.cpp
   commands/ListCommand.cpp
   commands/MkdirCommand.cpp
   commands/PutCommand.cpp
   commands/RmCommand.cpp
+  Argument.cpp
   ArgumentParser.cpp
   BlobApi.cpp
   BlobConfig.cpp

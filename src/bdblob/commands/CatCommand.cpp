@@ -20,66 +20,48 @@
   SOFTWARE.
 */
 
-#include <sys/stat.h>
+#include <memory>
+#include "BlobConfig.h"
 #include "BlobApi.h"
-#include "commands/PutCommand.h"
-
+#include "commands/CatCommand.h"
 
 namespace bdblob
 {
   extern BlobApi * g_api;
 
 
-  PutCommand::PutCommand(std::string prefix)
-    : Command("put", std::move(prefix))
+  CatCommand::CatCommand(std::string prefix)
+    : Command("cat", std::move(prefix))
   {
-    this->parser.Register<bool>("force", false, 'f', "overwrite if file already exists", false, false);
-    this->parser.Register<std::string>("source", true, 0, "local source", true, "");
-    this->parser.Register<std::string>("target", false, 0, "remote target", true, "");
+    this->parser.Register<std::string>("path", true, 0, "path", true, std::string());
   }
 
 
-  int PutCommand::Execute(int argc, const char ** argv)
+  int CatCommand::Execute(int argc, const char ** argv)
   {
     assert(g_api);
 
     if (!this->parser.Parse(argc, argv))
     {
-      fprintf(stderr, "Invalid arguments.\n");
+      fprintf(stderr, "Invalid argument.\n");
       this->PrintUsage();
       return -1;
     }
 
-    bool force = this->parser.GetArgument("force")->AsBoolean();
-    std::string source = this->parser.GetArgument("source")->AsString();
-    std::string target = this->parser.GetArgument("target")->AsString();
+    std::string path = this->parser.GetArgument("path")->AsString();
 
-    // TODO: support upload folders and wildcard filenames
-    struct stat props;
-    if (stat(source.c_str(), &props) != 0)
+    uint64_t offset = 0;
+    uint64_t size = BlobConfig::BlockSize();
+    std::unique_ptr<char[]> buffer(new char[size + 1]);
+    while (g_api->Get(path, offset, buffer.get(), &size) && size > 0)
     {
-      fprintf(stderr, "%s\n", BlobErrorToString(BlobError::NOT_FOUND));
-      return static_cast<int>(BlobError::NOT_FOUND);
+      buffer.get()[size] = '\0';
+      printf("%s", buffer.get());
+      offset += size;
+      size = BlobConfig::BlockSize();
     }
 
-    if (S_ISDIR(props.st_mode))
-    {
-      fprintf(stderr, "%s\n", BlobErrorToString(BlobError::NOT_SUPPORTED));
-      return static_cast<int>(BlobError::NOT_SUPPORTED);
-    }
-
-    if (target.empty())
-    {
-      target = "/";
-    }
-
-    auto info = g_api->Info(target);
-    if (info && info->type == Folder::EntryType::FOLDER)
-    {
-      target += (target[target.size() - 1] == '/' ? "" : "/") + BlobApi::BaseName(source);
-    }
-
-    if (!g_api->Put(target, source, force))
+    if (g_api->Error() != BlobError::SUCCESS)
     {
       fprintf(stderr, "%s\n", BlobErrorToString(g_api->Error()));
       return static_cast<int>(g_api->Error());
