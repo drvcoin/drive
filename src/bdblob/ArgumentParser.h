@@ -70,6 +70,8 @@ namespace bdblob
 
     ArgumentBase * GetArgument(std::string name) const;
 
+    ArgumentBase & operator[](std::string name) const;
+
   private:
 
     bool ValidateRequired() const;

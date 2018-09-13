@@ -491,6 +491,80 @@ namespace bdblob
   }
 
 
+  bool BlobApi::Move(std::string src, std::string dest, bool overwrite)
+  {
+    this->ClearError();
+
+    auto srcParts = SplitPath(src);
+    auto srcParent = GetParentFolder(srcParts);
+    if (srcParts.empty() || !srcParent)
+    {
+      this->error = BlobError::NOT_FOUND;
+      return false;
+    }
+
+    std::string & srcName = srcParts[srcParts.size() - 1];
+    auto srcEntry = srcParent->Entries().find(srcName);
+    if (srcEntry == srcParent->Entries().end())
+    {
+      this->error = BlobError::IO_ERROR;
+      return false;
+    }
+
+    auto destParts = SplitPath(dest);
+    auto destParent = GetParentFolder(destParts);
+    if (destParts.empty() || !destParent)
+    {
+      this->error = BlobError::NOT_FOUND;
+      return false;
+    }
+
+    if (JoinPaths(srcParts) == JoinPaths(destParts))
+    {
+      return true;
+    }
+
+    std::string destName = destParts[destParts.size() - 1];
+    auto destEntry = destParent->Entries().find(destName);
+    if (destEntry != destParent->Entries().end())
+    {
+      if (destEntry->second.type == Folder::EntryType::FILE)
+      {
+        if (!overwrite)
+        {
+          this->error = BlobError::ALREADY_EXIST;
+          return false;
+        }
+        else
+        {
+          this->provider->DeleteBlob(destEntry->second.id);
+          destParent->RemoveEntry(destName);
+        }
+      }
+      else
+      {
+        destParent = Folder::LoadFolder(this->provider.get(), destEntry->second.id);
+        if (!destParent)
+        {
+          this->error = BlobError::IO_ERROR;
+          return false;
+        }
+
+        destName = srcName;
+        destParts.emplace_back(destName);
+        if (JoinPaths(srcParts) == JoinPaths(destParts))
+        {
+          return true;
+        }
+      }
+    }
+
+    destParent->UpdateEntry(destName, srcEntry->second);
+    srcParent->RemoveEntry(srcName);
+    return true;
+  }
+
+
   std::unique_ptr<Folder::Entry> BlobApi::Info(std::string path)
   {
     this->ClearError();

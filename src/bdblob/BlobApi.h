@@ -50,6 +50,8 @@ namespace bdblob
 
     bool Delete(std::string path);
 
+    bool Move(std::string src, std::string dest, bool overwrite = false);
+
     std::unique_ptr<Folder::Entry> Info(std::string path);
 
     std::shared_ptr<Folder> GetParentFolder(const std::vector<std::string> & parts);

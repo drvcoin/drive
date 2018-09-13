@@ -37,18 +37,11 @@ namespace bdblob
   }
 
 
-  int CatCommand::Execute(int argc, const char ** argv)
+  int CatCommand::Execute()
   {
     assert(g_api);
 
-    if (!this->parser.Parse(argc, argv))
-    {
-      fprintf(stderr, "Invalid argument.\n");
-      this->PrintUsage();
-      return -1;
-    }
-
-    std::string path = this->parser.GetArgument("path")->AsString();
+    std::string path = this->parser["path"].AsString();
 
     uint64_t offset = 0;
     uint64_t size = BlobConfig::BlockSize();

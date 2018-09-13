@@ -37,20 +37,13 @@ namespace bdblob
   }
 
 
-  int RmCommand::Execute(int argc, const char ** argv)
+  int RmCommand::Execute()
   {
     assert(g_api);
 
-    if (!this->parser.Parse(argc, argv))
-    {
-      fprintf(stderr, "Invalid arguments.\n");
-      this->PrintUsage();
-      return -1;
-    }
-
-    bool recursive = this->parser.GetArgument("recursive")->AsBoolean();
-    bool force = this->parser.GetArgument("force")->AsBoolean();
-    std::string target = this->parser.GetArgument("target")->AsString();
+    bool recursive = this->parser["recursive"].AsBoolean();
+    bool force = this->parser["force"].AsBoolean();
+    std::string target = this->parser["target"].AsString();
 
     auto parts = BlobApi::SplitPath(target);
     auto parent = g_api->GetParentFolder(parts);

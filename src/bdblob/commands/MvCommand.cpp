@@ -20,20 +20,39 @@
   SOFTWARE.
 */
 
-#pragma once
+#include "BlobApi.h"
+#include "commands/MvCommand.h"
 
-#include "Command.h"
 
 namespace bdblob
 {
-  class ListCommand : public Command
+  extern BlobApi * g_api;
+
+
+  MvCommand::MvCommand(std::string prefix)
+    : Command("mv", std::move(prefix))
   {
-  public:
+    this->parser.Register<bool>("force", false, 'f', "overwrite existing file", false, false);
+    this->parser.Register<std::string>("source", true, 0, "source path", true, std::string());
+    this->parser.Register<std::string>("destination", true, 0, "destination path", true, std::string());
+  }
 
-    explicit ListCommand(std::string prefix);
 
-  protected:
+  int MvCommand::Execute()
+  {
+    assert(g_api);
 
-    int Execute() override;
-  };
+    bool force = this->parser["force"].AsBoolean();
+    std::string source = this->parser["source"].AsString();
+    std::string target = this->parser["destination"].AsString();
+
+    // TODO: support mv wildcard filenames
+    if (!g_api->Move(std::move(source), std::move(target), force))
+    {
+      fprintf(stderr, "%s\n", BlobErrorToString(g_api->Error()));
+      return static_cast<int>(g_api->Error());
+    }
+
+    return 0;
+  }
 }

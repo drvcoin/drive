@@ -39,20 +39,13 @@ namespace bdblob
   }
 
 
-  int GetCommand::Execute(int argc, const char ** argv)
+  int GetCommand::Execute()
   {
     assert(g_api);
 
-    if (!this->parser.Parse(argc, argv))
-    {
-      fprintf(stderr, "Invalid arguments.\n");
-      this->PrintUsage();
-      return -1;
-    }
-
-    bool force = this->parser.GetArgument("force")->AsBoolean();
-    std::string source = this->parser.GetArgument("source")->AsString();
-    std::string target = this->parser.GetArgument("target")->AsString();
+    bool force = this->parser["force"].AsBoolean();
+    std::string source = this->parser["source"].AsString();
+    std::string target = this->parser["target"].AsString();
 
     // TODO: support downloading folders and wildcard filenames
     auto info = g_api->Info(source);

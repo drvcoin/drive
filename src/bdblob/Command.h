@@ -35,11 +35,15 @@ namespace bdblob
 
     virtual ~Command() = default;
 
-    virtual int Execute(int argc, const char ** argv) = 0;
+    int Execute(int argc, const char ** argv);
 
     void PrintUsage() const;
 
     const std::string & Name() const    { return this->name; }
+
+  protected:
+
+    virtual int Execute() = 0;
 
   protected:
 

@@ -36,19 +36,12 @@ namespace bdblob
   }
 
 
-  int MkdirCommand::Execute(int argc, const char ** argv)
+  int MkdirCommand::Execute()
   {
     assert(g_api);
 
-    if (!this->parser.Parse(argc, argv))
-    {
-      fprintf(stderr, "Invalid arguments.\n");
-      this->PrintUsage();
-      return -1;
-    }
-
-    bool recursive = this->parser.GetArgument("recursive")->AsBoolean();
-    std::string target = this->parser.GetArgument("target")->AsString();
+    bool recursive = this->parser["recursive"].AsBoolean();
+    std::string target = this->parser["target"].AsString();
 
     bool result = g_api->Mkdir(target);
     if (!result)

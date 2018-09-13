@@ -26,11 +26,11 @@
 
 namespace bdblob
 {
-  class ListCommand : public Command
+  class MvCommand : public Command
   {
   public:
 
-    explicit ListCommand(std::string prefix);
+    explicit MvCommand(std::string prefix);
 
   protected:
 

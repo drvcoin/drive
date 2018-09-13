@@ -32,6 +32,8 @@ namespace bdblob
 
     explicit CatCommand(std::string prefix);
 
-    int Execute(int argc, const char ** argv) override;
+  protected:
+
+    int Execute() override;
   };
 }

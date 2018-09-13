@@ -39,21 +39,13 @@ namespace bdblob
   }
 
 
-  int ListCommand::Execute(int argc, const char ** argv)
+  int ListCommand::Execute()
   {
     assert(g_api);
 
-    if (!this->parser.Parse(argc, argv))
-    {
-      fprintf(stderr, "Invalid arguments.\n");
-
-      this->PrintUsage();
-      return -1;
-    }
-
-    bool showList = this->parser.GetArgument("list")->AsBoolean();
-    bool showAll = this->parser.GetArgument("all")->AsBoolean();
-    std::string path = this->parser.GetArgument("path")->AsString();
+    bool showList = this->parser["list"].AsBoolean();
+    bool showAll = this->parser["all"].AsBoolean();
+    std::string path = this->parser["path"].AsString();
 
     auto parts = BlobApi::SplitPath(path);
 

@@ -39,6 +39,7 @@ add_executable(
   commands/GetCommand.cpp
   commands/ListCommand.cpp
   commands/MkdirCommand.cpp
+  commands/MvCommand.cpp
   commands/PutCommand.cpp
   commands/RmCommand.cpp
   Argument.cpp

@@ -31,6 +31,19 @@ namespace bdblob
   }
 
 
+  int Command::Execute(int argc, const char ** argv)
+  {
+    if (!this->parser.Parse(argc, argv))
+    {
+      fprintf(stderr, "Invalid arguments.\n\n");
+      this->PrintUsage();
+      return -1;
+    }
+
+    return this->Execute();
+  }
+
+
   void Command::PrintUsage() const
   {
     std::string command;

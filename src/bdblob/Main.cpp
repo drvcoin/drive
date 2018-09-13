@@ -30,6 +30,7 @@
 #include "commands/GetCommand.h"
 #include "commands/ListCommand.h"
 #include "commands/MkdirCommand.h"
+#include "commands/MvCommand.h"
 #include "commands/PutCommand.h"
 #include "commands/RmCommand.h"
 
@@ -48,6 +49,7 @@ static void PrintUsage(const char * prefix)
   printf("  get\t\t\tDownload file.\n");
   printf("  ls\t\t\tList files or directories.\n");
   printf("  mkdir\t\t\tCreate directory.\n");
+  printf("  mv\t\t\tMove file or directory.\n");
   printf("  rm\t\t\tDelete files or directories.\n");
   printf("  put\t\t\tUpload file.\n");
 }
@@ -74,6 +76,7 @@ int main(int argc, const char ** argv)
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::GetCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::ListCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::MkdirCommand(argv[0])));
+  commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::MvCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::PutCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::RmCommand(argv[0])));
 

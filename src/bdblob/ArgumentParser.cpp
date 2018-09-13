@@ -264,4 +264,10 @@ namespace bdblob
     auto itr = this->args.find(std::move(name));
     return itr != this->args.end() ? itr->second.get() : nullptr;
   }
+
+
+  ArgumentBase & ArgumentParser::operator[](std::string name) const
+  {
+    return *(this->GetArgument(std::move(name)));
+  }
 }
