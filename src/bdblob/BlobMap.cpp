@@ -20,6 +20,7 @@
   SOFTWARE.
 */
 
+#include <string.h>
 #include <unistd.h>
 #include "BufferedOutputStream.h"
 #include "BufferedInputStream.h"
