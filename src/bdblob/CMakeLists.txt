@@ -32,6 +32,8 @@ set(ROOT ${PROJECT_SOURCE_DIR}/../..)
 
 include(${ROOT}/Config.cmake)
 
+#add_definitions(-DLOCAL_BLOB)
+
 add_executable(
   bdblob
 

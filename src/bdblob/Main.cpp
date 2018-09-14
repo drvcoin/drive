@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <fstream>
 #include "BlobConfig.h"
 #include "FileBlobProvider.h"
 #include "RemoteBlobProvider.h"
@@ -55,6 +56,36 @@ static void PrintUsage(const char * prefix)
 }
 
 
+void ReadConfig()
+{
+  std::ifstream cfg("/etc/drive/bdblob.conf");
+  std::string data((std::istreambuf_iterator<char>(cfg)),
+               std::istreambuf_iterator<char>());
+
+  if(!data.size())
+  {
+    return;
+  }
+
+  Json::Reader reader;
+  Json::Value json;
+  if (!reader.parse(data.c_str(), data.size(), json, false) ||
+      !json.isObject())
+  {
+    return;
+  }
+
+  if(json["kademlia"].isArray())
+  {
+    for(int i = 0; i < json["kademlia"].size(); i++)
+    {
+      auto kd = json["kademlia"][i].asString();
+      dfs::VolumeManager::kademliaUrl.emplace_back(kd);
+    }
+  }
+}
+
+
 int main(int argc, const char ** argv)
 {
   if (argc < 2)
@@ -63,10 +94,21 @@ int main(int argc, const char ** argv)
     return -1;
   }
 
-  dfs::VolumeManager::kademliaUrl.emplace_back("http://10.0.1.53:7800");
+  ReadConfig();
 
-  auto provider = std::unique_ptr<bdblob::RemoteBlobProvider>(new bdblob::RemoteBlobProvider(""));
-  // auto provider = std::unique_ptr<bdblob::BlobProvider>(new bdblob::FileBlobProvider("storage"));
+  if(dfs::VolumeManager::kademliaUrl.size() == 0)
+  {
+      dfs::VolumeManager::kademliaUrl.emplace_back("http://18.220.231.21:7800");
+  }
+
+  std::unique_ptr<bdblob::BlobProvider> provider = nullptr;
+
+#ifdef LOCAL_BLOB
+  provider = std::make_unique<bdblob::FileBlobProvider>("storage");
+#else
+  provider = std::make_unique<bdblob::RemoteBlobProvider>(".");
+#endif
+
   provider->InitializeBlobMap("blob.cache");
 
   bdblob::BlobConfig::Initialize(provider.get());
@@ -82,14 +124,24 @@ int main(int argc, const char ** argv)
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::PutCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::RmCommand(argv[0])));
 
+
+  int retval = -1;
+
   for (const auto & command : commands)
   {
     if (command->Name() == argv[1])
     {
-      return command->Execute(argc - 1, &argv[1]);
+      retval = command->Execute(argc - 1, &argv[1]);
+      break;
     }
   }
 
-  PrintUsage(argv[0]);
-  return -1;  
+  dfs::VolumeManager::Stop();
+
+  if(retval == -1)
+  {
+    PrintUsage(argv[0]);
+  }
+
+  return retval;
 }
