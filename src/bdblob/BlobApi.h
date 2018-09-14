@@ -46,6 +46,8 @@ namespace bdblob
 
     bool Get(std::string path, std::string localPath, bool force = false);
 
+    bool Get(std::string path, uint64_t offset, void * output, uint64_t * size);
+
     bool Delete(std::string path);
 
     std::unique_ptr<Folder::Entry> Info(std::string path);

@@ -20,44 +20,79 @@
   SOFTWARE.
 */
 
-#pragma once
+#include <stdlib.h>
+#include <string.h>
+#include "Buffer.h"
 
-#include <memory>
-#include <string>
-#include <memory>
-#include <stdint.h>
-#include "IBlob.h"
-#include "BlobMap.h"
+#ifndef BUFSIZ
+#define BUFSIZ 8192
+#endif
 
 namespace bdblob
 {
-  class BlobProvider
+  Buffer::~Buffer()
   {
-  public:
-
-    virtual ~BlobProvider() = default;
-
-    virtual std::unique_ptr<IBlob> NewBlob(uint64_t size) = 0;
-
-    virtual std::unique_ptr<IBlob> OpenBlob(std::string id) = 0;
-
-    virtual void DeleteBlob(std::string id) = 0;
-
-  public:
-
-    bool InitializeBlobMap(std::string path)
+    if (this->buf)
     {
-      this->blobMap = std::make_unique<BlobMap>();
-      return this->blobMap->Initialize(std::move(path));
+      free(this->buf);
+      this->buf = nullptr;
+    }
+  }
+
+
+  Buffer::Buffer(Buffer && val)
+  {
+    if (this->buf)
+    {
+      free(this->buf);
     }
 
-    BlobMap * GetBlobMap() const
+    this->buf = val.buf;
+    this->size = val.size;
+    this->memsize = val.memsize;
+    val.buf = nullptr;
+    val.size = val.memsize = 0;
+  }
+
+
+  Buffer & Buffer::operator=(Buffer && val)
+  {
+    if (this->buf)
     {
-      return this->blobMap.get();
+      free(this->buf);
     }
 
-  private:
+    this->buf = val.buf;
+    this->size = val.size;
+    this->memsize = val.memsize;
+    val.buf = nullptr;
+    val.size = val.memsize = 0;
+    return *this;
+  }
 
-    std::unique_ptr<BlobMap> blobMap = nullptr;
-  };
+
+  bool Buffer::Resize(size_t size)
+  {
+    if (size <= this->memsize)
+    {
+      this->size = size;
+      return true;
+    }
+
+    size_t newsize = ((size - 1) / BUFSIZ + 1) * BUFSIZ;
+
+    uint8_t * ptr = static_cast<uint8_t *>(realloc(this->buf, newsize));
+    if (ptr)
+    {
+      this->buf = ptr;
+      this->memsize = newsize;
+      this->size = size;
+
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
 }

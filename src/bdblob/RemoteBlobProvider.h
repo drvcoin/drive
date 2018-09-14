@@ -26,11 +26,11 @@
 
 namespace bdblob
 {
-  class FileBlobProvider : public BlobProvider
+  class RemoteBlobProvider : public BlobProvider
   {
   public:
 
-    explicit FileBlobProvider(const char * rootPath);
+    explicit RemoteBlobProvider(const char * rootPath);
 
     std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
 

@@ -22,24 +22,16 @@
 
 #pragma once
 
-#include "BlobProvider.h"
+#include "Command.h"
 
 namespace bdblob
 {
-  class FileBlobProvider : public BlobProvider
+  class CatCommand : public Command
   {
   public:
 
-    explicit FileBlobProvider(const char * rootPath);
+    explicit CatCommand(std::string prefix);
 
-    std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
-
-    std::unique_ptr<IBlob> OpenBlob(std::string id) override;
-
-    void DeleteBlob(std::string id) override;
-
-  private:
-
-    std::string rootPath;
+    int Execute(int argc, const char ** argv) override;
   };
 }

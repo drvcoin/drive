@@ -20,26 +20,43 @@
   SOFTWARE.
 */
 
-#pragma once
-
-#include "BlobProvider.h"
+#include "Argument.h"
 
 namespace bdblob
 {
-  class FileBlobProvider : public BlobProvider
+  template<>
+  Argument<std::string>::Argument()
+    : ArgumentBase(ArgumentType::STRING)
   {
-  public:
+  }
 
-    explicit FileBlobProvider(const char * rootPath);
+  template<>
+  const std::string & Argument<std::string>::AsString() const
+  {
+    return this->value;
+  }
 
-    std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
+  template<>
+  Argument<int64_t>::Argument()
+    : ArgumentBase(ArgumentType::INTEGER)
+  {
+  }
 
-    std::unique_ptr<IBlob> OpenBlob(std::string id) override;
+  template<>
+  int64_t Argument<int64_t>::AsInt() const
+  {
+    return this->value;
+  }
 
-    void DeleteBlob(std::string id) override;
+  template<>
+  Argument<bool>::Argument()
+    : ArgumentBase(ArgumentType::BOOLEAN)
+  {
+  }
 
-  private:
-
-    std::string rootPath;
-  };
+  template<>
+  bool Argument<bool>::AsBoolean() const
+  {
+    return this->value;
+  }
 }

@@ -27,72 +27,6 @@
 
 namespace bdblob
 {
-  void ArgumentParser::Register(std::string name, Argument::Type type, bool required, std::string abbrev, std::string description, bool isAnonymouse)
-  {
-    assert(type != Argument::Type::__MAX__);
-    assert(!name.empty());
-    assert(this->args.find(name) == this->args.end());
-
-    auto ptr = std::make_unique<Argument>(type);
-
-    if (!abbrev.empty())
-    {
-      assert(this->abbrevs.find(abbrev) == this->abbrevs.end());
-      this->abbrevs[abbrev] = name;
-      ptr->SetAbbrev(std::move(abbrev));
-    }
-
-    ptr->SetDescription(std::move(description));
-    ptr->SetRequired(required);
-    ptr->SetAnonymouse(isAnonymouse);
-
-    if (isAnonymouse)
-    {
-      this->anonymouse.emplace_back(name);
-    }
-
-    this->args[name] = std::move(ptr);
-  }
-
-
-  void ArgumentParser::Register(std::string name, bool required, std::string abbrev, std::string description, std::string defaultValue, bool isAnonymouse)
-  {
-    this->Register(name, Argument::Type::STRING, required, std::move(abbrev), std::move(description), isAnonymouse);
-
-    auto itr = this->args.find(std::move(name));
-    assert(itr != this->args.end());
-
-    itr->second->SetValue(std::move(defaultValue));
-  }
-
-  void ArgumentParser::Register(std::string name, bool required, std::string abbrev, std::string description, const char * defaultValue, bool isAnonymouse)
-  {
-    this->Register(std::move(name), required, std::move(abbrev), std::move(description), std::string(defaultValue), isAnonymouse);
-  }
-
-
-  void ArgumentParser::Register(std::string name, bool required, std::string abbrev, std::string description, int64_t defaultValue, bool isAnonymouse)
-  {
-    this->Register(name, Argument::Type::INTEGER, required, std::move(abbrev), std::move(description), isAnonymouse);
-
-    auto itr = this->args.find(std::move(name));
-    assert(itr != this->args.end());
-
-    itr->second->SetValue(defaultValue);
-  }
-
-
-  void ArgumentParser::Register(std::string name, bool required, std::string abbrev, std::string description, bool defaultValue, bool isAnonymouse)
-  {
-    this->Register(name, Argument::Type::BOOLEAN, required, std::move(abbrev), std::move(description), isAnonymouse);
-
-    auto itr = this->args.find(std::move(name));
-    assert(itr != this->args.end());
-
-    itr->second->SetValue(defaultValue);
-  }
-
-
   void ArgumentParser::PrintUsage(std::string prefix) const
   {
     printf("Usage: %s [options]", prefix.c_str());
@@ -127,9 +61,9 @@ namespace bdblob
       }
 
       printf("  ");
-      if (!pair.second->Abbrev().empty())
+      if (pair.second->Abbrev() != 0)
       {
-        printf("-%s, ", pair.second->Abbrev().c_str());
+        printf("-%c, ", pair.second->Abbrev());
       }
       else
       {
@@ -150,122 +84,148 @@ namespace bdblob
   }
 
 
-  bool ArgumentParser::Parse(int argc, const char ** argv)
+  static void parseParam(std::string input, std::string & key, std::string & value)
+  {
+    if (input.empty())
+    {
+      return;
+    }
+
+    auto pos = input.find_first_of('=');
+    if (pos == 0 || pos == input.size() - 1)
+    {
+      return;
+    }
+    else if (pos != std::string::npos)
+    {
+      key = input.substr(0, pos);
+      value = input.substr(pos + 1, input.size() - pos - 1);
+    }
+    else
+    {
+      key = std::move(input);
+    }
+  }
+
+
+  bool ArgumentParser::Parse(int argc, const char ** argv, std::map<std::string, std::string> & params) const
   {
     size_t anonymouseIdx = 0;
     for (int idx = 1; idx < argc; ++idx)
     {
-      const char * param = argv[idx];
+      std::string key;
+      std::string value;
+      const char * cur = argv[idx];
 
-      std::string name;
-
-      if (param[0] != '-')
+      if (cur[0] != '-')
       {
         if (anonymouseIdx >= this->anonymouse.size())
         {
           return false;
         }
-        else
-        {
-          name = this->anonymouse[anonymouseIdx++];
-          --idx;
-        }
+
+        params[this->anonymouse[anonymouseIdx++]] = cur;
       }
       else
       {
-        if (param[1] == '\0')
+        bool isAbbrev = cur[1] != '-';
+        std::string key, value;
+        parseParam(isAbbrev ? cur + 1 : cur + 2, key, value);
+
+        if (key.empty() || (isAbbrev && key.size() > 1 && !value.empty()))
         {
           return false;
         }
 
-        if (param[1] != '-')
+        std::vector<std::string> names;
+        if (!isAbbrev)
         {
-          if (param[2] != '\0')
-          {
-            return false;
-          }
-
-          auto abbrevItr = this->abbrevs.find(&param[1]);
-          if (abbrevItr == this->abbrevs.end())
-          {
-            return false;
-          }
-
-          name = abbrevItr->second;
+          names.emplace_back(std::move(key));
         }
         else
         {
-          if (param[2] == '\0')
+          for (size_t i = 0; i < key.size(); ++i)
+          {
+            auto itr = this->abbrevs.find(key[i]);
+            if (itr == this->abbrevs.end())
+            {
+              return false;
+            }
+
+            names.emplace_back(itr->second);
+          }
+        }
+
+        for (const auto & name : names)
+        {
+          auto itr = this->args.find(name);
+          if (itr == this->args.end())
           {
             return false;
           }
 
-          name = (& param[2]);
+          if (names.size() > 1 && !itr->second->IsBoolean())
+          {
+            return false;
+          }
+
+          if (itr->second->IsBoolean())
+          {
+            params[name] = value;
+          }
+          else
+          {
+            if (!value.empty())
+            {
+              params[name] = value;
+            }
+            else if (idx < argc - 1)
+            {
+              params[name] = argv[++idx];
+            }
+            else
+            {
+              return false;
+            }
+          }
         }
       }
+    }
 
-      auto itr = this->args.find(name);
+    return true;
+  }
+
+
+  bool ArgumentParser::Parse(int argc, const char ** argv)
+  {
+    std::map<std::string, std::string> params;
+    if (!this->Parse(argc, argv, params))
+    {
+      return false;
+    }
+
+    for (const auto & param : params)
+    {
+      auto itr = this->args.find(param.first);
       if (itr == this->args.end())
       {
         return false;
       }
 
-      switch (itr->second->GetType())
+      if (itr->second->IsString())
       {
-        case Argument::Type::STRING:
-        {
-          if (++idx >= argc)
-          {
-            return false;
-          }
-
-          itr->second->SetValue(argv[idx]);
-          break;
-        }
-
-        case Argument::Type::INTEGER:
-        {
-          if (++idx >= argc)
-          {
-            return false;
-          }
-
-          itr->second->SetValue((int64_t)atoll(argv[idx]));
-          break;
-        }
-
-        case Argument::Type::BOOLEAN:
-        {
-          if (itr->second->IsAnonymouse())
-          {
-            ++idx;
-            itr->second->SetValue(strcmp(param, "true") == 0 || strcmp(param, "1"));
-          }
-          else
-          {
-            if (idx == argc - 1 || strcmp(argv[idx + 1], "true") == 0 || strcmp(argv[idx + 1], "1") == 0)
-            {
-              itr->second->SetValue(true);
-              ++idx;
-            }
-            else if (strcmp(argv[idx + 1], "false") == 0 || strcmp(argv[idx + 1], "0") == 0)
-            {
-              itr->second->SetValue(false);
-              ++idx;
-            }
-            else
-            {
-              // This argument acts like a flag
-              itr->second->SetValue(true);
-            }
-          }
-          break;
-        }
-
-        default:
-        {
-          return false;
-        }
+        auto ptr = static_cast<StringArgument *>(itr->second.get());
+        ptr->SetValue(param.second);
+      }
+      else if (itr->second->IsIntegral())
+      {
+        auto ptr = static_cast<IntArgument *>(itr->second.get());
+        ptr->SetValue((int64_t)atoll(param.second.c_str()));
+      }
+      else // Boolean
+      {
+        auto ptr = static_cast<BoolArgument *>(itr->second.get());
+        ptr->SetValue(param.second.empty() || param.second == "true" || param.second == "1");
       }
     }
 
@@ -296,5 +256,12 @@ namespace bdblob
     }
 
     return true;
+  }
+
+
+  ArgumentBase * ArgumentParser::GetArgument(std::string name) const
+  {
+    auto itr = this->args.find(std::move(name));
+    return itr != this->args.end() ? itr->second.get() : nullptr;
   }
 }

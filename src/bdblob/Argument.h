@@ -24,161 +24,97 @@
 
 #include <string>
 #include <stdint.h>
+#include <typeinfo>
 #include <assert.h>
-#include <type_traits>
 
 namespace bdblob
 {
-  class Argument
+  enum class ArgumentType
+  {
+    STRING,
+    INTEGER,
+    BOOLEAN
+  };
+
+
+  class ArgumentBase
   {
   public:
 
-    enum class Type
-    {
-      STRING,
-      INTEGER,
-      BOOLEAN,
-      __MAX__
-    };
+    virtual ~ArgumentBase() = default;
 
-  public:
+    bool IsString() const                   { return this->type == ArgumentType::STRING; }
+    bool IsIntegral() const                 { return this->type == ArgumentType::INTEGER; }
+    bool IsBoolean() const                  { return this->type == ArgumentType::BOOLEAN; }
 
-    explicit Argument(Type type)
-      : type(type)
-    {
-      assert(type != Type::__MAX__);
-    }
+    ArgumentType Type() const               { return this->type; }
 
-    ~Argument()
-    {
-      if (this->isSet && this->value)
-      {
-        switch (this->type)
-        {
-          case Type::STRING:
-          {
-            delete static_cast<std::string *>(this->value);
-            break;
-          }
-
-          case Type::INTEGER:
-          {
-            delete static_cast<int64_t *>(this->value);
-            break;
-          }
-
-          case Type::BOOLEAN:
-          {
-            delete static_cast<bool *>(this->value);
-            break;
-          }
-
-          default:
-          {
-            assert(false);
-            break;
-          }
-        }
-
-        this->value = nullptr;
-      }
-    }
-
-
-    void SetValue(std::string val)
-    {
-      assert(this->type == Type::STRING);
-      if (this->value)
-      {
-        delete static_cast<std::string *>(this->value);
-      }
-
-      this->value = new std::string(std::move(val));
-      this->isSet = true;
-    }
-
-
-    void SetValue(const char * val)
-    {
-      this->SetValue(std::string(val));
-    }
-
-
-    void SetValue(int64_t val)
-    {
-      assert(this->type == Type::INTEGER);
-      if (this->value)
-      {
-        delete static_cast<int64_t *>(this->value);
-      }
-
-      this->value = new int64_t(val);
-      this->isSet = true;
-    }
-
-
-    void SetValue(bool val)
-    {
-      assert(this->type == Type::BOOLEAN);
-      if (this->value)
-      {
-        delete static_cast<bool *>(this->value);
-      }
-
-      this->value = new bool(val);
-      this->isSet = true;
-    }
-
-
-    template<typename T>
-    const T & GetValue() const
-    {
-      assert(this->isSet);
-
-      bool valid = (this->type == Type::STRING && std::is_convertible<std::string *, T *>::value) ||
-                   (this->type == Type::INTEGER && std::is_convertible<int64_t *, T *>::value) ||
-                   (this->type == Type::BOOLEAN && std::is_convertible<bool *, T *>::value);
-
-      assert(valid);
-
-      return *((T *)this->value);
-    }
-
-
-    Type GetType() const                    { return this->type; }
+    virtual const std::string & AsString() const    { assert(false); }
+    virtual int64_t AsInt() const                   { assert(false); }
+    virtual bool AsBoolean() const                  { assert(false); }
 
     bool IsSet() const                      { return this->isSet; }
-
-    const std::string & Abbrev() const      { return this->abbrev; }
-
+    char Abbrev() const                     { return this->abbrev; }
     const std::string & Description() const { return this->description; }
-
     bool IsRequired() const                 { return this->required; }
-
     bool IsAnonymouse() const               { return this->anonymouse; }
 
-    void SetAbbrev(std::string val)         { this->abbrev = std::move(val); }
-
+    void SetAbbrev(char val)                { this->abbrev = val; }
     void SetDescription(std::string val)    { this->description = std::move(val); }
-
     void SetRequired(bool val)              { this->required = val; }
-
     void SetAnonymouse(bool val)            { this->anonymouse = val; }
+
+  protected:
+
+    explicit ArgumentBase(ArgumentType type)
+      : type(type)
+    {
+    }
+
+    void SetIsSet(bool val)                 { this->isSet = val; }
 
   private:
 
-    Type type;
-
-    void * value = nullptr;
-
+    ArgumentType type;
     bool isSet = false;
-
-    std::string abbrev;
-
-    std::string description;
-
     bool required = false;
-
     bool anonymouse = false;
+    char abbrev = 0;
+    std::string description;
   };
+
+
+  template<typename T>
+  class Argument : public ArgumentBase
+  {
+  public:
+
+    Argument();
+
+    const std::string & AsString() const override     { assert(false); }
+    int64_t AsInt() const override                    { assert(false); }
+    bool AsBoolean() const override                   { assert(false); }
+
+    template<typename V>
+    void SetValue(V && val)
+    {
+      this->value = std::forward<V>(val);
+      this->SetIsSet(true);
+    }
+
+    template<typename V>
+    void SetDefaultValue(V && val)
+    {
+      this->value = std::forward<V>(val);
+    }
+
+  private:
+
+    T value = T();
+  };
+
+
+  using StringArgument = Argument<std::string>;
+  using IntArgument = Argument<int64_t>;
+  using BoolArgument = Argument<bool>;
 }

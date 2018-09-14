@@ -24,7 +24,7 @@
 
 #include <stdint.h>
 #include <string>
-
+#include "BlobProvider.h"
 
 namespace bdblob
 {
@@ -35,14 +35,22 @@ namespace bdblob
     static uint64_t BlockSize()               { return blockSize; }
     static void SetBlockSize(uint64_t val)    { blockSize = val; }
 
-    static const std::string & RootId()       { return *rootId; }
-    static void SetRootId(std::string val);
+    static uint64_t CodeBlocks()               { return codeBlocks; }
+    static void SetCodeBlocks(uint64_t val)    { codeBlocks = val; }
 
-    static void Initialize();
+    static uint64_t DataBlocks()               { return dataBlocks; }
+    static void SetDataBlocks(uint64_t val)    { dataBlocks = val; }
+
+    static const std::string & RootId()       { return *rootId; }
+    static void SetRootId(std::string val, BlobProvider * provider);
+
+    static void Initialize(BlobProvider * provider);
 
   private:
 
     static uint64_t blockSize;
+    static uint64_t codeBlocks;
+    static uint64_t dataBlocks;
 
     static std::string * rootId;
   };

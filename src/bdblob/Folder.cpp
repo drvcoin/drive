@@ -25,6 +25,7 @@
 #include "BlobApi.h"
 #include "BufferedOutputStream.h"
 #include "BufferedInputStream.h"
+#include "BlobMap.h"
 #include "Folder.h"
 
 #define MAGIC_HEADER 0x0a0b0c0d
@@ -58,11 +59,18 @@ namespace bdblob
     assert(!id.empty());
     assert(provider);
 
+    auto blobMap = provider->GetBlobMap();
+    assert(blobMap);
+
     Entry properties = {};
     properties.type = EntryType::FOLDER;
     properties.id = std::move(id);
     properties.createTime = properties.modifyTime = now();
     properties.size = 0;
+
+    Buffer buffer = blobMap->GetValue(properties.id);
+    BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
+    properties.metadata.Deserialize(stream);
 
     if (parent)
     {
@@ -104,6 +112,10 @@ namespace bdblob
     {
       BufferedInputStream stream{buffer, len};
       success = folder->Deserialize(stream);
+      if (success)
+      {
+        folder->UpdateMetadataCache();
+      }
     }
 
     delete[] buffer;
@@ -133,6 +145,8 @@ namespace bdblob
     this->modified = true;
 
     this->Flush();
+
+    this->UpdateMetadataCache();
   }
 
 
@@ -203,6 +217,8 @@ namespace bdblob
     return_false_if(blob->Write(0, stream.Buffer(), stream.Offset()) < stream.Offset());
 
     this->modified = false;
+
+    this->UpdateMetadataCache(true);
     return true;
   }
 
@@ -277,6 +293,7 @@ namespace bdblob
     return_false_if(!stream.WriteUInt32(entry.createTime));
     return_false_if(!stream.WriteUInt32(entry.modifyTime));
     return_false_if(!stream.WriteUInt64(entry.size));
+    return_false_if(!entry.metadata.Serialize(stream));
 
     return true;
   }
@@ -298,7 +315,7 @@ namespace bdblob
     entry.modifyTime = stream.ReadUInt32();
     entry.size = stream.ReadUInt64();
 
-    return true;
+    return entry.metadata.Deserialize(stream);
   }
 
 
@@ -310,7 +327,30 @@ namespace bdblob
     result += sizeof(entry.createTime);
     result += sizeof(entry.modifyTime);
     result += sizeof(entry.size);
+    result += entry.metadata.GetSerializedSize();
     return result;
+  }
+
+
+  bool Folder::UpdateMetadataCache(bool includeThis) const
+  {
+    auto blobMap = this->provider->GetBlobMap();
+    if (!blobMap)
+    {
+      return false;
+    }
+
+    for (const auto & entry : this->entries)
+    {
+      if ((entry.first == "." && !includeThis) || entry.first == "..")
+      {
+        continue;
+      }
+
+      blobMap->SetMetadata(entry.second.id, entry.second.metadata);
+    }
+
+    return true;
   }
 
 

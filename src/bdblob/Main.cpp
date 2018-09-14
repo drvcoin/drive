@@ -25,7 +25,10 @@
 #include <vector>
 #include "BlobConfig.h"
 #include "FileBlobProvider.h"
+#include "RemoteBlobProvider.h"
 #include "BlobApi.h"
+#include "VolumeManager.h"
+#include "commands/CatCommand.h"
 #include "commands/GetCommand.h"
 #include "commands/ListCommand.h"
 #include "commands/MkdirCommand.h"
@@ -43,6 +46,7 @@ static void PrintUsage(const char * prefix)
   printf("Usage: %s <action>\n", prefix);
   printf("\n");
   printf("Actions:\n");
+  printf("  cat\t\t\tShow file content.\n");
   printf("  get\t\t\tDownload file.\n");
   printf("  ls\t\t\tList files or directories.\n");
   printf("  mkdir\t\t\tCreate directory.\n");
@@ -59,13 +63,19 @@ int main(int argc, const char ** argv)
     return -1;
   }
 
-  bdblob::BlobConfig::Initialize();
+  dfs::VolumeManager::kademliaUrl.emplace_back("http://10.0.1.53:7800");
 
-  auto provider = std::unique_ptr<bdblob::BlobProvider>(new bdblob::FileBlobProvider("storage"));
+  auto provider = std::unique_ptr<bdblob::RemoteBlobProvider>(new bdblob::RemoteBlobProvider(""));
+  // auto provider = std::unique_ptr<bdblob::BlobProvider>(new bdblob::FileBlobProvider("storage"));
+  provider->InitializeBlobMap("blob.cache");
+
+  bdblob::BlobConfig::Initialize(provider.get());
+
   bdblob::g_api = new bdblob::BlobApi();
   bdblob::g_api->Initialize(std::move(provider), bdblob::BlobConfig::RootId());
 
   std::vector<std::unique_ptr<bdblob::Command>> commands;
+  commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::CatCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::GetCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::ListCommand(argv[0])));
   commands.emplace_back(std::unique_ptr<bdblob::Command>(new bdblob::MkdirCommand(argv[0])));

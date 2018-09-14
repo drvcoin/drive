@@ -20,6 +20,7 @@
   SOFTWARE.
 */
 
+#include "PlatformHelper.h"
 #include "HttpRequest.h"
 
 #include <sstream>

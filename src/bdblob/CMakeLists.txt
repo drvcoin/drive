@@ -35,21 +35,28 @@ include(${ROOT}/Config.cmake)
 add_executable(
   bdblob
 
+  commands/CatCommand.cpp
   commands/GetCommand.cpp
   commands/ListCommand.cpp
   commands/MkdirCommand.cpp
   commands/PutCommand.cpp
   commands/RmCommand.cpp
+  Argument.cpp
   ArgumentParser.cpp
   BlobApi.cpp
   BlobConfig.cpp
   BlobError.cpp
+  BlobMap.cpp
+  BlobMetadata.cpp
+  Buffer.cpp
   BufferedInputStream.cpp
   BufferedOutputStream.cpp
   Command.cpp
   File.cpp
   FileBlob.cpp
   FileBlobProvider.cpp
+  RemoteBlob.cpp
+  RemoteBlobProvider.cpp
   Folder.cpp
   IInputStream.cpp
   IOutputStream.cpp
@@ -57,6 +64,20 @@ add_executable(
 )
 
 include_directories(".")
+include_directories(${ROOT}/src/jsoncpp/include)
+include_directories(${ROOT}/src/bdfs-lib)
+include_directories(${ROOT}/src/bdfsclient-lib)
+
+bd_lib(bdblob bdfsclient-static ${LIBDIR}/libbdfsclient.a)
+bd_lib(bdblob bdfs-static ${LIBDIR}/libbdfs.a)
+bd_lib(bdblob jsoncpp ${LIBDIR}/libjsoncpp.a)
+bd_lib(bdblob cm256 ${ROOT_CM256}/out/lib/libcm256.a)
+
+bd_sys_lib(bdblob crypto)
+bd_sys_lib(bdblob curl)
+bd_sys_lib(bdblob dl)
+
+bd_use_pthread(bdblob)
 
 if (NOT APPLE)
 bd_sys_lib(bdblob uuid)

@@ -76,7 +76,8 @@ namespace bdblob
       }
 
       this->root = std::make_shared<Folder>(this->provider.get(), std::string(), blob->Id(), nullptr);
-      BlobConfig::SetRootId(blob->Id());
+
+      BlobConfig::SetRootId(blob->Id(), this->provider.get());
     }
 
     return true;
@@ -179,7 +180,7 @@ namespace bdblob
 
     if (BlobConfig::RootId() != this->RootId())
     {
-      BlobConfig::SetRootId(this->RootId());
+      BlobConfig::SetRootId(this->RootId(), this->provider.get());
     }
 
     return true;
@@ -279,6 +280,7 @@ namespace bdblob
     if (!blob)
     {
       this->error = BlobError::IO_ERROR;
+      return false;
     }
 
     // Step 4: Update the folder entry to point to the new blob, and delete the old blob if existed.
@@ -292,11 +294,17 @@ namespace bdblob
       entry.createTime = createTime;
     }
 
+    auto blobMap = this->provider->GetBlobMap();
+    if (blobMap)
+    {
+      blobMap->GetMetadata(entry.id, entry.metadata);
+    }
+
     folder->UpdateEntry(filename, std::move(entry));
 
     if (BlobConfig::RootId() != this->RootId())
     {
-      BlobConfig::SetRootId(this->RootId());
+      BlobConfig::SetRootId(this->RootId(), this->provider.get());
     }
 
     if (!oldBlobId.empty())
@@ -390,6 +398,54 @@ namespace bdblob
     }
 
     if (totalBytes < entry->size)
+    {
+      this->error = BlobError::IO_ERROR;
+      return false;
+    }
+
+    return true;
+  }
+
+
+  bool BlobApi::Get(std::string path, uint64_t offset, void * output, uint64_t * size)
+  {
+    this->ClearError();
+
+    assert(output && size);
+
+    if (*size == 0)
+    {
+      return true;
+    }
+
+    auto entry = this->Info(path);
+    if (!entry)
+    {
+      return false;
+    }
+
+    if (entry->type != Folder::EntryType::FILE)
+    {
+      this->error = BlobError::NOT_SUPPORTED;
+      return false;
+    }
+
+    auto blob = this->provider->OpenBlob(entry->id);
+    if (!blob)
+    {
+      this->error = BlobError::IO_ERROR;
+      return false;
+    }
+
+    if (offset >= entry->size)
+    {
+      *size = 0;
+      return true;
+    }
+
+    uint64_t remaining = std::min<uint64_t>(*size, entry->size - offset);
+    *size = blob->Read(offset, output, remaining);
+    if (*size < remaining)
     {
       this->error = BlobError::IO_ERROR;
       return false;
@@ -497,7 +553,7 @@ namespace bdblob
       if (end > offset)
       {
         std::string name = path.substr(offset, end - offset);
-        if (name == "..")
+        if (name == ".." && result.size() > 0)
         {
           result.pop_back();
         }

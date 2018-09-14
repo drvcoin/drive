@@ -22,24 +22,46 @@
 
 #pragma once
 
-#include "BlobProvider.h"
+#include <stdio.h>
+#include <map>
+#include <string>
+#include "BlobMetadata.h"
+#include "Buffer.h"
 
 namespace bdblob
 {
-  class FileBlobProvider : public BlobProvider
+  class BlobMap
   {
+  private:
+
+    struct Index
+    {
+      off_t offset;
+      size_t size;
+    };
+
   public:
 
-    explicit FileBlobProvider(const char * rootPath);
+    ~BlobMap();
 
-    std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
+    bool Initialize(std::string path);
 
-    std::unique_ptr<IBlob> OpenBlob(std::string id) override;
+    void SetValue(std::string key, const void * data, size_t len);
 
-    void DeleteBlob(std::string id) override;
+    Buffer GetValue(std::string key) const;
+
+    void SetMetadata(std::string key, const BlobMetadata & metadata);
+
+    bool GetMetadata(std::string key, BlobMetadata & metadata) const;
+
+    bool HasKey(std::string key) const;
 
   private:
 
-    std::string rootPath;
+    std::map<std::string, Index> indexes;
+
+    FILE * file = nullptr;
+
+    std::string filename;
   };
 }

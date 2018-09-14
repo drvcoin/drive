@@ -33,9 +33,9 @@ namespace bdblob
   GetCommand::GetCommand(std::string prefix)
     : Command("get", std::move(prefix))
   {
-    this->parser.Register("force", false, "f", "overwrite existing local files", false, false);
-    this->parser.Register("source", Argument::Type::STRING, true, "", "remote source", true);
-    this->parser.Register("target", false, "", "local target", ".", true);
+    this->parser.Register<bool>("force", false, 'f', "overwrite existing local files", false, false);
+    this->parser.Register<std::string>("source", true, 0, "remote source", true, std::string());
+    this->parser.Register<std::string>("target", false, 0, "local target", true, "");
   }
 
 
@@ -50,9 +50,9 @@ namespace bdblob
       return -1;
     }
 
-    bool force = this->parser.GetValue<bool>("force");
-    std::string source = this->parser.GetValue<std::string>("source");
-    std::string target = this->parser.GetValue<std::string>("target");
+    bool force = this->parser.GetArgument("force")->AsBoolean();
+    std::string source = this->parser.GetArgument("source")->AsString();
+    std::string target = this->parser.GetArgument("target")->AsString();
 
     // TODO: support downloading folders and wildcard filenames
     auto info = g_api->Info(source);

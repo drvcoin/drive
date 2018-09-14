@@ -20,26 +20,53 @@
   SOFTWARE.
 */
 
-#pragma once
-
-#include "BlobProvider.h"
+#include <memory>
+#include "BlobConfig.h"
+#include "BlobApi.h"
+#include "commands/CatCommand.h"
 
 namespace bdblob
 {
-  class FileBlobProvider : public BlobProvider
+  extern BlobApi * g_api;
+
+
+  CatCommand::CatCommand(std::string prefix)
+    : Command("cat", std::move(prefix))
   {
-  public:
+    this->parser.Register<std::string>("path", true, 0, "path", true, std::string());
+  }
 
-    explicit FileBlobProvider(const char * rootPath);
 
-    std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
+  int CatCommand::Execute(int argc, const char ** argv)
+  {
+    assert(g_api);
 
-    std::unique_ptr<IBlob> OpenBlob(std::string id) override;
+    if (!this->parser.Parse(argc, argv))
+    {
+      fprintf(stderr, "Invalid argument.\n");
+      this->PrintUsage();
+      return -1;
+    }
 
-    void DeleteBlob(std::string id) override;
+    std::string path = this->parser.GetArgument("path")->AsString();
 
-  private:
+    uint64_t offset = 0;
+    uint64_t size = BlobConfig::BlockSize();
+    std::unique_ptr<char[]> buffer(new char[size + 1]);
+    while (g_api->Get(path, offset, buffer.get(), &size) && size > 0)
+    {
+      buffer.get()[size] = '\0';
+      printf("%s", buffer.get());
+      offset += size;
+      size = BlobConfig::BlockSize();
+    }
 
-    std::string rootPath;
-  };
+    if (g_api->Error() != BlobError::SUCCESS)
+    {
+      fprintf(stderr, "%s\n", BlobErrorToString(g_api->Error()));
+      return static_cast<int>(g_api->Error());
+    }
+
+    return 0;
+  }
 }

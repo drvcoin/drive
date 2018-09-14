@@ -47,34 +47,9 @@ namespace dfs
 
   std::vector<std::string> VolumeManager::kademliaUrl;
 
-  std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name, const std::string & configPath)
+  std::unique_ptr<Volume> VolumeManager::LoadVolumeFromJson(const std::string & name, const Json::Value & json)
   {
-
-    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
-    printf("path=%s\n", path.c_str());
-    FILE * file = fopen(path.c_str(), "r");
-    if (!file)
-    {
-      return nullptr;
-    }
-
-    bdfs::Buffer buffer;
-    buffer.Resize(BUFSIZ);
-    size_t offset = 0;
-
-    size_t bytes;
-    while ((bytes = fread(static_cast<char *>(buffer.Buf()) + offset, 1, BUFSIZ, file)) == BUFSIZ)
-    {
-      offset = buffer.Size();
-      buffer.Resize(buffer.Size() + BUFSIZ);
-    }
-
-    fclose(file);
-
-    Json::Reader reader;
-    Json::Value json;
-    if (!reader.parse(static_cast<const char *>(buffer.Buf()), offset + bytes, json, false) ||
-        !json.isObject() ||
+    if( !json.isObject() ||
         !json["blockSize"].isIntegral() ||
         !json["blockCount"].isIntegral() ||
         !json["dataBlocks"].isIntegral() ||
@@ -123,6 +98,38 @@ namespace dfs
     return volume;
   }
 
+  std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name, const std::string & configPath)
+  {
+    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
+    printf("path=%s\n", path.c_str());
+    FILE * file = fopen(path.c_str(), "r");
+    if (!file)
+    {
+      return nullptr;
+    }
+
+    bdfs::Buffer buffer;
+    buffer.Resize(BUFSIZ);
+    size_t offset = 0;
+
+    size_t bytes;
+    while ((bytes = fread(static_cast<char *>(buffer.Buf()) + offset, 1, BUFSIZ, file)) == BUFSIZ)
+    {
+      offset = buffer.Size();
+      buffer.Resize(buffer.Size() + BUFSIZ);
+    }
+
+    fclose(file);
+
+    Json::Reader reader;
+    Json::Value json;
+    if (!reader.parse(static_cast<const char *>(buffer.Buf()), offset + bytes, json, false))
+    {
+      return nullptr;
+    }
+    return LoadVolumeFromJson(name, json);
+  }
+
 
   bdfs::HostInfo VolumeManager::GetProviderEndpoint(const std::string & name)
   {
@@ -161,8 +168,7 @@ namespace dfs
     return hostInfo;
   }
 
-
-  bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
+  Json::Value VolumeManager::CreateVolumePartitions(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
   {
     size_t blockSize = 64*1024;
     auto providerSize = size / dataBlocks;
@@ -196,7 +202,7 @@ namespace dfs
         if (jsonArray.isNull())
         {
           printf("Failed to query for providers.\n");
-          return false;
+          return Json::Value();
         }
 
         std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
@@ -288,6 +294,12 @@ namespace dfs
     volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
     volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
     volume["partitions"] = partitionsArray;
+    return volume;
+  }
+
+  bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
+  {
+    auto volume = CreateVolumePartitions(volumeName, size, dataBlocks, codeBlocks);
 
     std::string result = volume.toStyledString();
 
@@ -320,7 +332,7 @@ namespace dfs
 
     printf("Config file: %s\n",path.c_str());
 
-    return (partitionsArray.size() == providerCount);
+    return (volume["partitions"].size() == codeBlocks + dataBlocks);
   }
 
 

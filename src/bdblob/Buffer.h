@@ -22,24 +22,38 @@
 
 #pragma once
 
-#include "BlobProvider.h"
+#include <stdint.h>
 
 namespace bdblob
 {
-  class FileBlobProvider : public BlobProvider
+  class Buffer
   {
   public:
+    
+    Buffer() = default;
 
-    explicit FileBlobProvider(const char * rootPath);
+    Buffer(const Buffer & val) = delete;
 
-    std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
+    Buffer(Buffer && val);
 
-    std::unique_ptr<IBlob> OpenBlob(std::string id) override;
+    ~Buffer();
 
-    void DeleteBlob(std::string id) override;
+    Buffer & operator=(const Buffer & val) = delete;
+
+    Buffer & operator=(Buffer && val);
+
+    void * Buf() const       { return this->buf; }
+
+    size_t Size() const      { return this->size; }
+
+    bool Resize(size_t size);
 
   private:
 
-    std::string rootPath;
+    uint8_t * buf = nullptr;
+
+    size_t size = 0;
+
+    size_t memsize = 0;
   };
 }

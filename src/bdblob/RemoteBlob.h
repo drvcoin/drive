@@ -22,24 +22,37 @@
 
 #pragma once
 
-#include "BlobProvider.h"
+#include <stdio.h>
+#include <memory>
+#include "IBlob.h"
+#include "Volume.h"
 
 namespace bdblob
 {
-  class FileBlobProvider : public BlobProvider
+  class RemoteBlob : public IBlob
   {
   public:
 
-    explicit FileBlobProvider(const char * rootPath);
+    explicit RemoteBlob(std::unique_ptr<dfs::Volume> volumePtr, std::string id, uint64_t size);
 
-    std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
+    ~RemoteBlob() override;
 
-    std::unique_ptr<IBlob> OpenBlob(std::string id) override;
+    RemoteBlob(const RemoteBlob & rhs) = delete;
 
-    void DeleteBlob(std::string id) override;
+    RemoteBlob & operator=(const RemoteBlob & rhs) = delete;
+
+    void Close() override;
+
+    uint64_t Read(uint64_t offset, void * buf, uint64_t len) override;
+
+    uint64_t Write(uint64_t offset, const void * data, uint64_t len) override;
+
+    bool IsOpened() const override;
 
   private:
 
-    std::string rootPath;
+    FILE * fp = nullptr;
+
+    std::unique_ptr<dfs::Volume> volume;
   };
 }

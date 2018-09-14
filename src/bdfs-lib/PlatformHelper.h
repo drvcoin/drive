@@ -22,24 +22,18 @@
 
 #pragma once
 
-#include "BlobProvider.h"
+#if defined(__APPLE__)
 
-namespace bdblob
+#include <string.h>
+
+inline const char * strchrnul(const char * input, char val)
 {
-  class FileBlobProvider : public BlobProvider
+  const char * ptr = input;
+  while (*ptr != '\0' && *ptr != val)
   {
-  public:
-
-    explicit FileBlobProvider(const char * rootPath);
-
-    std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
-
-    std::unique_ptr<IBlob> OpenBlob(std::string id) override;
-
-    void DeleteBlob(std::string id) override;
-
-  private:
-
-    std::string rootPath;
-  };
+    ++ptr;
+  }
+  return ptr;
 }
+
+#endif
