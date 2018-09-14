@@ -31,8 +31,8 @@ namespace bdblob
   MkdirCommand::MkdirCommand(std::string prefix)
     : Command("mkdir", std::move(prefix))
   {
-    this->parser.Register("recursive", false, "p", "create directories recursively", false, false);
-    this->parser.Register("target", Argument::Type::STRING, true, "", "target", true);
+    this->parser.Register<bool>("recursive", false, 'p', "create directories recursively", false, false);
+    this->parser.Register<std::string>("target", true, 0, "target", true, "");
   }
 
 
@@ -47,8 +47,8 @@ namespace bdblob
       return -1;
     }
 
-    bool recursive = this->parser.GetValue<bool>("recursive");
-    std::string target = this->parser.GetValue<std::string>("target");
+    bool recursive = this->parser.GetArgument("recursive")->AsBoolean();
+    std::string target = this->parser.GetArgument("target")->AsString();
 
     bool result = g_api->Mkdir(target);
     if (!result)

@@ -31,11 +31,15 @@ namespace dfs
   class VolumeManager
   {
   public:
-    static std::unique_ptr<Volume> LoadVolume(const std::string &name, const std::string &configPath = "", bool isBlob = false);
+    static std::unique_ptr<Volume> LoadVolumeFromJson(const std::string & name, const Json::Value & json);
 
-    static bool CreateVolume(const std::string &volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks, bool isBlob = false);
+    static std::unique_ptr<Volume> LoadVolume(const std::string &name, const std::string &configPath = "");
 
-    static bool DeleteVolume(const std::string &name, const std::string &path, bool isBlob = false);
+    static Json::Value CreateVolumePartitions(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks);
+
+    static bool CreateVolume(const std::string &volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks);
+
+    static bool DeleteVolume(const std::string &name, const std::string &path);
 
     static void Stop();
 

@@ -33,9 +33,9 @@ namespace bdblob
   ListCommand::ListCommand(std::string prefix)
     : Command("ls", std::move(prefix))
   {
-    this->parser.Register("list", false, "l", "show the result in detail list", false);
-    this->parser.Register("all", false, "a", "show hidden files", false, false);
-    this->parser.Register("path", Argument::Type::STRING, true, "", "path", true);
+    this->parser.Register<bool>("list", false, 'l', "show the result in detail list", false, false);
+    this->parser.Register<bool>("all", false, 'a', "show hidden files", false, false);
+    this->parser.Register<std::string>("path", false, 0, "path", true, "/");
   }
 
 
@@ -51,9 +51,9 @@ namespace bdblob
       return -1;
     }
 
-    bool showList = this->parser.GetValue<bool>("list");
-    bool showAll = this->parser.GetValue<bool>("all");
-    std::string path = this->parser.GetValue<std::string>("path");
+    bool showList = this->parser.GetArgument("list")->AsBoolean();
+    bool showAll = this->parser.GetArgument("all")->AsBoolean();
+    std::string path = this->parser.GetArgument("path")->AsString();
 
     auto parts = BlobApi::SplitPath(path);
 

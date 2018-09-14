@@ -20,52 +20,53 @@
   SOFTWARE.
 */
 
-#pragma once
-
-#include <string>
-#include <vector>
-#include <stdint.h>
-#include "IOutputStream.h"
-#include "IInputStream.h"
+#include <memory>
+#include "BlobConfig.h"
+#include "BlobApi.h"
+#include "commands/CatCommand.h"
 
 namespace bdblob
 {
-  class BlobMetadata
+  extern BlobApi * g_api;
+
+
+  CatCommand::CatCommand(std::string prefix)
+    : Command("cat", std::move(prefix))
   {
-  public:
+    this->parser.Register<std::string>("path", true, 0, "path", true, std::string());
+  }
 
-    struct PartitionInfo
+
+  int CatCommand::Execute(int argc, const char ** argv)
+  {
+    assert(g_api);
+
+    if (!this->parser.Parse(argc, argv))
     {
-      std::string name;
-      std::string provider;
-    };
+      fprintf(stderr, "Invalid argument.\n");
+      this->PrintUsage();
+      return -1;
+    }
 
-  public:
+    std::string path = this->parser.GetArgument("path")->AsString();
 
-    bool Serialize(IOutputStream & stream) const;
+    uint64_t offset = 0;
+    uint64_t size = BlobConfig::BlockSize();
+    std::unique_ptr<char[]> buffer(new char[size + 1]);
+    while (g_api->Get(path, offset, buffer.get(), &size) && size > 0)
+    {
+      buffer.get()[size] = '\0';
+      printf("%s", buffer.get());
+      offset += size;
+      size = BlobConfig::BlockSize();
+    }
 
-    bool Deserialize(IInputStream & stream);
+    if (g_api->Error() != BlobError::SUCCESS)
+    {
+      fprintf(stderr, "%s\n", BlobErrorToString(g_api->Error()));
+      return static_cast<int>(g_api->Error());
+    }
 
-    size_t GetSerializedSize() const;
-
-    void AddPartition(std::string name, std::string provider);
-
-    uint64_t Size() const                                     { return this->size; }
-
-    void SetSize(uint64_t val)                                { this->size = val; }
-
-    uint64_t BlockSize() const                                     { return this->blockSize; }
-
-    void SetBlockSize(uint64_t val)                                { this->blockSize = val; }
-
-    const std::vector<PartitionInfo> & Partitions() const     { return this->partitions; }
-
-  private:
-
-    uint64_t size = 0;
-
-    uint64_t blockSize = 0;
-
-    std::vector<PartitionInfo> partitions;
-  };
+    return 0;
+  }
 }

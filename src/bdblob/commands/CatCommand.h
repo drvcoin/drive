@@ -22,50 +22,16 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <stdint.h>
-#include "IOutputStream.h"
-#include "IInputStream.h"
+#include "Command.h"
 
 namespace bdblob
 {
-  class BlobMetadata
+  class CatCommand : public Command
   {
   public:
 
-    struct PartitionInfo
-    {
-      std::string name;
-      std::string provider;
-    };
+    explicit CatCommand(std::string prefix);
 
-  public:
-
-    bool Serialize(IOutputStream & stream) const;
-
-    bool Deserialize(IInputStream & stream);
-
-    size_t GetSerializedSize() const;
-
-    void AddPartition(std::string name, std::string provider);
-
-    uint64_t Size() const                                     { return this->size; }
-
-    void SetSize(uint64_t val)                                { this->size = val; }
-
-    uint64_t BlockSize() const                                     { return this->blockSize; }
-
-    void SetBlockSize(uint64_t val)                                { this->blockSize = val; }
-
-    const std::vector<PartitionInfo> & Partitions() const     { return this->partitions; }
-
-  private:
-
-    uint64_t size = 0;
-
-    uint64_t blockSize = 0;
-
-    std::vector<PartitionInfo> partitions;
+    int Execute(int argc, const char ** argv) override;
   };
 }

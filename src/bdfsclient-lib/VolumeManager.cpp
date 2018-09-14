@@ -47,36 +47,9 @@ namespace dfs
 
   std::vector<std::string> VolumeManager::kademliaUrl;
 
-  #define BLOB_DIR  "/var/tmp/blob/"
-
-  std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name, const std::string & configPath, bool isBlob)
+  std::unique_ptr<Volume> VolumeManager::LoadVolumeFromJson(const std::string & name, const Json::Value & json)
   {
-
-    std::string path = !configPath.empty() ? configPath : (isBlob ? std::string(BLOB_DIR) : std::string("/etc/drive/")) + name + std::string("/volume.conf");
-    printf("path=%s\n", path.c_str());
-    FILE * file = fopen(path.c_str(), "r");
-    if (!file)
-    {
-      return nullptr;
-    }
-
-    bdfs::Buffer buffer;
-    buffer.Resize(BUFSIZ);
-    size_t offset = 0;
-
-    size_t bytes;
-    while ((bytes = fread(static_cast<char *>(buffer.Buf()) + offset, 1, BUFSIZ, file)) == BUFSIZ)
-    {
-      offset = buffer.Size();
-      buffer.Resize(buffer.Size() + BUFSIZ);
-    }
-
-    fclose(file);
-
-    Json::Reader reader;
-    Json::Value json;
-    if (!reader.parse(static_cast<const char *>(buffer.Buf()), offset + bytes, json, false) ||
-        !json.isObject() ||
+    if( !json.isObject() ||
         !json["blockSize"].isIntegral() ||
         !json["blockCount"].isIntegral() ||
         !json["dataBlocks"].isIntegral() ||
@@ -125,6 +98,38 @@ namespace dfs
     return volume;
   }
 
+  std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name, const std::string & configPath)
+  {
+    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
+    printf("path=%s\n", path.c_str());
+    FILE * file = fopen(path.c_str(), "r");
+    if (!file)
+    {
+      return nullptr;
+    }
+
+    bdfs::Buffer buffer;
+    buffer.Resize(BUFSIZ);
+    size_t offset = 0;
+
+    size_t bytes;
+    while ((bytes = fread(static_cast<char *>(buffer.Buf()) + offset, 1, BUFSIZ, file)) == BUFSIZ)
+    {
+      offset = buffer.Size();
+      buffer.Resize(buffer.Size() + BUFSIZ);
+    }
+
+    fclose(file);
+
+    Json::Reader reader;
+    Json::Value json;
+    if (!reader.parse(static_cast<const char *>(buffer.Buf()), offset + bytes, json, false))
+    {
+      return nullptr;
+    }
+    return LoadVolumeFromJson(name, json);
+  }
+
 
   bdfs::HostInfo VolumeManager::GetProviderEndpoint(const std::string & name)
   {
@@ -163,8 +168,7 @@ namespace dfs
     return hostInfo;
   }
 
-
-  bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks, bool isBlob)
+  Json::Value VolumeManager::CreateVolumePartitions(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
   {
     size_t blockSize = 64*1024;
     auto providerSize = size / dataBlocks;
@@ -198,7 +202,7 @@ namespace dfs
         if (jsonArray.isNull())
         {
           printf("Failed to query for providers.\n");
-          return false;
+          return Json::Value();
         }
 
         std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
@@ -251,9 +255,8 @@ namespace dfs
           }
 
           auto result = folder->CreatePartition(reserveId, blockSize);
-          if (!result->Wait(folder->GetTimeout()) || result->HasError())
+          if (!result->Wait(folder->GetTimeout()) || !result->GetResult())
           {
-            printf("Failed to create partition on provider '%s'\n", contracts[i]->Provider().c_str());
             continue;
           }
 
@@ -291,10 +294,16 @@ namespace dfs
     volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
     volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
     volume["partitions"] = partitionsArray;
+    return volume;
+  }
+
+  bool VolumeManager::CreateVolume(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks)
+  {
+    auto volume = CreateVolumePartitions(volumeName, size, dataBlocks, codeBlocks);
 
     std::string result = volume.toStyledString();
 
-    std::string path = std::string("/etc/drive/") + std::string(isBlob ? "blob/" : "") + volumeName;
+    std::string path = "/etc/drive/" + volumeName;
 
     mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
@@ -303,7 +312,7 @@ namespace dfs
     FILE * file = fopen(path.c_str(), "w");
     if (!file)
     {
-      path = (isBlob ? std::string(BLOB_DIR) : std::string("/tmp/drive/"))+ volumeName;
+      path = "/tmp/drive/" + volumeName;
       std::string cmd = "mkdir -p " + path;
       system(cmd.c_str());
       path.append("/volume.conf");
@@ -323,13 +332,13 @@ namespace dfs
 
     printf("Config file: %s\n",path.c_str());
 
-    return (partitionsArray.size() == providerCount);
+    return (volume["partitions"].size() == codeBlocks + dataBlocks);
   }
 
 
-  bool VolumeManager::DeleteVolume(const std::string & name, const std::string & configPath, bool isBlob)
+  bool VolumeManager::DeleteVolume(const std::string & name, const std::string & configPath)
   {
-    auto volume = LoadVolume(name, configPath, isBlob);
+    auto volume = LoadVolume(name, configPath);
     if (!volume)
     {
       printf("Failed to load volume.\n");
@@ -342,7 +351,7 @@ namespace dfs
       return false;
     }
 
-    std::string path = !configPath.empty() ? configPath : (isBlob ? std::string(BLOB_DIR) : std::string("/etc/drive/")) + name + std::string("/volume.conf");
+    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
     unlink(path.c_str());
 
     return true;

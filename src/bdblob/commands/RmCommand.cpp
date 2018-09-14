@@ -31,9 +31,9 @@ namespace bdblob
   RmCommand::RmCommand(std::string prefix)
     : Command("rm", std::move(prefix))
   {
-    this->parser.Register("recursive", false, "r", "delete files or directories", false, false);
-    this->parser.Register("force", false, "f", "delete even if directory is not empty", false, false);
-    this->parser.Register("target", Argument::Type::STRING, true, "", "target", true);
+    this->parser.Register<bool>("recursive", false, 'r', "delete files or directories", false, false);
+    this->parser.Register<bool>("force", false, 'f', "delete even if directory is not empty", false, false);
+    this->parser.Register<std::string>("target", true, 0, "target", true, "");
   }
 
 
@@ -48,9 +48,9 @@ namespace bdblob
       return -1;
     }
 
-    bool recursive = this->parser.GetValue<bool>("recursive");
-    bool force = this->parser.GetValue<bool>("force");
-    std::string target = this->parser.GetValue<std::string>("target");
+    bool recursive = this->parser.GetArgument("recursive")->AsBoolean();
+    bool force = this->parser.GetArgument("force")->AsBoolean();
+    std::string target = this->parser.GetArgument("target")->AsString();
 
     auto parts = BlobApi::SplitPath(target);
     auto parent = g_api->GetParentFolder(parts);

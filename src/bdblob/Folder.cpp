@@ -68,7 +68,7 @@ namespace bdblob
     properties.createTime = properties.modifyTime = now();
     properties.size = 0;
 
-    Buffer buffer = blobMap->GetValue(id);
+    Buffer buffer = blobMap->GetValue(properties.id);
     BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
     properties.metadata.Deserialize(stream);
 

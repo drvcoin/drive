@@ -20,52 +20,43 @@
   SOFTWARE.
 */
 
-#pragma once
-
-#include <string>
-#include <vector>
-#include <stdint.h>
-#include "IOutputStream.h"
-#include "IInputStream.h"
+#include "Argument.h"
 
 namespace bdblob
 {
-  class BlobMetadata
+  template<>
+  Argument<std::string>::Argument()
+    : ArgumentBase(ArgumentType::STRING)
   {
-  public:
+  }
 
-    struct PartitionInfo
-    {
-      std::string name;
-      std::string provider;
-    };
+  template<>
+  const std::string & Argument<std::string>::AsString() const
+  {
+    return this->value;
+  }
 
-  public:
+  template<>
+  Argument<int64_t>::Argument()
+    : ArgumentBase(ArgumentType::INTEGER)
+  {
+  }
 
-    bool Serialize(IOutputStream & stream) const;
+  template<>
+  int64_t Argument<int64_t>::AsInt() const
+  {
+    return this->value;
+  }
 
-    bool Deserialize(IInputStream & stream);
+  template<>
+  Argument<bool>::Argument()
+    : ArgumentBase(ArgumentType::BOOLEAN)
+  {
+  }
 
-    size_t GetSerializedSize() const;
-
-    void AddPartition(std::string name, std::string provider);
-
-    uint64_t Size() const                                     { return this->size; }
-
-    void SetSize(uint64_t val)                                { this->size = val; }
-
-    uint64_t BlockSize() const                                     { return this->blockSize; }
-
-    void SetBlockSize(uint64_t val)                                { this->blockSize = val; }
-
-    const std::vector<PartitionInfo> & Partitions() const     { return this->partitions; }
-
-  private:
-
-    uint64_t size = 0;
-
-    uint64_t blockSize = 0;
-
-    std::vector<PartitionInfo> partitions;
-  };
+  template<>
+  bool Argument<bool>::AsBoolean() const
+  {
+    return this->value;
+  }
 }

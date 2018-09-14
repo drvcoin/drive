@@ -32,7 +32,7 @@ namespace bdblob
 
     explicit RemoteBlobProvider(const char * rootPath);
 
-    std::unique_ptr<IBlob> NewBlob(size_t size) override;
+    std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
 
     std::unique_ptr<IBlob> OpenBlob(std::string id) override;
 

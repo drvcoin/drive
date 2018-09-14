@@ -69,7 +69,7 @@ namespace bdblob
   }
 
 
-  std::unique_ptr<IBlob> RemoteBlobProvider::NewBlob(size_t size)
+  std::unique_ptr<IBlob> RemoteBlobProvider::NewBlob(uint64_t size)
   {
     std::string id = uuidgen();
     std::string folder = this->rootPath + "/" + id;
@@ -78,57 +78,72 @@ namespace bdblob
       return nullptr;
     }
 
-    if(dfs::VolumeManager::CreateVolume(id, size, bdblob::BlobConfig::DataBlocks(), bdblob::BlobConfig::CodeBlocks(), true))
+    auto blobMap = this->GetBlobMap();
+    if (!blobMap)
     {
-      std::string blobFileName = folder + "/blob";
-      auto volume = dfs::VolumeManager::LoadVolume(id, "", true);
+      return nullptr;
+    }
+
+    Json::Value volumeInfo = dfs::VolumeManager::CreateVolumePartitions(id, size, bdblob::BlobConfig::DataBlocks(), bdblob::BlobConfig::CodeBlocks());
+    BlobMetadata metadata;
+    metadata.SetSize(size);
+    metadata.SetBlockSize(volumeInfo["blockSize"].asUInt());
+
+    for (size_t i = 0; i < volumeInfo["partitions"].size(); ++i)
+    {
+      auto & partition = volumeInfo["partitions"][i];
+      if (!partition["name"].isString() || !partition["provider"].isString())
+      {
+        return nullptr;
+      }
+      metadata.AddPartition(partition["name"].asString(), partition["provider"].asString());
+    }
+
+    blobMap->SetMetadata(id, metadata);
+
+    if(!volumeInfo.isNull())
+    {
+      auto volume = dfs::VolumeManager::LoadVolumeFromJson(id, volumeInfo);
       if(volume != nullptr)
       {
         return std::unique_ptr<IBlob>(new RemoteBlob(std::move(volume), std::move(id), size));
       }
     }
     return nullptr;
-
-
-    // mkdir(folder.c_str(), 0755);
-
-    // std::string metaSize = folder + "/.size";
-    // FILE * file = fopen(metaSize.c_str(), "wb");
-    // if (file)
-    // {
-    //   fwrite(&size, 1, sizeof(size_t), file);
-    //   fclose(file);
-    // }
-
-    // std::string blobFileName = folder + "/blob";
-    // FILE * blobFile = fopen(blobFileName.c_str(), "wb");
-    // if (blobFile)
-    // {
-    //   char buf[BUFSIZ];
-    //   memset(buf, 0, BUFSIZ);
-
-    //   size_t remaining = size;
-    //   while (remaining >= BUFSIZ)
-    //   {
-    //     fwrite(buf, 1, BUFSIZ, blobFile);
-    //     remaining -= BUFSIZ;
-    //   }
-
-    //   if (remaining > 0)
-    //   {
-    //     fwrite(buf, 1, remaining, blobFile);
-    //   }
-
-    //   fclose(blobFile);
-    // }
-
-    // return std::unique_ptr<IBlob>(new FileBlob(blobFileName.c_str(), std::move(id), size));
   }
 
 
   std::unique_ptr<IBlob> RemoteBlobProvider::OpenBlob(std::string id)
   {
-    auto volume = dfs::VolumeManager::LoadVolume(id, "", true);
+    auto blobMap = this->GetBlobMap();
+    if (!blobMap)
+    {
+      return nullptr;
+    }
+
+    BlobMetadata metadata;
+    if (!blobMap->GetMetadata(id, metadata))
+    {
+      return nullptr;
+    }
+
+    Json::Value partitionArray;
+    for(auto & partition : metadata.Partitions())
+    {
+        Json::Value pt;
+        pt["name"] = partition.name;
+        pt["provider"] = partition.provider;
+        partitionArray.append(pt);
+    }
+
+    Json::Value json;
+    json["partitions"] = partitionArray;
+    json["blockSize"] = Json::Value::UInt(metadata.BlockSize());
+    json["blockCount"] = Json::Value::UInt((metadata.Size()/bdblob::BlobConfig::DataBlocks())  / metadata.BlockSize());
+    json["dataBlocks"] = Json::Value::UInt(bdblob::BlobConfig::DataBlocks());
+    json["codeBlocks"] = Json::Value::UInt(bdblob::BlobConfig::CodeBlocks());
+
+    auto volume = dfs::VolumeManager::LoadVolumeFromJson(id, json);
     if(volume.get() != nullptr)
     {
       auto dataSize = volume->DataSize();
@@ -136,33 +151,6 @@ namespace bdblob
     } 
     
     return nullptr;
-    // char path[PATH_MAX];
-    // sprintf(path, "%s/%s/.size", this->rootPath.c_str(), id.c_str());
-    
-    // FILE * metaFile = fopen(path, "rb");
-    // if (!metaFile)
-    // {
-    //   return nullptr;
-    // }
-
-    // size_t size = 0;
-    // size_t bytes = fread(&size, 1, sizeof(size_t), metaFile);
-    // fclose(metaFile);
-
-    // if (bytes < sizeof(size_t))
-    // {
-    //   return nullptr;
-    // }
-
-    // sprintf(path, "%s/%s/blob", this->rootPath.c_str(), id.c_str());
-
-    // std::unique_ptr<IBlob> result(new FileBlob(path, std::move(id), size));
-    // if (!result->IsOpened())
-    // {
-    //   return nullptr;
-    // }
-
-    // return std::move(result);
   }
 
 

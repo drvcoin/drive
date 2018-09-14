@@ -32,6 +32,7 @@ namespace bdblob
   bool BlobMetadata::Serialize(IOutputStream & stream) const
   {
     return_false_if(!stream.WriteUInt64(this->size));
+    return_false_if(!stream.WriteUInt64(this->blockSize));
     return_false_if(!stream.WriteUInt32(this->partitions.size()));
     for (const auto & partition : this->partitions)
     {
@@ -44,9 +45,11 @@ namespace bdblob
 
   bool BlobMetadata::Deserialize(IInputStream & stream)
   {
-    return_false_if(stream.Remainder() < sizeof(uint64_t) + sizeof(uint32_t));
+    return_false_if(stream.Remainder() < (sizeof(uint64_t) + sizeof(uint64_t) + sizeof(uint32_t)));
 
     this->size = stream.ReadUInt64();
+
+    this->blockSize = stream.ReadUInt64();
 
     uint32_t count = stream.ReadUInt32();
 
@@ -69,7 +72,7 @@ namespace bdblob
 
   size_t BlobMetadata::GetSerializedSize() const
   {
-    size_t result = sizeof(this->size) + sizeof(uint32_t);
+    size_t result = sizeof(this->size) + sizeof(this->blockSize) + sizeof(uint32_t);
 
     for (const auto & partition : this->partitions)
     {
