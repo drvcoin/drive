@@ -263,7 +263,8 @@ namespace bdkad
 
     auto result = AsyncResultPtr(new AsyncResult<bool>());
 
-    KademliaHandler::controller->Publish(key, data, 864000, 1, result);
+    uint32_t publishTtl = 10*24*3600;      // Published data TTL = 10 days
+    KademliaHandler::controller->Publish(key, data, publishTtl, 1, result);
 
     if (!result->Wait(60000) || !AsyncResultHelper::GetResult<bool>(result.get()))
     {
@@ -286,9 +287,7 @@ namespace bdkad
       auto jsonStr = writer.write(json);
 
       std::string keyStr;
-      keyStr = json["type"].asString() + ":" + json["name"].asString() + ":" + std::to_string(json["ts"].asUInt());
-
-      printf("Writing log to %s\n",keyStr.c_str());
+      keyStr = "LOG";
 
       sha1_t digest;
       Digest::Compute(keyStr.c_str(), keyStr.size(), digest);
@@ -298,7 +297,8 @@ namespace bdkad
 
       auto result = AsyncResultPtr(new AsyncResult<bool>());
 
-      KademliaHandler::controller->SaveLog(key, data, UINT32_MAX, 0, result);
+      uint32_t logTtl = 180*24*3600;      // Logs TTL = 180 days
+      KademliaHandler::controller->StoreLog(key, data, logTtl, 0, result);
 
       if (!result->Wait(60000) || !AsyncResultHelper::GetResult<bool>(result.get()))
       {
@@ -393,7 +393,7 @@ namespace bdkad
 
     auto result = AsyncResultPtr(new  AsyncResult<BufferPtr>());
 
-    KademliaHandler::controller->Query(key, query, limit, result);
+    KademliaHandler::controller->QueryLogs(key, query, limit, result);
 
     if (!result->Wait(60000))
     {
