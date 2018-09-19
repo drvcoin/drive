@@ -68,7 +68,7 @@ namespace bdblob
     }
     else
     {
-      auto blob = this->provider->NewBlob(BlobConfig::BlockSize());
+      auto blob = this->provider->NewBlob(BlobConfig::MinBlobSize());
       if (!blob)
       {
         this->error = BlobError::IO_ERROR;
@@ -168,7 +168,7 @@ namespace bdblob
       return false;
     }
 
-    auto blob = this->provider->NewBlob(BlobConfig::BlockSize());
+    auto blob = this->provider->NewBlob(BlobConfig::MinBlobSize());
     if (!blob)
     {
       this->error = BlobError::IO_ERROR;
@@ -274,7 +274,7 @@ namespace bdblob
     rewind(file.Value());
 
     // Step 3: Create a new blob (not used yet)
-    uint64_t blobSize = fileSize > 0 ? (((fileSize - 1) / BlobConfig::BlockSize()) + 1) * BlobConfig::BlockSize() : BlobConfig::BlockSize();
+    uint64_t blobSize = fileSize > 0 ? (((fileSize - 1) / BlobConfig::BlockSize()) + 1) * BlobConfig::BlockSize() : BlobConfig::MinBlobSize();
 
     auto blob = this->provider->NewBlob(blobSize);
     if (!blob)
@@ -317,9 +317,9 @@ namespace bdblob
     off_t offset = 0;
     size_t bytes = 0;
     uint64_t totalBytes = 0;
-    while ((bytes = fread(buffer.get() + offset, 1, BlobConfig::BlockSize(), file.Value())) > 0)
+    while ((bytes = fread(buffer.get(), 1, BlobConfig::BlockSize(), file.Value())) > 0)
     {
-      if (blob->Write(offset, buffer.get() + offset, bytes) < bytes)
+      if (blob->Write(offset, buffer.get(), bytes) < bytes)
       {
         break;
       }

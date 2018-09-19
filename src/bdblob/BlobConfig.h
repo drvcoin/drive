@@ -32,6 +32,7 @@ namespace bdblob
   {
   public:
 
+    static uint64_t MinBlobSize()             { return blockSize * dataBlocks; }
     static uint64_t BlockSize()               { return blockSize; }
     static void SetBlockSize(uint64_t val)    { blockSize = val; }
 

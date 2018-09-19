@@ -32,7 +32,7 @@ namespace bdblob
 {
   uint64_t BlobConfig::dataBlocks = 2;
   uint64_t BlobConfig::codeBlocks = 2;
-  uint64_t BlobConfig::blockSize = 64 * 1024 * BlobConfig::dataBlocks;
+  uint64_t BlobConfig::blockSize = 64 * 1024;
 
   std::string * BlobConfig::rootId = nullptr;
 

@@ -29,11 +29,6 @@ namespace bdblob
 {
   RemoteBlob::RemoteBlob(std::unique_ptr<dfs::Volume> volumePtr, std::string id, uint64_t size)
   {
-    // this->fp = fopen(path, "rb+");
-    // if (!this->fp)
-    // {
-    //   this->fp = fopen(path, "wb+");
-    // }
     this->volume = std::move(volumePtr);
 
     this->SetId(std::move(id));
@@ -65,18 +60,14 @@ namespace bdblob
       return 0;
     }
 
-    return volume->ReadDecrypt(buf, len, offset) ? len : 0;
-    // fseek(this->fp, offset, SEEK_SET);
+    if(!volume->ReadDecrypt(buf, len, offset))
+    {
+      len = 0;
+    }
 
-    // len = std::min<uint64_t>(len, this->Size() - offset);
+     len = std::min<uint64_t>(len, this->Size() - offset);
 
-    // uint64_t rtn = fread(buf, 1, len, this->fp);
-    // if (rtn < len)
-    // {
-    //   memset(static_cast<uint8_t *>(buf) + rtn, 0, len - rtn);
-    // }
-
-    // return len;
+     return len;
   }
 
 
@@ -88,31 +79,6 @@ namespace bdblob
     }
 
     return volume->WriteEncrypt(data, len, offset) ? len : 0;
-
-    // fseek(this->fp, 0, SEEK_END);
-    // long fileSize = ftell(this->fp);
-    // if (fileSize < 0)
-    // {
-    //   fileSize = 0;
-    // }
-
-    // if (offset > static_cast<uint64_t>(fileSize))
-    // {
-    //   fseek(this->fp, 0, SEEK_END);
-    //   char zero = '\0';
-    //   fwrite(&zero, 1, static_cast<uint64_t>(fileSize) - offset, this->fp);
-    // }
-    // else
-    // {
-    //   fseek(this->fp, offset, SEEK_SET);
-    // }
-
-    // len = std::min<uint64_t>(len, this->Size() - offset);
-
-    // uint64_t rtn = fwrite(data, 1, len, this->fp);
-    // fflush(this->fp);
-
-    // return rtn;
   }
 
 

@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <cmath>
 
 #include "RemoteBlob.h"
 #include "RemoteBlobProvider.h"
@@ -139,7 +140,7 @@ namespace bdblob
     Json::Value json;
     json["partitions"] = partitionArray;
     json["blockSize"] = Json::Value::UInt(metadata.BlockSize());
-    json["blockCount"] = Json::Value::UInt((metadata.Size()/bdblob::BlobConfig::DataBlocks())  / metadata.BlockSize());
+    json["blockCount"] = Json::Value::UInt(std::ceil((metadata.Size()/bdblob::BlobConfig::DataBlocks()) * 1.0  / metadata.BlockSize()));
     json["dataBlocks"] = Json::Value::UInt(bdblob::BlobConfig::DataBlocks());
     json["codeBlocks"] = Json::Value::UInt(bdblob::BlobConfig::CodeBlocks());
 
