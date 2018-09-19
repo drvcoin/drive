@@ -290,7 +290,7 @@ namespace dfs
 
     Json::Value volume;
     volume["blockSize"] = Json::Value::UInt(blockSize);
-    volume["blockCount"] = Json::Value::UInt(providerSize / blockSize);
+    volume["blockCount"] = Json::Value::UInt(std::ceil(providerSize * 1.0 / blockSize));
     volume["dataBlocks"] = Json::Value::UInt(dataBlocks);
     volume["codeBlocks"] = Json::Value::UInt(codeBlocks);
     volume["partitions"] = partitionsArray;
