@@ -32,8 +32,12 @@
 #include <netinet/in.h>
 #include <string.h>
 
+#if !defined(__APPLE__)
 // Leading NUL creates a socket that's not backed by the file system 
 #define UNIX_SOC_PREFIX "\0/blocdrive/usp/"
+#else
+#define UNIX_SOC_PREFIX "/var/tmp/blocdrive.socket."
+#endif
 
 namespace bdfs
 {
@@ -116,13 +120,23 @@ namespace bdfs
       return false;
     }
 
+#if !defined(__APPLE__)
     if ((connectFd = socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0)) == -1)
     {
       return false;
     }
+#else
+    if ((connectFd = socket(PF_LOCAL, SOCK_STREAM, 0)) == -1)
+    {
+      return false;
+    }
+    fcntl(connectFd, O_CLOEXEC);
+#endif
 
     bool success = false;
     int retry = 0;
+
+    size_t serverAddrLen = sizeof(serverAddrLen);
 
     if (!UnixDomainSocket::SetNonBlock(connectFd, true))
     {
@@ -134,7 +148,12 @@ namespace bdfs
     memcpy(serverAddr.sun_path, UNIX_SOC_PREFIX, sizeof(UNIX_SOC_PREFIX));
     strcat(&(serverAddr.sun_path[1]), uuid);
 
-    while (connect(connectFd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+#if defined(__APPLE__)
+    serverAddr.sun_len = sizeof(serverAddr);
+    serverAddrLen = SUN_LEN(&serverAddr);
+#endif
+
+    while (connect(connectFd, (struct sockaddr *)&serverAddr, serverAddrLen) == -1)
     {
       if (timeout >= 0 && errno == EAGAIN)
       {
@@ -191,19 +210,34 @@ namespace bdfs
       return false;
     }
 
+#if !defined(__APPLE__)
     if ((listenFd = socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0)) == -1)
     {
       return false;
     }
+#else
+    if ((listenFd = socket(PF_LOCAL, SOCK_STREAM, 0)) == -1)
+    {
+      return false;
+    }
+    fcntl(listenFd, O_CLOEXEC);
+#endif
 
     bzero(&serverAddr, sizeof(serverAddr));
     serverAddr.sun_family = AF_LOCAL;
     memcpy(serverAddr.sun_path, UNIX_SOC_PREFIX, sizeof(UNIX_SOC_PREFIX));
     strcat(&(serverAddr.sun_path[1]), uuid);
-    
+
+    size_t serverAddrLen = sizeof(serverAddrLen);
+
+#if defined(__APPLE__)
+    serverAddr.sun_len = sizeof(serverAddr);
+    serverAddrLen = SUN_LEN(&serverAddr);
+#endif
+
     unlink(serverAddr.sun_path);
 
-    if (bind(listenFd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+    if (bind(listenFd, (struct sockaddr *)&serverAddr, serverAddrLen) == -1)
     {
       close(listenFd);
       return false;
@@ -225,8 +259,16 @@ namespace bdfs
     UnixDomainSocket * clientSocket = NULL;
     struct sockaddr_un clientAddr;
     socklen_t sockLen = sizeof(struct sockaddr);
-    
+   
+#if !defined(__APPLE__)
     int clientFd = accept4(this->socketFd, (struct sockaddr *)&clientAddr, &sockLen, SOCK_CLOEXEC);
+#else
+    int clientFd = accept(this->socketFd, (struct sockaddr *)&clientAddr, &sockLen);
+    if (clientFd != -1)
+    {
+      fcntl(clientFd, O_CLOEXEC);
+    }
+#endif
 
     if (clientFd != -1 &&
         UnixDomainSocket::SetNonBlock(clientFd, true) &&

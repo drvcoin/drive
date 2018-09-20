@@ -22,50 +22,37 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <stdint.h>
-#include "IOutputStream.h"
-#include "IInputStream.h"
+#include <stdio.h>
+#include <memory>
+#include "IBlob.h"
+#include "Volume.h"
 
 namespace bdblob
 {
-  class BlobMetadata
+  class RemoteBlob : public IBlob
   {
   public:
 
-    struct PartitionInfo
-    {
-      std::string name;
-      std::string provider;
-    };
+    explicit RemoteBlob(std::unique_ptr<dfs::Volume> volumePtr, std::string id, uint64_t size);
 
-  public:
+    ~RemoteBlob() override;
 
-    bool Serialize(IOutputStream & stream) const;
+    RemoteBlob(const RemoteBlob & rhs) = delete;
 
-    bool Deserialize(IInputStream & stream);
+    RemoteBlob & operator=(const RemoteBlob & rhs) = delete;
 
-    size_t GetSerializedSize() const;
+    void Close() override;
 
-    void AddPartition(std::string name, std::string provider);
+    uint64_t Read(uint64_t offset, void * buf, uint64_t len) override;
 
-    uint64_t Size() const                                     { return this->size; }
+    uint64_t Write(uint64_t offset, const void * data, uint64_t len) override;
 
-    void SetSize(uint64_t val)                                { this->size = val; }
-
-    uint64_t BlockSize() const                                     { return this->blockSize; }
-
-    void SetBlockSize(uint64_t val)                                { this->blockSize = val; }
-
-    const std::vector<PartitionInfo> & Partitions() const     { return this->partitions; }
+    bool IsOpened() const override;
 
   private:
 
-    uint64_t size = 0;
+    FILE * fp = nullptr;
 
-    uint64_t blockSize = 0;
-
-    std::vector<PartitionInfo> partitions;
+    std::unique_ptr<dfs::Volume> volume;
   };
 }

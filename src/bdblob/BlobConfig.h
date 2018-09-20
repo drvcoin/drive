@@ -32,8 +32,15 @@ namespace bdblob
   {
   public:
 
+    static uint64_t MinBlobSize()             { return blockSize * dataBlocks; }
     static uint64_t BlockSize()               { return blockSize; }
     static void SetBlockSize(uint64_t val)    { blockSize = val; }
+
+    static uint64_t CodeBlocks()               { return codeBlocks; }
+    static void SetCodeBlocks(uint64_t val)    { codeBlocks = val; }
+
+    static uint64_t DataBlocks()               { return dataBlocks; }
+    static void SetDataBlocks(uint64_t val)    { dataBlocks = val; }
 
     static const std::string & RootId()       { return *rootId; }
     static void SetRootId(std::string val, BlobProvider * provider);
@@ -43,6 +50,8 @@ namespace bdblob
   private:
 
     static uint64_t blockSize;
+    static uint64_t codeBlocks;
+    static uint64_t dataBlocks;
 
     static std::string * rootId;
   };

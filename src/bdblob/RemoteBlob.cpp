@@ -20,52 +20,70 @@
   SOFTWARE.
 */
 
-#pragma once
-
-#include <string>
-#include <vector>
-#include <stdint.h>
-#include "IOutputStream.h"
-#include "IInputStream.h"
+#include <algorithm>
+#include <errno.h>
+#include <string.h>
+#include "RemoteBlob.h"
 
 namespace bdblob
 {
-  class BlobMetadata
+  RemoteBlob::RemoteBlob(std::unique_ptr<dfs::Volume> volumePtr, std::string id, uint64_t size)
   {
-  public:
+    this->volume = std::move(volumePtr);
 
-    struct PartitionInfo
+    this->SetId(std::move(id));
+    this->SetSize(size);
+  }
+
+
+  RemoteBlob::~RemoteBlob()
+  {
+    this->Close();
+  }
+
+
+  void RemoteBlob::Close()
+  {
+    if (this->fp)
     {
-      std::string name;
-      std::string provider;
-    };
+      fclose(this->fp);
+      this->fp = nullptr;
+    }
+    volume.reset();
+  }
 
-  public:
 
-    bool Serialize(IOutputStream & stream) const;
+  uint64_t RemoteBlob::Read(uint64_t offset, void * buf, uint64_t len)
+  {
+    if (!this->volume.get() || !buf || offset > this->Size())
+    {
+      return 0;
+    }
 
-    bool Deserialize(IInputStream & stream);
+    if(!volume->ReadDecrypt(buf, len, offset))
+    {
+      len = 0;
+    }
 
-    size_t GetSerializedSize() const;
+     len = std::min<uint64_t>(len, this->Size() - offset);
 
-    void AddPartition(std::string name, std::string provider);
+     return len;
+  }
 
-    uint64_t Size() const                                     { return this->size; }
 
-    void SetSize(uint64_t val)                                { this->size = val; }
+  uint64_t RemoteBlob::Write(uint64_t offset, const void * data, uint64_t len)
+  {
+    if (!this->volume.get() || !data || offset > this->Size())
+    {
+      return 0;
+    }
 
-    uint64_t BlockSize() const                                     { return this->blockSize; }
+    return volume->WriteEncrypt(data, len, offset) ? len : 0;
+  }
 
-    void SetBlockSize(uint64_t val)                                { this->blockSize = val; }
 
-    const std::vector<PartitionInfo> & Partitions() const     { return this->partitions; }
-
-  private:
-
-    uint64_t size = 0;
-
-    uint64_t blockSize = 0;
-
-    std::vector<PartitionInfo> partitions;
-  };
+  bool RemoteBlob::IsOpened() const
+  {
+    return this->volume.get() != nullptr;
+  }
 }

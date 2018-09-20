@@ -63,7 +63,7 @@ namespace dfs
     params.RecoveryCount = codeCount;
 
     size_t dataSize = dataCount * blockSize;
-    std::unique_ptr<uint8_t> dataBuffer(new uint8_t[dataSize]);
+    std::unique_ptr<uint8_t[]> dataBuffer(new uint8_t[dataSize]);
     memset(dataBuffer.get(), 0, dataSize);
 
     std::vector<uint64_t> missingBlocks;
@@ -111,7 +111,7 @@ namespace dfs
     }
 
     size_t codeSize = codeCount * blockSize;
-    std::unique_ptr<uint8_t> codeBuffer(new uint8_t[codeSize]);
+    std::unique_ptr<uint8_t[]> codeBuffer(new uint8_t[codeSize]);
 
     return_false_if(cm256_encode(params, blocks, codeBuffer.get()));
 
@@ -136,7 +136,7 @@ namespace dfs
     params.RecoveryCount = codeCount;
 
     size_t dataSize = dataCount * blockSize;
-    std::unique_ptr<uint8_t> dataBuffer(new uint8_t[dataSize]);
+    std::unique_ptr<uint8_t[]> dataBuffer(new uint8_t[dataSize]);
     memset(dataBuffer.get(), 0, dataSize);
 
     cm256_block blocks[256];
@@ -149,7 +149,7 @@ namespace dfs
     }
 
     size_t codeSize = codeCount * blockSize;
-    std::unique_ptr<uint8_t> codeBuffer(new uint8_t[codeSize]);
+    std::unique_ptr<uint8_t[]> codeBuffer(new uint8_t[codeSize]);
 
     return_false_if_msg(cm256_encode(params, blocks, codeBuffer.get()), "Error: erasure coding failed\n")
 

@@ -28,6 +28,7 @@
 #include <json/json.h>
 #include <thread>
 #include <fstream>
+#include <errno.h>
 
 #include "ActionHandler.h"
 #include "BdTypes.h"
@@ -49,11 +50,27 @@ namespace dfs
   // ubd callbacks  
   static size_t xmp_read(void *buf, size_t size, size_t offset, void * context)
   {
+#ifdef __APPLE__
+    printf("xmp_read: offset=%lld size=%lld\n", offset, size);
+    Volume * volume = static_cast<Volume *>(context);
+    if (offset + size > volume->BlockCount() * volume->DataCount() * volume->BlockSize())
+    {
+      return EINVAL;
+    }
+#endif
     return ((Volume*)context)->ReadDecrypt(buf, size, offset) ? 0 : -1;
   }
 
   static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
   {
+#ifdef __APPLE__
+    printf("xmp_write: offset=%lld size=%lld\n", offset, size);
+    Volume * volume = static_cast<Volume *>(context);
+    if (offset + size > volume->BlockCount() * volume->DataCount() * volume->BlockSize())
+    {
+      return EINVAL;
+    }
+#endif
     return ((Volume*)context)->WriteEncrypt(buf, size, offset) ? 0 : -1;
   }
 
@@ -149,6 +166,9 @@ namespace dfs
 
     // Cache size set to 100MB / (blockSize * (dataCount + codeCount)), flushing every 10 seconds
     std::string cacheDir = "/var/drive/" + name + "/" + "cache";
+ #ifndef __APPLE__
+    volume->EnableCache(std::make_unique<dfs::Cache>(cacheDir, volume.get(), 200, 10));
+ #endif
     volume->EnableCache(std::make_unique<dfs::Cache>(cacheDir, volume.get(), 200, 10));
     
     printf("Processing: %s\n", nbdPath.c_str());

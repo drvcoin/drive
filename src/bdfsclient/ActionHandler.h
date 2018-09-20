@@ -20,6 +20,7 @@
   SOFTWARE.
 */
 
+#include <string>
 #include <map>
 
 namespace dfs

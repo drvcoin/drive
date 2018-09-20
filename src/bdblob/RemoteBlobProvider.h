@@ -22,50 +22,24 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <stdint.h>
-#include "IOutputStream.h"
-#include "IInputStream.h"
+#include "BlobProvider.h"
 
 namespace bdblob
 {
-  class BlobMetadata
+  class RemoteBlobProvider : public BlobProvider
   {
   public:
 
-    struct PartitionInfo
-    {
-      std::string name;
-      std::string provider;
-    };
+    explicit RemoteBlobProvider(const char * rootPath);
 
-  public:
+    std::unique_ptr<IBlob> NewBlob(uint64_t size) override;
 
-    bool Serialize(IOutputStream & stream) const;
+    std::unique_ptr<IBlob> OpenBlob(std::string id) override;
 
-    bool Deserialize(IInputStream & stream);
-
-    size_t GetSerializedSize() const;
-
-    void AddPartition(std::string name, std::string provider);
-
-    uint64_t Size() const                                     { return this->size; }
-
-    void SetSize(uint64_t val)                                { this->size = val; }
-
-    uint64_t BlockSize() const                                     { return this->blockSize; }
-
-    void SetBlockSize(uint64_t val)                                { this->blockSize = val; }
-
-    const std::vector<PartitionInfo> & Partitions() const     { return this->partitions; }
+    void DeleteBlob(std::string id) override;
 
   private:
 
-    uint64_t size = 0;
-
-    uint64_t blockSize = 0;
-
-    std::vector<PartitionInfo> partitions;
+    std::string rootPath;
   };
 }

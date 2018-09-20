@@ -31,7 +31,10 @@
 #define return_false_if_msg(condition, ...) \
   if (condition) { printf(__VA_ARGS__); return false; }
 
+#if !defined(__APPLE__)
 uint64_t htonll(uint64_t val);
 uint64_t ntohll(uint64_t val);
+#endif
+
 bool nbd_ready(const char* devname, bool do_print = false);
 std::string execCmd(std::string cmd);
