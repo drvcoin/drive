@@ -31,7 +31,11 @@ namespace dfs
   class VolumeManager
   {
   public:
+    static std::unique_ptr<Volume> LoadVolumeFromJson(const std::string & name, const Json::Value & json);
+
     static std::unique_ptr<Volume> LoadVolume(const std::string &name, const std::string &configPath = "");
+
+    static Json::Value CreateVolumePartitions(const std::string & volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks);
 
     static bool CreateVolume(const std::string &volumeName, const uint64_t size, const uint16_t dataBlocks, const uint16_t codeBlocks);
 

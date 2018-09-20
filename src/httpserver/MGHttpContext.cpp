@@ -312,7 +312,7 @@ namespace bdhttp
     }
 
     // output content-length
-    mg_printf(_connection, "Content-Length: %lu\r\n\r\n", size);
+    mg_printf(_connection, "Content-Length: %llu\r\n\r\n", (long long unsigned)size);
 
     if (content != NULL)
     {

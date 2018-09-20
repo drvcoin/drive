@@ -28,6 +28,9 @@
 #include <cerrno>
 #include <memory>
 #include <sstream>
+#include <array>
+
+#if !defined(__APPLE__)
 
 uint64_t htonll(uint64_t val)
 {
@@ -47,8 +50,13 @@ uint64_t ntohll(uint64_t val)
 #endif
 }
 
+#endif // !__APPLE__
+
 
 bool nbd_ready(const char* devname, bool do_print) {
+
+#if !defined(__APPLE__)
+
   char buf[256];
   char* p;
   int fd;
@@ -78,6 +86,9 @@ bool nbd_ready(const char* devname, bool do_print) {
   buf[(len < 256) ? len : 255]='\0';
   if(do_print) printf("%s\n", buf);
   close(fd);
+
+#endif
+
   return true;
 }
 

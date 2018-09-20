@@ -27,6 +27,7 @@
 #include <streambuf>
 #include <stdarg.h>
 #include <json/json.h>
+#include <errno.h>
 
 namespace dfs
 {

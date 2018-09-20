@@ -34,7 +34,9 @@ namespace bdfs
   {
     void OnDequeue(HttpRequest* & request, void * context)
     {
+#ifdef DEBUG_API
       printf("Processing: %s\n", request->Url().c_str());
+#endif
       request->Execute();
     }
 

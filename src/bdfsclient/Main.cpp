@@ -25,8 +25,9 @@
 #include <sstream>
 #include <streambuf>
 #include <fstream>
+#include <array>
+
 #include <thread>
-#include <pthread.h>
 #include "cm256.h"
 #include "UnixDomainSocket.h"
 #include "ClientManager.h"
