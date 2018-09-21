@@ -23,6 +23,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <stdint.h>
 
 namespace bdhost
@@ -36,7 +37,7 @@ namespace bdhost
 
     static std::string endpoint;
 
-    static std::string kademlia;
+    static std::vector<std::string> kademlia;
 
     static std::string repo;
 

@@ -131,9 +131,8 @@ namespace dfs
   bool Volume::WriteEncrypt(const void * buffer, size_t size, size_t offset)
   {
     if (size == 0) { return true; }
-
-    std::unique_ptr<uint8_t> clearBuffer(new uint8_t[blockSize]);
-    std::unique_ptr<uint8_t> cryptBuffer(new uint8_t[blockSize]);
+    std::unique_ptr<uint8_t[]> clearBuffer(new uint8_t[blockSize]);
+    std::unique_ptr<uint8_t[]> cryptBuffer(new uint8_t[blockSize]);
     uint64_t dataBlock = (uint64_t)(offset / blockSize);
     size_t blockOffset = offset - (dataBlock * blockSize);
     uint64_t row = dataBlock / dataCount;
@@ -233,8 +232,8 @@ namespace dfs
   {
     if (size == 0) { return true; }
 
-    std::unique_ptr<uint8_t> clearBuffer(new uint8_t[blockSize]);
-    std::unique_ptr<uint8_t> cryptBuffer(new uint8_t[blockSize]);
+    std::unique_ptr<uint8_t[]> clearBuffer(new uint8_t[blockSize]);
+    std::unique_ptr<uint8_t[]> cryptBuffer(new uint8_t[blockSize]);
     uint64_t dataBlock = (uint64_t)(offset / blockSize);
     size_t blockOffset = offset - (dataBlock * blockSize);
     uint64_t row = dataBlock / dataCount;

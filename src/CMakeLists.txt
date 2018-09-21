@@ -51,6 +51,8 @@ add_subdirectory(bdfs-lib)
 add_subdirectory(bdfsclient-lib)
 add_subdirectory(bdfs)
 add_subdirectory(bdfsclient)
+add_subdirectory(bdblob)
+
 add_subdirectory(httpserver)
 add_subdirectory(bdhost)
 add_subdirectory(bdkad)

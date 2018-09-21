@@ -60,6 +60,10 @@ if (DEFINED DEBUG_HTTP)
   add_definitions(-DDEBUG_HTTP)
 endif (DEFINED DEBUG_HTTP)
 
+if (DEFINED DEBUG_API)
+  add_definitions(-DDEBUG_API)
+endif (DEFINED DEBUG_API)
+
 if (DEFINED DEBUG_HTTP_RELAY)
   add_definitions(-DDEBUG_HTTP_RELAY)
 endif (DEFINED DEBUG_HTTP_RELAY)

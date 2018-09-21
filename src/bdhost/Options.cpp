@@ -34,7 +34,7 @@ namespace bdhost
 
   std::string Options::endpoint;
 
-  std::string Options::kademlia = "http://localhost:7800";
+  std::vector<std::string> Options::kademlia;
 
   std::string Options::repo = ".";
 
@@ -107,7 +107,7 @@ namespace bdhost
       else if (strcmp(argv[i], "-k") == 0)
       {
         assert_argument_index(++i, "kad");
-        kademlia = argv[i];
+        kademlia.emplace_back(argv[i]);
       }
       else if (strcmp(argv[i], "-a") == 0)
       {

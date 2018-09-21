@@ -20,6 +20,7 @@
   SOFTWARE.
 */
 
+#include "PlatformHelper.h"
 #include "HttpCookies.h"
 
 #include <algorithm>
@@ -28,7 +29,6 @@
 
 namespace bdfs
 {
-
   HttpCookies::Cookie::Cookie() :
     expires(0),
     maxAge(0),

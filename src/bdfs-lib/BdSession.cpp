@@ -34,7 +34,9 @@ namespace bdfs
   {
     void OnDequeue(HttpRequest* & request, void * context)
     {
+#ifdef DEBUG_API
       printf("Processing: %s\n", request->Url().c_str());
+#endif
       request->Execute();
     }
 
@@ -96,6 +98,15 @@ namespace bdfs
       delete this->config;
       this->config = nullptr;
     } 
+  }
+
+  void BdSession::Stop()
+  {
+    if (queueStarted)
+    {
+      queue.Stop();
+      queueStarted = false;
+    }
   }
 
   std::string BdSession::__EncodeArgs(BdObject::CArgs & args)
