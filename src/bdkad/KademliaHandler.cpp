@@ -387,8 +387,11 @@ namespace bdkad
 
     uint32_t limit = UINT32_MAX;
 
+    std::string keyStr;
+    keyStr = "LOG";
+
     sha1_t digest;
-    Digest::Compute(query.c_str(), query.size(), digest);
+    Digest::Compute(keyStr.c_str(), keyStr.size(), digest);
     KeyPtr key = std::make_shared<Key>(digest);
 
     auto result = AsyncResultPtr(new  AsyncResult<BufferPtr>());
