@@ -52,8 +52,6 @@ add_executable(
   BlobMap.cpp
   BlobMetadata.cpp
   Buffer.cpp
-  BufferedInputStream.cpp
-  BufferedOutputStream.cpp
   Command.cpp
   File.cpp
   FileBlob.cpp
@@ -61,8 +59,6 @@ add_executable(
   RemoteBlob.cpp
   RemoteBlobProvider.cpp
   Folder.cpp
-  IInputStream.cpp
-  IOutputStream.cpp
   Main.cpp
 )
 

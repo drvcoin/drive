@@ -28,7 +28,7 @@
 #include "IInputStream.h"
 #include "EndianUtil.h"
 
-namespace bdblob
+namespace dfs
 {
   int8_t IInputStream::ReadInt8()
   {

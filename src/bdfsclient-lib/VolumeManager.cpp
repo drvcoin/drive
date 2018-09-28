@@ -40,6 +40,7 @@
 #include "BdPartitionFolder.h"
 #include "Buffer.h"
 #include "ContractRepository.h"
+#include "BlobCache.h"
 
 namespace dfs
 {
@@ -133,7 +134,15 @@ namespace dfs
 
   bdfs::HostInfo VolumeManager::GetProviderEndpoint(const std::string & name)
   {
+    static BlobCache lookupCache;
     bdfs::HostInfo hostInfo;
+
+    auto getInfo = lookupCache.GetValue(name);
+    if(!getInfo.isNull() && getInfo.isString())
+    {
+      hostInfo.FromString(getInfo.asString());
+      return hostInfo;
+    }
 
     if (kademliaUrl.size() == 0)
     {
@@ -162,6 +171,8 @@ namespace dfs
 
       std::string hostInfoStr = std::string(static_cast<const char *>(buffer.Buf()), buffer.Size());
       hostInfo.FromString(hostInfoStr);
+      lookupCache.SetValue(name, Json::Value(hostInfoStr));
+
       return hostInfo;
     }
 

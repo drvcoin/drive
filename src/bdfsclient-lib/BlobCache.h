@@ -22,50 +22,48 @@
 
 #pragma once
 
+#include <stdio.h>
+#include <unordered_map>
 #include <string>
-#include <vector>
-#include <stdint.h>
-#include "IOutputStream.h"
-#include "IInputStream.h"
+#include <chrono>
+#include "json/value.h"
+#include "Buffer.h"
 
-namespace bdblob
+namespace dfs
 {
-  class BlobMetadata
-  {
-  public:
+  typedef std::chrono::steady_clock Clock;
 
-    struct PartitionInfo
+  // Persistent Lookup Cache with Expiry time
+  class BlobCache
+  {
+    struct CacheValue
     {
-      std::string name;
-      std::string provider;
+      Json::Value data;
+      uint64_t expiry;
     };
 
   public:
 
-    bool Serialize(dfs::IOutputStream & stream) const;
+    explicit BlobCache(const std::string path = "lookup_cache", uint64_t expiry_ms = 5*60*1000);
 
-    bool Deserialize(dfs::IInputStream & stream);
+    ~BlobCache();
 
-    size_t GetSerializedSize() const;
+    void SetValue(const std::string &key, const Json::Value &value);
 
-    void AddPartition(std::string name, std::string provider);
+    bdfs::Buffer GetValueBuffer(const std::string &key) const;
 
-    uint64_t Size() const                                     { return this->size; }
+    Json::Value GetValue(const std::string &key);
 
-    void SetSize(uint64_t val)                                { this->size = val; }
-
-    uint64_t BlockSize() const                                     { return this->blockSize; }
-
-    void SetBlockSize(uint64_t val)                                { this->blockSize = val; }
-
-    const std::vector<PartitionInfo> & Partitions() const     { return this->partitions; }
+    bool HasKey(const std::string &key) const;
 
   private:
 
-    uint64_t size = 0;
+    void SyncWrite();
 
-    uint64_t blockSize = 0;
+    std::unordered_map<std::string, CacheValue> cache;
 
-    std::vector<PartitionInfo> partitions;
+    FILE * file = nullptr;
+
+    uint64_t cacheExpiry; // In milliseconds
   };
 }

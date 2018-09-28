@@ -35,7 +35,12 @@ include(${ROOT}/Config.cmake)
 add_library(
   bdfsclient-static STATIC
 
-	Cache.cpp
+  IInputStream.cpp
+  IOutputStream.cpp
+  BufferedInputStream.cpp
+  BufferedOutputStream.cpp
+  Cache.cpp
+  BlobCache.cpp
   Util.cpp
   Volume.cpp
   VolumeCell.cpp
