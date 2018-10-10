@@ -29,64 +29,30 @@
 #include "VolumeManager.h"
 #include "BdProtocol.h"
 
+#if defined(_WIN32)
+#include "devio.h"
+#endif
+
 namespace dfs
 {
   using namespace bdfs;
 
-  ClientManager::ClientManager() :
-    isUnixSocketListening(false),
-    requestLoop(&ClientManager::HandleRequest)
+  ClientManager::ClientManager()
   {
   }
 
-  void ClientManager::Run()
+  bool ClientManager::Start()
   {
-    (void) signal(SIGPIPE, SIG_IGN);
-
-    if (!unixSocket.Listen("bdfsclient", 2))
-    {
-      printf("Failed to listen on Unix socket\n");
-      return;
-    }
-
-    if (!this->requestLoop.Start())
-    {
-      printf("Failed to start request loop\n");
-      return;
-    }
-
-    // Listen loop
-    std::thread([&]{
-      isUnixSocketListening = true;
-      while(true)
-      {
-        UnixDomainSocket * socket = this->unixSocket.Accept();
-
-        if (socket == NULL)
-        {
-          break;
-        }
-
-        this->requestLoop.SendEvent(this, socket);
-      }
-    }).join();
+    Listen();
+    return true;
   }
 
   bool ClientManager::Stop()
   {
-    if(isUnixSocketListening)
-    {
-      unixSocket.Shutdown(SHUT_RDWR);
-      unixSocket.Close();
-    }
-    
-    isUnixSocketListening = false;
-    this->requestLoop.Stop();
-
     return true;
   }
 
-  std::unique_ptr<char[]> ClientManager::ProcessRequest(std::unique_ptr<char[]> &buff, UnixDomainSocket *socket, bool &shouldReply)
+  std::unique_ptr<char[]> ClientManager::ProcessRequest(std::unique_ptr<char[]> &buff, bool &shouldReply, CrossIPC &ipc)
   {
     shouldReply = true;
 
@@ -94,96 +60,111 @@ namespace dfs
     std::vector<std::string> args;
 
     auto inArgs = bdcp::Parse(buff);
-    
-    switch(((bdcp::BdHdr *)buff.get())->type)
+    printf("ProcessRequest::instruction of type : %d\n", ((bdcp::BdHdr *)buff.get())->type);
+    switch (((bdcp::BdHdr *)buff.get())->type)
     {
-      case bdcp::BIND:
+    case bdcp::BIND:
+    {
+      if (inArgs.size() > 0)
       {
-        if(inArgs.size() > 0)
+        status = ActionHandler::BindVolume(inArgs[0], inArgs.size() > 1 ? inArgs[1] : "");
+        if (status)
         {
-          status = ActionHandler::BindVolume(inArgs[0], inArgs.size() > 1 ? inArgs[1]: "");
-          if(status)
-          {
-            std::string nbdPath = ActionHandler::GetNbdForVolume(inArgs[0]);
-            args.emplace_back(nbdPath);
-          }
+          std::string shm = drv_imdisk_shm_name(inArgs[0]);
+          args.emplace_back(shm);
         }
-        break;
       }
-
-      case bdcp::UNBIND:
-      {
-        if(inArgs.size() == 1)
-        {
-          std::string mountPath = ActionHandler::GetMountPathForVolume(inArgs[0]);
-          status = ActionHandler::UnbindVolume(inArgs[0]);
-          if(status)
-          {
-            args.emplace_back(mountPath);
-          }
-        }
-        break;
-      }
-
-      case bdcp::QUERY_VOLUMEINFO:
-      {
-        shouldReply = false;
-        status = 1;
-        
-        for(auto &it : ActionHandler::GetVolumeInfo())
-        {
-          printf("QUERY_%s,%s,%s\n",it.second->volumeName.c_str(),it.second->nbdPath.c_str(),it.second->mountPath.c_str());
-          args.emplace_back(it.second->volumeName);
-          args.emplace_back(it.second->nbdPath);
-          args.emplace_back(it.second->mountPath);
-
-          auto p = bdcp::Create(bdcp::RESPONSE,args,status);
-          
-          socket->SendMessage(p.get(),((bdcp::BdHdr *)p.get())->length);
-        }
-        break;
-      }
-
-      default:
-        printf("Unhandled instruction of type : %d\n",((bdcp::BdHdr *)buff.get())->type);
+      break;
     }
-   
-    return bdcp::Create(bdcp::RESPONSE,args,status);
+
+    case bdcp::UNBIND:
+    {
+      if (inArgs.size() == 1)
+      {
+        std::string mountPath = ActionHandler::GetMountPathForVolume(inArgs[0]);
+        status = ActionHandler::UnbindVolume(inArgs[0]);
+        if (status)
+        {
+          args.emplace_back(mountPath);
+        }
+      }
+      break;
+    }
+
+    case bdcp::QUERY_VOLUMEINFO:
+    {
+      shouldReply = false;
+      status = 1;
+
+      for (auto &it : ActionHandler::GetVolumeInfo())
+      {
+        //printf("QUERY_%s,%s\n", it.first.c_str(), it.second->volumeName.c_str());
+        args.emplace_back(it.second->volumeName);
+#if !defined(_WIN32)
+        args.emplace_back(it.second->nbdPath);
+#endif
+        args.emplace_back(it.second->mountPath);
+
+        auto p = bdcp::Create(bdcp::RESPONSE, args, status);
+
+        ipc.Write((uint8_t*)p.get(), ((bdcp::BdHdr*)p.get())->length);
+        args.clear();
+      }
+      break;
+    }
+
+    default:
+      printf("Unhandled instruction of type : %d\n", ((bdcp::BdHdr *)buff.get())->type);
+    }
+
+    return bdcp::Create(bdcp::RESPONSE, args, status);
   }
 
-  bool ClientManager::HandleRequest(void * sender, UnixDomainSocket * socket)
+  void ClientManager::Listen()
   {
-    ClientManager *_this = (ClientManager *)sender;
+    bool fContinue = true;
 
-    uint32_t length;
-   
-    if (socket->RecvMessage(&length, sizeof(uint32_t)) <= 0)
+    CrossIPC ipc;
+
+    while (fContinue)
     {
-      printf("%s: failed to read message length.\n", __func__);
-      socket->Close();
-      return false;
-    }
+      bool fSuccess;
 
-    std::unique_ptr<char[]>buff = std::make_unique<char[]>(length);
-    ((bdcp::BdHdr*)buff.get())->length = length;
 
-    if (socket->RecvMessage(buff.get()+sizeof(uint32_t), length-sizeof(uint32_t)) > 0)
-    {
-      bool shouldReply = true;
-      auto resp = _this->ProcessRequest(buff,socket,shouldReply);
-      
-      if(shouldReply)
+      if (!ipc.Listen())
       {
-        socket->SendMessage(resp.get(),((bdcp::BdHdr*)resp.get())->length);
+        printf("IPC Exception: GLE:%u\n", GetLastError());
+        ipc.Disconnect();
+        continue;
       }
+
+      uint32_t cbLen = 0;
+      uint32_t length = 0;
+      ipc.Read((uint8_t*)&length, sizeof(uint32_t), cbLen);
+
+
+      if (cbLen != sizeof(uint32_t))
+      {
+        printf("%s: failed to read message length.\n", __func__);
+      }
+
+      std::unique_ptr<char[]>buff = std::make_unique<char[]>(length);
+      ((bdcp::BdHdr*)buff.get())->length = length;
+
+      ipc.Read((uint8_t*)buff.get() + sizeof(uint32_t), length - sizeof(uint32_t), cbLen);
+      if (cbLen == length - sizeof(uint32_t))
+      {
+        bool shouldReply = true;
+        auto resp = this->ProcessRequest(buff, shouldReply, ipc);
+
+        if (shouldReply)
+        {
+          ipc.Write((uint8_t*)resp.get(), ((bdcp::BdHdr*)resp.get())->length);
+        }
+      }
+
+      ipc.Disconnect();
     }
-    else
-    {
-      printf("%s: failed to read bdfs message.\n",__func__);
-    }
- 
-    socket->Close();
-    
-    return true;
   }
 }
+

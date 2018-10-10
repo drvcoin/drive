@@ -21,7 +21,6 @@
 */
 
 #include "Event.h"
-#include "AutoMutex.h"
 
 namespace bdfs
 {
@@ -29,49 +28,24 @@ namespace bdfs
   Event::Event()
     : isSet(false)
   {
-    memset(&this->cond, 0, sizeof(this->cond));
-    memset(&this->mutex, 0, sizeof(this->mutex));
   }
 
   Event::~Event()
   {
-    pthread_cond_destroy(&this->cond);
-    pthread_mutex_destroy(&this->mutex);
   }
 
   bool Event::Initialize()
   {
-    int res = -1;
-    if ((res = pthread_cond_init(&this->cond, NULL)) != 0)
-    {
-      return false;
-    }
-    if ((res = pthread_mutex_init(&this->mutex, NULL)) != 0)
-    {
-      return false;
-    }
     return true;
   }  
 
   bool Event::Wait(unsigned int milliseconds)
   {
-    int res = -1;
+	std::unique_lock<std::mutex> lock(mutex);
 
-    if ((res = gettimeofday(&this->tp, NULL)) != 0) 
-    {
-      return false;
-    }
-
-    this->ts.tv_sec = this->tp.tv_sec + milliseconds/1000 + ((milliseconds%1000 + (this->tp.tv_usec/1000))/1000);
-    this->ts.tv_nsec = (milliseconds%1000 + (this->tp.tv_usec/1000))%1000 * 1000000;
-    
-    AutoMutex lock(&this->mutex);
     if (!isSet)
     {
-      if ((res = pthread_cond_timedwait(&this->cond, &this->mutex, &this->ts)) != 0)
-      {
-        return false;
-      }
+		return cond.wait_for(lock, std::chrono::milliseconds(milliseconds)) == std::cv_status::no_timeout;
     }
     else
     {
@@ -82,14 +56,9 @@ namespace bdfs
 
   bool Event::Signal()
   {
-    int res = -1;
-    
-    AutoMutex lock(&this->mutex);
+	std::unique_lock<std::mutex> lock(mutex);
     this->isSet = true;
-    if ((res = pthread_cond_signal(&this->cond)) != 0)
-    {
-      return false;
-    }
+	cond.notify_all();
     return true;
   }
 }

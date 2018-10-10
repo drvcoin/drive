@@ -24,10 +24,13 @@
 #include <sys/stat.h>
 #include <cmath>
 #include <limits>
-#include <unistd.h>
 #include <json/json.h>
 #include <thread>
 #include <unordered_set>
+
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
 
 #include "VolumeManager.h"
 #include "BdTypes.h"
@@ -41,6 +44,8 @@
 #include "Buffer.h"
 #include "ContractRepository.h"
 #include "BlobCache.h"
+#include "Paths.h"
+#include "Util.h"
 
 namespace dfs
 {
@@ -101,7 +106,8 @@ namespace dfs
 
   std::unique_ptr<Volume> VolumeManager::LoadVolume(const std::string & name, const std::string & configPath)
   {
-    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
+    std::string path = !configPath.empty() ? configPath : GetWorkingDir() + SLASH + name + SLASH + "volume.conf";
+  
     printf("path=%s\n", path.c_str());
     FILE * file = fopen(path.c_str(), "r");
     if (!file)
@@ -314,11 +320,11 @@ namespace dfs
 
     std::string result = volume.toStyledString();
 
-    std::string path = "/etc/drive/" + volumeName;
+    std::string path = GetWorkingDir() + SLASH + volumeName;
 
     mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-    path.append("/volume.conf");
+    path += SLASH + std::string("volume.conf");
 
     FILE * file = fopen(path.c_str(), "w");
     if (!file)
@@ -362,7 +368,7 @@ namespace dfs
       return false;
     }
 
-    std::string path = !configPath.empty() ? configPath : "/etc/drive/" + name + "/volume.conf";
+    std::string path = GetWorkingDir() + SLASH + name + SLASH + "volume.conf";
     unlink(path.c_str());
 
     return true;

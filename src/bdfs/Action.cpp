@@ -24,6 +24,13 @@
 
 #include <string.h>
 
+#if defined(_WIN32)
+#define snprintf _snprintf 
+#define vsnprintf _vsnprintf 
+#define strcasecmp _stricmp 
+#define strncasecmp _strnicmp 
+#endif
+
 namespace dfs
 {
   namespace Action

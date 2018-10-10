@@ -24,26 +24,19 @@
 
 #include <stdint.h>
 #include <memory>
-#include "EventLoop.h"
-#include "UnixDomainSocket.h"
+#include "CrossIPC.h"
 
 namespace dfs
 {
-  using namespace bdfs;
-
   class ClientManager
   {
   private:
-    UnixDomainSocket unixSocket;
-    bool isUnixSocketListening;
-    EventLoop<UnixDomainSocket *> requestLoop;
-
-    std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char []> &buff, UnixDomainSocket *socket, bool &shouldReply);
-    static bool HandleRequest(void *sender, UnixDomainSocket *socket);
+    std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char[]> &buff, bool &shouldReply, CrossIPC &ipc);
+    void Listen();
 
   public:
     ClientManager();
-    void Run();
+    bool Start();
     bool Stop();
   };
 }

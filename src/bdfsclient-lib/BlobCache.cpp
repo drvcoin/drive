@@ -21,7 +21,6 @@
 */
 
 #include <string.h>
-#include <unistd.h>
 #include <fstream>
 #include <ctime>
 #include "BufferedOutputStream.h"

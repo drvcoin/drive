@@ -28,6 +28,7 @@
 #include <stdarg.h>
 #include <json/json.h>
 #include <errno.h>
+#include "Paths.h"
 
 namespace dfs
 {
@@ -85,6 +86,7 @@ namespace dfs
     printf("  -n {name}      Volume name\n");
     printf("  -?|h           Show this help screen\n");
     printf("\n");
+#if !defined(_WIN32)
     printf("Options: format\n");
     printf("eg: ./drive format -n volume xfs\n");
     printf("\n");
@@ -93,6 +95,7 @@ namespace dfs
     printf("  --args {args}  Args for mkfs command\n");
     printf("  -?|h           Show this help screen\n");
     printf("\n");
+#endif
     printf("Options: list\n");
     printf("\n");
     printf("  -?|h           Show this help screen\n");
@@ -122,7 +125,7 @@ namespace dfs
 
   void Options::ReadConfig()
   {
-    std::ifstream cfg("/etc/drive/bdfs.conf");
+    std::ifstream cfg(GetDriveConf());
     std::string data((std::istreambuf_iterator<char>(cfg)),
                  std::istreambuf_iterator<char>());
 

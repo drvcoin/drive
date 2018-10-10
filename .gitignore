@@ -37,11 +37,11 @@
 .clang_complete
 .vscode
 
+# Visual studio files
+*.user
+.vs
+
 # Generated files
 out
-
-# CMake generated files
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
+x64
+x86
