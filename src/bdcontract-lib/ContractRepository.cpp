@@ -27,7 +27,7 @@ SOFTWARE.
 
 #ifdef _WIN32
 #include <direct.h>
-#include "dirent.h"
+#include "dirent-win.h"
 
 #else
 #include <unistd.h>
@@ -88,7 +88,7 @@ namespace bdcontract
 #ifdef _WIN32
       mkpath(const_cast<char *>(root.c_str()));
 #else
-      mkpath(const_cast<char *>(root.c_sssssstr()), 0755);
+      mkpath(const_cast<char *>(root.c_str()), 0755);
 #endif
     }
     else
@@ -181,7 +181,7 @@ namespace bdcontract
     }
 
     std::string filename = this->root + "/" + name;
-    _unlink(filename.c_str());
+    unlink(filename.c_str());
   }
 
 

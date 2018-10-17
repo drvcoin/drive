@@ -24,6 +24,9 @@ SOFTWARE.
 
 CrossIPC::CrossIPC()
 {
+#if !defined(_WIN32)
+  unixSocket.Listen("bdfsclient", 2);
+#endif
 }
 
 
@@ -36,6 +39,9 @@ bool CrossIPC::Listen()
 {
 #if defined(_WIN32)
   return ipc.CreateEndPoint(1);
+#else
+  UnixDomainSocket * socket = this->unixSocket.Accept();
+  return (socket == NULL);
 #endif
 
 }

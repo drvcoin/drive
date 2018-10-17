@@ -49,6 +49,7 @@ add_library(
   BitSet.cpp
   Partition.cpp
   VolumeManager.cpp
+  Paths.cpp
 )
 
 set_target_properties(bdfsclient-static PROPERTIES OUTPUT_NAME bdfsclient)

@@ -41,6 +41,12 @@
 *.user
 .vs
 
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
 # Generated files
 out
 x64

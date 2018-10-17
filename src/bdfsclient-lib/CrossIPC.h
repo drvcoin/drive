@@ -24,6 +24,8 @@ SOFTWARE.
 
 #if defined(_WIN32)
 #include "PiperIPC.h"
+#else
+#include "UnixDomainSocket.h"
 #endif
 
 class CrossIPC
@@ -41,6 +43,8 @@ public:
 private:
 #if defined(_WIN32)
   PiperIPC ipc;
+#else
+  UnixDomainSocket unixSocket;
 #endif
 };
 

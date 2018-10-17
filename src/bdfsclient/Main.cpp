@@ -45,7 +45,8 @@ sigset_t mySigs;
 
 void setupSigHandler()
 {
-#if !defined(_WIN32)  sigemptyset(&mySigs);
+#if !defined(_WIN32)  
+  sigemptyset(&mySigs);
   sigaddset(&mySigs, SIGINT);
   sigaddset(&mySigs, SIGTERM);
 

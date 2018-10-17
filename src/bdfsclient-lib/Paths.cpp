@@ -23,6 +23,10 @@ SOFTWARE.
 #include "Paths.h"
 #include "Util.h"
 
+#if !defined(_WIN32)
+#include <sys/stat.h>
+#endif
+
 namespace dfs
 {
   std::string GetWorkingDir()
@@ -32,7 +36,7 @@ namespace dfs
   #else
     static std::string workingDir("/etc/drive");
   #endif
-    mkdir(workingDir.c_str());
+    mkdir(workingDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     return workingDir;
   }
 

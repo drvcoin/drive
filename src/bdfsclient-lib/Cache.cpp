@@ -22,9 +22,9 @@ SOFTWARE.
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef _WIN32
+#if defined( _WIN32)
 #include <direct.h>
-#include "dirent.h"
+#include "dirent-win.h"
 #else
 #include <unistd.h>
 #include <dirent.h>
@@ -377,7 +377,7 @@ namespace dfs
         {
           char filename[PATH_MAX];
           sprintf(filename, "%s/%" PRIu64 "", this->rootPath.c_str(), ts->second);
-          _unlink(filename);
+          unlink(filename);
 
           this->items.erase(it);
         }

@@ -40,8 +40,11 @@
 #include "ContractRepository.h"
 #include "Cache.h"
 
-#include "CrossIPC.h"
 #include "BdProtocol.h"
+#if !defined(_WIN32)
+#include <unistd.h>
+#include "UnixDomainSocket.h"
+#endif
 
 using namespace dfs;
 using namespace bdfs;
@@ -52,67 +55,74 @@ static bdfs::HttpConfig defaultConfig;
 #define MAX_RECV_TIMEOUT 300
 
 
-std::unique_ptr<char[]> ReceiveBdcp(CrossIPC *ipc)
+#if defined (_WIN32)
+#else
+std::unique_ptr<char[]> ReceiveBdcp(UnixDomainSocket *socket)
 {
   uint32_t length;
-  uint32_t cbLen;
-  if (ipc == nullptr)
+
+  if (socket != nullptr && socket->RecvMessage(&length, sizeof(uint32_t), MAX_RECV_TIMEOUT) <= 0)
   {
+    socket->Close();
     return nullptr;
   }
 
-  ipc->Read((uint8_t*)&length, sizeof(uint32_t), cbLen);
   std::unique_ptr<char[]>buff = std::make_unique<char[]>(length);
   ((bdcp::BdHdr*)buff.get())->length = length;
 
-  ipc->Read((uint8_t*)buff.get() + sizeof(uint32_t), length - sizeof(uint32_t), cbLen);
+  socket->RecvMessage(buff.get()+sizeof(uint32_t), length-sizeof(uint32_t), SENDRECV_TIMEOUT);
 
   return buff;
 }
 
 std::unique_ptr<char[]> SendReceive(const std::vector<std::string> &args, bdcp::T type)
 {
-  CrossIPC ipc;
-  auto buff = bdcp::Create(type, args);
+  UnixDomainSocket socket;
+  auto buff = bdcp::Create(type,args);
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
   std::unique_ptr<char[]> returnBuff = nullptr;
 
-  if (!ipc.Attach())
+  if(!socket.Connect("bdfsclient"))
   {
     printf("Error: Unable to connect to bdfsclient daemon.\n");
     exit(0);
   }
-  else if (!ipc.Write((uint8_t*)buff.get(), buffLength))
+  else if (socket.SendMessage(buff.get(), buffLength, SENDRECV_TIMEOUT) != buffLength)
   {
     printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
     exit(0);
   }
   else
   {
-    returnBuff = ReceiveBdcp(&ipc);
-    if (buff == nullptr)
+    returnBuff = ReceiveBdcp(&socket);
+    if(returnBuff == nullptr)
     {
       printf("Error: Unable to readresponse from bdfsclient daemon.\n");
       exit(0);
     }
   }
-  ipc.Disconnect();
+
   return returnBuff;
 }
-
+#endif
 
 void ListVolumes()
 {
-  CrossIPC ipc;
   auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO, std::vector<std::string>());
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
-  
-  if(!ipc.Attach())
+#if defined(_WIN32)
+#else
+  UnixDomainSocket ipc;
+  if(!ipc.Connect("bdfsclient"))
+#endif
   {
     printf("Error: Unable to connect to bdfsclient daemon.\n");
     exit(0);
   }
-  else if (!ipc.Write((uint8_t*)buff.get(), buffLength))
+#if defined(_WIN32)
+#else
+  else if (ipc.SendMessage(buff.get(), buffLength, SENDRECV_TIMEOUT) != buffLength)
+#endif
   {
     printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
     exit(0);
@@ -260,7 +270,7 @@ void HandleOptions()
           exit(0);
         }
 
-        int timeout = 10;	
+        int timeout = 10;
         while(!nbd_ready(respParams[0].c_str()) && timeout--)
         {
           sleep(1);

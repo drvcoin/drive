@@ -59,8 +59,11 @@ namespace dfs
     {
       return EINVAL;
     }
-#endif
+#elif _WIN32
     return ((Volume*)context)->ReadDecrypt(buf, size, offset) ? size : 0;
+#else
+    return ((Volume*)context)->ReadDecrypt(buf, size, offset) ? 0 : -1;
+#endif
   }
 
   static size_t xmp_write(const void *buf, size_t size, size_t offset, void * context)
@@ -72,8 +75,11 @@ namespace dfs
     {
       return EINVAL;
     }
-#endif
+#elif _WIN32
     return ((Volume*)context)->WriteEncrypt(buf, size, offset) ? size : 0;
+#else
+    return ((Volume*)context)->WriteEncrypt(buf, size, offset) ? 0 : -1;
+#endif
   }
 
   static void xmp_disc(void * context)
