@@ -131,7 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ActionHandler.cpp" />
-    <ClCompile Include="ClientManager.cpp" />
+    <ClCompile Include="ClientManager-win.cpp" />
     <ClCompile Include="devio.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="safeio_win32.cpp" />

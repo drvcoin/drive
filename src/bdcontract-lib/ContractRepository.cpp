@@ -39,6 +39,7 @@ SOFTWARE.
 namespace bdcontract
 {
 #ifdef _WIN32
+  #define unlink _unlink
   static int mkpath(char* path)
 #else
   static int mkpath(char* path, mode_t mode)

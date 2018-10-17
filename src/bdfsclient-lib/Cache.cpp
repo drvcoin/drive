@@ -37,6 +37,7 @@ SOFTWARE.
 #include "Volume.h"
 #include "Buffer.h"
 #include "Cache.h"
+#include "Util.h"
 
 namespace dfs
 {

@@ -41,7 +41,9 @@
 #include "Cache.h"
 
 #include "BdProtocol.h"
-#if !defined(_WIN32)
+#if defined(_WIN32)
+#include "PiperIPC.h"
+#else
 #include <unistd.h>
 #include "UnixDomainSocket.h"
 #endif
@@ -56,6 +58,53 @@ static bdfs::HttpConfig defaultConfig;
 
 
 #if defined (_WIN32)
+std::unique_ptr<char[]> ReceiveBdcp(PiperIPC *ipc)
+{
+  uint32_t length;
+  DWORD cbLen;
+  if (ipc == nullptr)
+  {
+    return nullptr;
+  }
+
+  ipc->SyncRead((uint8_t*)&length, sizeof(uint32_t), cbLen);
+  std::unique_ptr<char[]>buff = std::make_unique<char[]>(length);
+  ((bdcp::BdHdr*)buff.get())->length = length;
+
+  ipc->SyncRead((uint8_t*)buff.get() + sizeof(uint32_t), length - sizeof(uint32_t), cbLen);
+
+  return buff;
+}
+
+std::unique_ptr<char[]> SendReceive(const std::vector<std::string> &args, bdcp::T type)
+{
+  PiperIPC ipc;
+  auto buff = bdcp::Create(type, args);
+  auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
+  std::unique_ptr<char[]> returnBuff = nullptr;
+
+  if (!ipc.AttachEndPoint())
+  {
+    printf("Error: Unable to connect to bdfsclient daemon.\n");
+    exit(0);
+  }
+  else if (!ipc.SyncWrite((uint8_t*)buff.get(), buffLength))
+  {
+    printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
+    exit(0);
+  }
+  else
+  {
+    returnBuff = ReceiveBdcp(&ipc);
+    if (buff == nullptr)
+    {
+      printf("Error: Unable to readresponse from bdfsclient daemon.\n");
+      exit(0);
+    }
+  }
+  ipc.Disconnect();
+  return returnBuff;
+}
 #else
 std::unique_ptr<char[]> ReceiveBdcp(UnixDomainSocket *socket)
 {
@@ -111,6 +160,8 @@ void ListVolumes()
   auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO, std::vector<std::string>());
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
 #if defined(_WIN32)
+  PiperIPC ipc;
+  if (!ipc.AttachEndPoint())
 #else
   UnixDomainSocket ipc;
   if(!ipc.Connect("bdfsclient"))
@@ -120,6 +171,7 @@ void ListVolumes()
     exit(0);
   }
 #if defined(_WIN32)
+  else if (!ipc.SyncWrite((uint8_t*)buff.get(), buffLength))
 #else
   else if (ipc.SendMessage(buff.get(), buffLength, SENDRECV_TIMEOUT) != buffLength)
 #endif
