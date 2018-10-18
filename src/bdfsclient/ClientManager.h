@@ -41,13 +41,12 @@ namespace dfs
     std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char[]> &buff, bool &shouldReply, PiperIPC &ipc);
     void Listen();
 #else
-    using namespace bdfs;
-    UnixDomainSocket unixSocket;
+    bdfs::UnixDomainSocket unixSocket;
     bool isUnixSocketListening;
-    EventLoop<UnixDomainSocket *> requestLoop;
+    bdfs::EventLoop<bdfs::UnixDomainSocket *> requestLoop;
 
-    std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char []> &buff, UnixDomainSocket *socket, bool &shouldReply);
-    static bool HandleRequest(void *sender, UnixDomainSocket *socket);
+    std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char []> &buff, bdfs::UnixDomainSocket *socket, bool &shouldReply);
+    static bool HandleRequest(void *sender, bdfs::UnixDomainSocket *socket);
 #endif
 
   public:
