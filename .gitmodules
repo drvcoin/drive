@@ -7,3 +7,6 @@
 [submodule "src/kademlia"]
 	path = src/kademlia
 	url = git@github.com:drvcoin/kademlia.git
+[submodule "deps/win"]
+	path = deps/win
+	url = git@github.com:drvcoin/drive-deps-win.git
