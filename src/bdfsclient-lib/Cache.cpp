@@ -41,11 +41,7 @@ SOFTWARE.
 
 namespace dfs
 {
-#ifdef _WIN32
   static int mkpath(char* path)
-#else
-  static int mkpath(char* path, mode_t mode)
-#endif
   {
     char * p = path;
 
@@ -61,7 +57,7 @@ namespace dfs
 #ifdef _WIN32
       rtn = _mkdir(path);
 #else
-      rtn = mkdir(path, mode);
+      rtn = mkdir(path, 0755);
 #endif
       if (p)
       {
@@ -128,11 +124,8 @@ namespace dfs
       rootPath.resize(rootPath.size() - 1);
     }
 
-#ifdef _WIN32
     mkpath(const_cast<char *>(rootPath.c_str()));
-#else
-    mkpath(const_cast<char *>(rootPath.c_str()), 0755);
-#endif
+
     cleanpath(rootPath.c_str());
 
     this->thread = std::thread(std::bind(&Cache::ThreadProc, this));

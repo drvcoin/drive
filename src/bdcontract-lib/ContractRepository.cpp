@@ -28,6 +28,7 @@ SOFTWARE.
 #ifdef _WIN32
 #include <direct.h>
 #include "dirent-win.h"
+#define unlink _unlink
 
 #else
 #include <unistd.h>
@@ -38,12 +39,7 @@ SOFTWARE.
 
 namespace bdcontract
 {
-#ifdef _WIN32
-  #define unlink _unlink
   static int mkpath(char* path)
-#else
-  static int mkpath(char* path, mode_t mode)
-#endif
   {
     char * p = path;
 
@@ -59,7 +55,7 @@ namespace bdcontract
 #ifdef _WIN32
       rtn = _mkdir(path);
 #else
-      rtn = mkdir(path, mode);
+      rtn = mkdir(path, 0755);
 #endif
       if (p)
       {
@@ -86,11 +82,7 @@ namespace bdcontract
         root.resize(root.size() - 1);
       }
 
-#ifdef _WIN32
       mkpath(const_cast<char *>(root.c_str()));
-#else
-      mkpath(const_cast<char *>(root.c_str()), 0755);
-#endif
     }
     else
     {
