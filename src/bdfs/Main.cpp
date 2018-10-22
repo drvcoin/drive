@@ -42,11 +42,22 @@
 
 #include "BdProtocol.h"
 #if defined(_WIN32)
+
 #include "PiperIPC.h"
+#define IPC_INSTANCE PiperIPC
+#define IPC_ATTACH() AttachEndPoint()
+#define IPC_WRITE(BUFF, LEN) SyncWrite((uint8_t*)BUFF, LEN)
+
 #else
+
 #include <unistd.h>
 #include "UnixDomainSocket.h"
+#define IPC_INSTANCE UnixDomainSocket
+#define IPC_ATTACH() Connect("bdfsclient")
+#define IPC_WRITE(BUFF, LEN) SendMessage(BUFF, LEN, SENDRECV_TIMEOUT) == LEN
+
 #endif
+
 
 using namespace dfs;
 using namespace bdfs;
@@ -159,22 +170,13 @@ void ListVolumes()
 {
   auto buff = bdcp::Create(bdcp::QUERY_VOLUMEINFO, std::vector<std::string>());
   auto buffLength = ((bdcp::BdHdr*)buff.get())->length;
-#if defined(_WIN32)
-  PiperIPC ipc;
-  if (!ipc.AttachEndPoint())
-#else
-  UnixDomainSocket ipc;
-  if(!ipc.Connect("bdfsclient"))
-#endif
+  IPC_INSTANCE ipc;
+  if (!ipc.IPC_ATTACH())
   {
     printf("Error: Unable to connect to bdfsclient daemon.\n");
     exit(0);
   }
-#if defined(_WIN32)
-  else if (!ipc.SyncWrite((uint8_t*)buff.get(), buffLength))
-#else
-  else if (ipc.SendMessage(buff.get(), buffLength, SENDRECV_TIMEOUT) != buffLength)
-#endif
+  else if (!ipc.IPC_WRITE(buff.get(), buffLength))
   {
     printf("Error: Unable to sendmessage to bdfsclient daemon.\n");
     exit(0);

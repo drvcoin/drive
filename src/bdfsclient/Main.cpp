@@ -40,12 +40,11 @@ using namespace bdfs;
 
 ClientManager client;
 #if !defined(_WIN32)
+#define SIG_HANDLER setupSigHandler()
 sigset_t mySigs;
-#endif
 
 void setupSigHandler()
 {
-#if !defined(_WIN32)  
   sigemptyset(&mySigs);
   sigaddset(&mySigs, SIGINT);
   sigaddset(&mySigs, SIGTERM);
@@ -59,10 +58,10 @@ void setupSigHandler()
     ActionHandler::Cleanup();
     client.Stop();
   }).detach();
-#endif
 }
 
-#if defined(_WIN32)
+#else
+#define SIG_HANDLER 1
 void signalHandler(int signum)
 {
   printf("Interrupt received by signal ( %d ).\n", signum);
@@ -75,7 +74,7 @@ void signalHandler(int signum)
 
 int main(int argc, char * * argv)
 {
-  setupSigHandler();
+  SIG_HANDLER;
 
   std::ifstream cfg(GetDriveConf());
   std::string data((std::istreambuf_iterator<char>(cfg)),
