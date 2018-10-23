@@ -35,6 +35,7 @@
 
 namespace bdblob
 {
+  using namespace dfs;
   static const uint64_t FOLDER_BLOB_UNIT_SIZE = 64 * 1024;
 
   static inline uint32_t now()

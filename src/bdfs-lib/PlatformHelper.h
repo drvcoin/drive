@@ -22,7 +22,7 @@
 
 #pragma once
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_WIN32)
 
 #include <string.h>
 

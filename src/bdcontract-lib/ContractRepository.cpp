@@ -1,39 +1,45 @@
 /*
-  Copyright (c) 2018 Drive Foundation
+Copyright (c) 2018 Drive Foundation
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-
 #include <string.h>
 #include <stdio.h>
-#include <errno.h>
+
+#ifdef _WIN32
+#include <direct.h>
+#include "dirent-win.h"
+#define unlink _unlink
+
+#else
+#include <unistd.h>
+#include <dirent.h>
+#endif
 
 #include "ContractRepository.h"
 
 namespace bdcontract
 {
-  static int mkpath(char* path, mode_t mode)
+  static int mkpath(char* path)
   {
     char * p = path;
 
@@ -45,8 +51,12 @@ namespace bdcontract
         *p = '\0';
       }
 
-      int rtn = mkdir(path, mode);
-
+      int rtn = 0;
+#ifdef _WIN32
+      rtn = _mkdir(path);
+#else
+      rtn = mkdir(path, 0755);
+#endif
       if (p)
       {
         *p = '/';
@@ -72,7 +82,7 @@ namespace bdcontract
         root.resize(root.size() - 1);
       }
 
-      mkpath(const_cast<char *>(root.c_str()), 0755);
+      mkpath(const_cast<char *>(root.c_str()));
     }
     else
     {
@@ -167,7 +177,7 @@ namespace bdcontract
     unlink(filename.c_str());
   }
 
-  
+
   std::vector<std::string> ContractRepository::GetContractNames() const
   {
     std::vector<std::string> result;

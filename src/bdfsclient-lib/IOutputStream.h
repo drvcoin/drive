@@ -25,70 +25,37 @@
  * =============================================================================
  */
 
-#include <memory.h>
-#if defined(WIN32) || defined(_WIN32)
-#include <winsock2.h>
-#else
-#include <arpa/inet.h>
-#endif
+#pragma once
 
-#include "BufferedInputStream.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include <string>
 
-namespace bdblob
+namespace dfs
 {
-  bool BufferedInputStream::Initialize(const uint8_t * buffer, size_t length)
+  class IOutputStream
   {
-    this->buffer = buffer;
+  public:
+    virtual ~IOutputStream() { }
 
-    this->offset = 0;
+    virtual size_t Write(const void * buffer, size_t size) = 0;
 
-    this->length = length;
-
-    this->needFree = false;
-
-    this->isValid = true;
-
-    return true;
-  }
-
-
-  BufferedInputStream::~BufferedInputStream(void)
-  {
-    if (this->needFree)
-    {
-      delete[] this->buffer;
-    }
-  }
-
-  size_t BufferedInputStream::Read(void * buffer, size_t length)
-  {
-    size_t remainder = this->length - this->offset;
-
-    if (remainder < length)
-    {
-      this->isValid = false;
-
-      length = remainder;
-    }
-
-    memcpy(buffer, this->buffer + this->offset, length);
-
-    this->offset += length;
-
-    return length;
-  }
-
-  size_t BufferedInputStream::Peek(void * buffer, size_t length)
-  {
-    size_t remainder = this->length - this->offset;
-
-    if (remainder < length)
-    {
-      length = remainder;
-    }
-
-    memcpy(buffer, this->buffer + this->offset, length);
-
-    return length;
-  }
+    virtual bool WriteInt8(int8_t value);
+    virtual bool WriteInt8(const int8_t * ary, size_t length);
+    virtual bool WriteUInt8(uint8_t value);
+    virtual bool WriteUInt8(const uint8_t * ary, size_t length);
+    virtual bool WriteInt16(int16_t value);
+    virtual bool WriteInt16(const int16_t * ary, size_t length);
+    virtual bool WriteUInt16(uint16_t value);
+    virtual bool WriteUInt16(const uint16_t * ary, size_t length);
+    virtual bool WriteInt32(int32_t value);
+    virtual bool WriteInt32(const int32_t * ary, size_t length);
+    virtual bool WriteUInt32(uint32_t value);
+    virtual bool WriteUInt32(const uint32_t * ary, size_t length);
+    virtual bool WriteInt64(int64_t value);
+    virtual bool WriteInt64(const int64_t * ary, size_t length);
+    virtual bool WriteUInt64(uint64_t value);
+    virtual bool WriteUInt64(const uint64_t * ary, size_t length);
+    virtual bool WriteString(const std::string & str);
+  };
 }

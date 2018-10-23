@@ -23,7 +23,7 @@
 #pragma once
 #include <stdint.h>
 #include <memory>
-#include <string>
+#include <cstring>
 #include <vector>
 #pragma pack(push,1)
 namespace bdfs

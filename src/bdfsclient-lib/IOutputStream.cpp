@@ -28,7 +28,7 @@
 #include "IOutputStream.h"
 #include "EndianUtil.h"
 
-namespace bdblob
+namespace dfs
 {
   static unsigned long signature= 0x01020304UL; 
 

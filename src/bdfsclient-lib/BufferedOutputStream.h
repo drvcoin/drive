@@ -27,38 +27,28 @@
 
 #pragma once
 
-#include "IInputStream.h"
+#include "IOutputStream.h"
 
-namespace bdblob
+namespace dfs
 {
-  class BufferedInputStream : public IInputStream
+  class BufferedOutputStream : public IOutputStream
   {
   private:
-    const uint8_t * buffer;
+    uint8_t * buffer;
     size_t length;
     size_t offset;
-    bool needFree;
-    bool isValid;
+
+    inline bool EnsureBuffer(size_t length);
 
   public:
-    BufferedInputStream() : buffer(NULL), length(0), offset(0), needFree(false), isValid(true) { }
-    BufferedInputStream(const uint8_t * buffer, size_t length) : buffer(buffer), length(length), offset(0), needFree(false), isValid(true) {}
-    ~BufferedInputStream(void);
+    BufferedOutputStream();
+    ~BufferedOutputStream(void);
 
-    bool Initialize(IInputStream * stream);
-    bool Initialize(const uint8_t * buffer, size_t length);
+    bool Reset() { offset = 0; return true; }
+    size_t Write(const void * ary, size_t length);
 
-    const void * Buffer() { return buffer; }
-    const void * BufferAt(size_t offset) { return buffer + offset; }
-    void Rewind(size_t bytes) { offset -= bytes; }
-    void Skip(size_t bytes) { offset += bytes; }
-
-    // IInputStream members
-    size_t Length() { return length; }
-    size_t Offset() { return offset; }
-    size_t Remainder() { return length - offset; }
-    size_t Read(void * buffer, size_t length);
-    size_t Peek(void * buffer, size_t length);
-    bool IsValid() { return isValid; }
+    const uint8_t * Buffer() const { return buffer; }
+    size_t Offset() const { return offset; }
+    size_t Length() const { return length; }
   };
 }

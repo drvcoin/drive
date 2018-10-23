@@ -24,26 +24,34 @@
 
 #include <stdint.h>
 #include <memory>
+
+#if defined(_WIN32)
+#include <Windows.h>
+#include "PiperIPC.h"
+#else
 #include "EventLoop.h"
 #include "UnixDomainSocket.h"
+#endif
 
 namespace dfs
 {
-  using namespace bdfs;
-
   class ClientManager
   {
-  private:
-    UnixDomainSocket unixSocket;
+#if defined(_WIN32)
+    std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char[]> &buff, bool &shouldReply, PiperIPC &ipc);
+    void Listen();
+#else
+    bdfs::UnixDomainSocket unixSocket;
     bool isUnixSocketListening;
-    EventLoop<UnixDomainSocket *> requestLoop;
+    bdfs::EventLoop<bdfs::UnixDomainSocket *> requestLoop;
 
-    std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char []> &buff, UnixDomainSocket *socket, bool &shouldReply);
-    static bool HandleRequest(void *sender, UnixDomainSocket *socket);
+    std::unique_ptr<char[]> ProcessRequest(std::unique_ptr<char []> &buff, bdfs::UnixDomainSocket *socket, bool &shouldReply);
+    static bool HandleRequest(void *sender, bdfs::UnixDomainSocket *socket);
+#endif
 
   public:
     ClientManager();
-    void Run();
+    bool Start();
     bool Stop();
   };
 }

@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <arpa/inet.h>
 #include <string>
 
 #define return_false_if(condition) \
@@ -36,5 +35,20 @@ uint64_t htonll(uint64_t val);
 uint64_t ntohll(uint64_t val);
 #endif
 
+#if defined(_WIN32)
+#define S_IRWXU 0000700 /* RWX mask for owner */
+#define S_IRWXG 0000070 /* RWX mask for group */
+#define S_IRWXO 0000007 /* RWX mask for other */
+#define S_IROTH 0000004 /* R for other */
+#define S_IWOTH 0000002 /* W for other */
+#define S_IXOTH 0000001 /* X for other */
+#define unlink _unlink
+
+void mkdir(const char* path, int flags = 0);
+
+#else // Unix/Mac
+
+#include <arpa/inet.h>
 bool nbd_ready(const char* devname, bool do_print = false);
 std::string execCmd(std::string cmd);
+#endif

@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <string>
 
-namespace bdblob
+namespace dfs
 {
   class IInputStream
   {

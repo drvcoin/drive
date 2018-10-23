@@ -29,6 +29,11 @@
 #include "BdObject.h"
 #include "AsyncResult.h"
 
+#ifdef _WIN32
+#include <basetsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 namespace bdfs
 {
   class BdPartition : public BdObject

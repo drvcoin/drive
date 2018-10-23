@@ -39,20 +39,20 @@ namespace dfs
   {
   }
 
-  void ClientManager::Run()
+  bool ClientManager::Start()
   {
     (void) signal(SIGPIPE, SIG_IGN);
 
     if (!unixSocket.Listen("bdfsclient", 2))
     {
       printf("Failed to listen on Unix socket\n");
-      return;
+      return false;
     }
 
     if (!this->requestLoop.Start())
     {
       printf("Failed to start request loop\n");
-      return;
+      return false;
     }
 
     // Listen loop
@@ -70,6 +70,7 @@ namespace dfs
         this->requestLoop.SendEvent(this, socket);
       }
     }).join();
+    return true;
   }
 
   bool ClientManager::Stop()

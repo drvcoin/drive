@@ -25,37 +25,50 @@
  * =============================================================================
  */
 
-#pragma once
+#include "BufferedOutputStream.h"
 
+#include <memory.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <string>
+#include <memory>
 
-namespace bdblob
+namespace dfs
 {
-  class IOutputStream
+  BufferedOutputStream::BufferedOutputStream() : buffer(NULL), length(0), offset(0)
   {
-  public:
-    virtual ~IOutputStream() { }
+  }
 
-    virtual size_t Write(const void * buffer, size_t size) = 0;
+  BufferedOutputStream::~BufferedOutputStream()
+  {
+    free(this->buffer);
+  }
 
-    virtual bool WriteInt8(int8_t value);
-    virtual bool WriteInt8(const int8_t * ary, size_t length);
-    virtual bool WriteUInt8(uint8_t value);
-    virtual bool WriteUInt8(const uint8_t * ary, size_t length);
-    virtual bool WriteInt16(int16_t value);
-    virtual bool WriteInt16(const int16_t * ary, size_t length);
-    virtual bool WriteUInt16(uint16_t value);
-    virtual bool WriteUInt16(const uint16_t * ary, size_t length);
-    virtual bool WriteInt32(int32_t value);
-    virtual bool WriteInt32(const int32_t * ary, size_t length);
-    virtual bool WriteUInt32(uint32_t value);
-    virtual bool WriteUInt32(const uint32_t * ary, size_t length);
-    virtual bool WriteInt64(int64_t value);
-    virtual bool WriteInt64(const int64_t * ary, size_t length);
-    virtual bool WriteUInt64(uint64_t value);
-    virtual bool WriteUInt64(const uint64_t * ary, size_t length);
-    virtual bool WriteString(const std::string & str);
-  };
+  bool BufferedOutputStream::EnsureBuffer(size_t length)
+  {
+    if ((this->offset + length) > this->length)
+    {
+      this->length = this->length + length + 64;
+
+      this->length &= ~63;
+
+      this->buffer = (uint8_t *)realloc(this->buffer, this->length);
+
+      if (this->buffer == NULL)
+      {
+        throw std::bad_alloc();
+      }
+    }
+
+    return true;
+  }
+
+  size_t BufferedOutputStream::Write(const void * ary, size_t length)
+  {
+    EnsureBuffer(length);
+
+    memcpy(buffer + offset, ary, length);
+
+    this->offset += length;
+
+    return length;
+  }
 }

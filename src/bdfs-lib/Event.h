@@ -23,20 +23,18 @@
 #pragma once
 
 #include <string.h>
-#include <sys/time.h>
-#include <pthread.h>
 #include <time.h>
 #include <errno.h>
+#include <mutex>
+#include <condition_variable>
 
 namespace bdfs 
 {
   class Event
   {
   private:
-    pthread_cond_t cond;
-    pthread_mutex_t mutex;
-    struct timespec ts;
-    struct timeval tp;
+	std::condition_variable cond;
+    std::mutex mutex;
     bool isSet;
 
   public:
