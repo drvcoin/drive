@@ -27,6 +27,7 @@
 #include "BufferedInputStream.h"
 #include "BlobCache.h"
 #include <json/json.h>
+#include "Paths.h"
 
 namespace dfs
 {
@@ -38,7 +39,9 @@ namespace dfs
       return;
     }
 
-    std::ifstream cfg(path.c_str());
+    std::string fpath =  GetPersistentDir() + std::string(SLASH) + path;
+
+    std::ifstream cfg(fpath.c_str());
     std::string data((std::istreambuf_iterator<char>(cfg)),
                  std::istreambuf_iterator<char>());
 
@@ -54,7 +57,7 @@ namespace dfs
       }
     }
 
-    this->file = fopen(path.c_str(), "w");
+    this->file = fopen(fpath.c_str(), "w");
   }
 
   BlobCache::~BlobCache()

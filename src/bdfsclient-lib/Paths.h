@@ -34,4 +34,5 @@ namespace dfs
 
   std::string GetWorkingDir();
   std::string GetDriveConf();
+  std::string GetPersistentDir();
 }
