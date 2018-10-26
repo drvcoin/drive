@@ -45,8 +45,6 @@ if (EXISTS ${PROJECT_SOURCE_DIR}/kademlia)
 endif (EXISTS ${PROJECT_SOURCE_DIR}/kademlia)
 
 add_subdirectory(mongoose)
-add_subdirectory(bdcontract-lib)
-add_subdirectory(bdcontract)
 add_subdirectory(bdfs-lib)
 add_subdirectory(bdfsclient-lib)
 add_subdirectory(bdfs)

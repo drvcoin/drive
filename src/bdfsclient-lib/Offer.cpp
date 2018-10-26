@@ -21,23 +21,22 @@
 */
 
 #include <json/json.h>
-#include "Contract.h"
+#include "Offer.h"
 
-namespace bdcontract
+namespace dfs
 {
-  std::string Contract::ToString() const
+  std::string Offer::ToString() const
   {
     Json::Value json;
     json["name"] = this->name;
     json["provider"] = this->provider;
     json["size"] = Json::Value::UInt(this->size);
-    json["reputation"] = Json::Value::UInt(this->reputation);
 
     return json.toStyledString();
   }
 
 
-  std::unique_ptr<Contract> Contract::FromString(const char * str, size_t len)
+  std::unique_ptr<Offer> Offer::FromString(const char * str, size_t len)
   {
     Json::Reader reader;
     Json::Value json;
@@ -45,23 +44,21 @@ namespace bdcontract
         !json.isObject() ||
         !json["name"].isString() ||
         !json["provider"].isString() ||
-        !json["size"].isIntegral() ||
-        !json["reputation"].isIntegral())
+        !json["size"].isIntegral())
     {
       return nullptr;
     }
 
-    auto contract = std::make_unique<Contract>();
+    auto contract = std::make_unique<Offer>();
     contract->SetName(json["name"].asString());
     contract->SetProvider(json["provider"].asString());
     contract->SetSize(json["size"].asUInt());
-    contract->SetReputation(json["reputation"].asUInt());
 
     return std::move(contract);
   }
 
 
-  std::unique_ptr<Contract> Contract::FromString(const std::string & str)
+  std::unique_ptr<Offer> Offer::FromString(const std::string & str)
   {
     return FromString(str.c_str(), str.size());
   }

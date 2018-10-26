@@ -41,6 +41,7 @@ add_library(
   BufferedOutputStream.cpp
   Cache.cpp
   BlobCache.cpp
+  Offer.cpp
   Util.cpp
   Volume.cpp
   VolumeCell.cpp
@@ -58,6 +59,5 @@ include_directories(${ROOT_UBD}/src)
 include_directories(${ROOT_CM256}/src)
 include_directories(${ROOT}/src/jsoncpp/include)
 include_directories(${ROOT}/src/mongoose)
-include_directories(${ROOT}/src/bdcontract-lib)
 include_directories(${ROOT}/src/bdfs-lib)
 

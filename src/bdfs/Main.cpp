@@ -37,7 +37,6 @@
 #include "Volume.h"
 #include "BdPartitionFolder.h"
 #include "Buffer.h"
-#include "ContractRepository.h"
 #include "Cache.h"
 
 #include "BdProtocol.h"

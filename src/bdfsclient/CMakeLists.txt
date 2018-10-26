@@ -43,13 +43,11 @@ add_executable(
 include_directories(${ROOT_UBD}/src)
 include_directories(${ROOT_CM256}/src)
 include_directories(${ROOT}/src/jsoncpp/include)
-include_directories(${ROOT}/src/bdcontract-lib)
 include_directories(${ROOT}/src/bdfs-lib)
 include_directories(${ROOT}/src/bdfsclient-lib)
 
 bd_lib(bdfsclient bdfsclient-static ${LIBDIR}/libbdfsclient.a)
 bd_lib(bdfsclient bdfs-static ${LIBDIR}/libbdfs.a)
-bd_lib(bdfsclient bdcontract-static ${LIBDIR}/libbdcontract.a)
 bd_lib(bdfsclient jsoncpp ${LIBDIR}/libjsoncpp.a)
 bd_lib(bdfsclient ubd ${ROOT_UBD}/out/lib/libubd.a)
 bd_lib(bdfsclient cm256 ${ROOT_CM256}/out/lib/libcm256.a)

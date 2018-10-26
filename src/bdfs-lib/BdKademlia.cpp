@@ -123,7 +123,7 @@ namespace bdfs
     return rtn ? result : nullptr;
   }
 
-  AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const char * contract, const char * endpoint, const size_t totalStorage, const size_t availableStorage, const size_t reputation = 1)
+  AsyncResultPtr<bool> BdKademlia::PublishStorage(const char * node, const char * contract, const char * endpoint, const size_t totalStorage, const size_t availableStorage)
   {
     assert(node);
 
@@ -137,7 +137,6 @@ namespace bdfs
     value["contract"] = std::string(contract);
     value["totalSize"] = Json::Value::UInt(totalStorage);
     value["availableSize"] = Json::Value::UInt(availableStorage);
-    value["reputation"] = Json::Value::UInt(reputation);
 
     BdObject::CArgs args;
     args["value"] = value.toStyledString();;

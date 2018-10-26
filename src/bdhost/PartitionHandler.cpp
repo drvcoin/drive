@@ -32,7 +32,6 @@
 #include "HttpHandlerRegister.h"
 #include "Partition.h"
 #include "PartitionHandler.h"
-#include "ContractRepository.h"
 
 extern void PublishStorage();
 

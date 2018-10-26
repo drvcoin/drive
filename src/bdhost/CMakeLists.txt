@@ -47,11 +47,9 @@ add_executable(
 
 include_directories(${ROOT}/src/jsoncpp/include)
 include_directories(${ROOT}/src/mongoose)
-include_directories(${ROOT}/src/bdcontract-lib)
 include_directories(${ROOT}/src/httpserver)
 include_directories(${ROOT}/src/bdfs-lib)
 
-bd_lib(bdhost bdcontract-static ${LIBDIR}/libbdcontract.a)
 bd_lib(bdhost bdhttp ${LIBDIR}/libbdhttp.a)
 bd_lib(bdhost mongoose ${LIBDIR}/libmongoose.a)
 bd_lib(bdhost jsoncpp ${LIBDIR}/libjsoncpp.a)

@@ -42,7 +42,7 @@
 #include "BdKademlia.h"
 #include "BdPartitionFolder.h"
 #include "Buffer.h"
-#include "ContractRepository.h"
+#include "Offer.h"
 #include "BlobCache.h"
 #include "Paths.h"
 #include "Util.h"
@@ -222,25 +222,24 @@ namespace dfs
           return Json::Value();
         }
 
-        std::vector<std::unique_ptr<bdcontract::Contract>> contracts;
+        std::vector<std::unique_ptr<Offer>> offers;
         for(auto &json : jsonArray)
         {
-          auto contract = std::make_unique<bdcontract::Contract>();
-          contract->SetName(json["contract"].asString());
-          contract->SetProvider(json["name"].asString());
-          contract->SetSize(json["availableSize"].asUInt());
-          contract->SetReputation(json["reputation"].asUInt());
-          contracts.emplace_back(std::move(contract));
+          auto offer = std::make_unique<Offer>();
+          offer->SetName(json["offer"].asString());
+          offer->SetProvider(json["name"].asString());
+          offer->SetSize(json["availableSize"].asUInt());
+          offers.emplace_back(std::move(offer));
         }
 
-        for (size_t i = 0; i < contracts.size(); ++i)
+        for (size_t i = 0; i < offers.size(); ++i)
         {
-          if(providersUsed.find(contracts[i]->Provider()) != providersUsed.end())
+          if(providersUsed.find(offers[i]->Provider()) != providersUsed.end())
           {
             continue;
           }
 
-          auto ep = GetProviderEndpoint(contracts[i]->Provider());
+          auto ep = GetProviderEndpoint(offers[i]->Provider());
           if (ep.url.empty())
           {
             continue;
@@ -248,7 +247,7 @@ namespace dfs
 
           auto cfg = new bdfs::HttpConfig();
           cfg->Relays(std::move(ep.relays));
-          providersUsed.emplace(contracts[i]->Provider());
+          providersUsed.emplace(offers[i]->Provider());
 
           auto session = bdfs::BdSession::CreateSession(ep.url.c_str(), cfg, true);
           auto folder = std::static_pointer_cast<bdfs::BdPartitionFolder>(
@@ -267,7 +266,7 @@ namespace dfs
 
           if(reserveId == "")
           {
-            printf("Failed to reserve space on provider '%s'\n", contracts[i]->Provider().c_str());
+            printf("Failed to reserve space on provider '%s'\n", offers[i]->Provider().c_str());
             continue;
           }
 
@@ -281,7 +280,7 @@ namespace dfs
 
           Json::Value partition;
           partition["name"] = obj->Name();
-          partition["provider"] = contracts[i]->Provider();
+          partition["provider"] = offers[i]->Provider();
 
           partitionsArray.append(partition);
 

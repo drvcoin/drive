@@ -44,10 +44,8 @@ add_executable(
 include_directories(${ROOT_KADEMLIA}/src/kad)
 include_directories(${ROOT}/src/jsoncpp/include)
 include_directories(${ROOT}/src/mongoose)
-include_directories(${ROOT}/src/bdcontract-lib)
 include_directories(${ROOT}/src/httpserver)
 
-bd_lib(bdkad bdcontract-static ${LIBDIR}/libbdcontract.a)
 bd_lib(bdkad bdhttp ${LIBDIR}/libbdhttp.a)
 bd_lib(bdkad mongoose ${LIBDIR}/libmongoose.a)
 bd_lib(bdkad jsoncpp ${LIBDIR}/libjsoncpp.a)
