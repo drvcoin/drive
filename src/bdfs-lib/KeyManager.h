@@ -22,45 +22,26 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <string>
+#include <memory>
 
-namespace bdfs 
+namespace bdfs
 {
-  class Buffer
+  class KeyBase;
+
+  class KeyManager
   {
   public:
-    
-    Buffer() = default;
 
-    Buffer(const Buffer & val) = delete;
+    bool Initialize(std::string priKeyPath, std::string pubKeyPath);
 
-    Buffer(Buffer && val);
+    KeyBase * PrivateKey() const    { return this->priKey.get(); }
 
-    ~Buffer();
-
-    Buffer & operator=(const Buffer & val) = delete;
-
-    Buffer & operator=(Buffer && val);
-
-    void * Buf() const       { return this->buf; }
-
-    size_t Size() const      { return this->size; }
-
-    bool Resize(size_t size);
-
-    std::string ToHexString() const;
-
-    bool FromHexString(const char * input, size_t len);
-
-    bool FromHexString(std::string input);
+    KeyBase * PublicKey() const     { return this->pubKey.get(); }
 
   private:
 
-    uint8_t * buf = nullptr;
+    std::unique_ptr<KeyBase> priKey;
 
-    size_t size = 0;
-
-    size_t memsize = 0;
+    std::unique_ptr<KeyBase> pubKey;
   };
 }

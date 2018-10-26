@@ -20,47 +20,49 @@
   SOFTWARE.
 */
 
-#pragma once
+#include <stdlib.h>
+#include "NullKey.h"
+#include "KeyManager.h"
 
-#include <stdint.h>
-#include <string>
 
-namespace bdfs 
+namespace bdfs
 {
-  class Buffer
+  static Buffer createTestBuffer()
   {
-  public:
+    Buffer result;
+    result.Resize(16);
     
-    Buffer() = default;
+    uint8_t * buf = static_cast<uint8_t *>(result.Buf());
+    for (size_t i = 0; i < result.Size(); ++i)
+    {
+      buf[i] = static_cast<uint8_t>(rand() % 256);
+    }
 
-    Buffer(const Buffer & val) = delete;
+    return std::move(result);
+  }
 
-    Buffer(Buffer && val);
 
-    ~Buffer();
+  bool KeyManager::Initialize(std::string priKeyPath, std::string pubKeyPath)
+  {
+    // TODO: replace NullKey with actual key implementation
+    std::unique_ptr<KeyBase> pri(new NullKey(true));
+    std::unique_ptr<KeyBase> pub(new NullKey(false));
 
-    Buffer & operator=(const Buffer & val) = delete;
+    if (!pri->Load(priKeyPath) || !pub->Load(pubKeyPath))
+    {
+      // TODO: replace this with actual key generation
+      pri->SetData(createTestBuffer());
+      pub->SetData(createTestBuffer());
 
-    Buffer & operator=(Buffer && val);
+      if (!pri->Save(priKeyPath) || !pub->Save(pubKeyPath))
+      {
+        return false;
+      }
+    }
 
-    void * Buf() const       { return this->buf; }
+    this->priKey = std::move(pri);
+    this->pubKey = std::move(pub);
 
-    size_t Size() const      { return this->size; }
-
-    bool Resize(size_t size);
-
-    std::string ToHexString() const;
-
-    bool FromHexString(const char * input, size_t len);
-
-    bool FromHexString(std::string input);
-
-  private:
-
-    uint8_t * buf = nullptr;
-
-    size_t size = 0;
-
-    size_t memsize = 0;
-  };
+    return true;
+  }
 }

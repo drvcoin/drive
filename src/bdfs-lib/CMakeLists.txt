@@ -47,6 +47,9 @@ add_library(
 	HostInfo.cpp
 	HttpCookies.cpp
 	HttpRequest.cpp
+	KeyBase.cpp
+	KeyManager.cpp
+	ScopeGuard.cpp
   UnixDomainSocket.cpp
   Event.cpp
 )

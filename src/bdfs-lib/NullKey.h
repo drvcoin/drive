@@ -22,45 +22,35 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <string>
+#include <string.h>
+#include "KeyBase.h"
 
-namespace bdfs 
+namespace bdfs
 {
-  class Buffer
+  class NullKey : public KeyBase
   {
   public:
-    
-    Buffer() = default;
 
-    Buffer(const Buffer & val) = delete;
+    explicit NullKey(bool isPrivate)
+      : KeyBase(isPrivate)
+    {
+    }
 
-    Buffer(Buffer && val);
 
-    ~Buffer();
+    bool Sign(const void * data, size_t len, std::string & output) const override
+    {
+      char val[32];
+      sprintf(val, "%u", static_cast<unsigned>(len));
+      output = val;
+      return this->IsPrivate();
+    }
 
-    Buffer & operator=(const Buffer & val) = delete;
 
-    Buffer & operator=(Buffer && val);
-
-    void * Buf() const       { return this->buf; }
-
-    size_t Size() const      { return this->size; }
-
-    bool Resize(size_t size);
-
-    std::string ToHexString() const;
-
-    bool FromHexString(const char * input, size_t len);
-
-    bool FromHexString(std::string input);
-
-  private:
-
-    uint8_t * buf = nullptr;
-
-    size_t size = 0;
-
-    size_t memsize = 0;
+    bool Verify(const void * data, size_t len, std::string signature) const override
+    {
+      char val[32];
+      sprintf(val, "%u", static_cast<unsigned>(len));
+      return !this->IsPrivate() && signature == val;
+    }
   };
 }

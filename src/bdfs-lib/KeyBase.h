@@ -22,45 +22,45 @@
 
 #pragma once
 
-#include <stdint.h>
+#include "Buffer.h"
 #include <string>
 
-namespace bdfs 
+namespace bdfs
 {
-  class Buffer
+  class KeyBase
   {
   public:
-    
-    Buffer() = default;
 
-    Buffer(const Buffer & val) = delete;
+    explicit KeyBase(bool isPrivate);
 
-    Buffer(Buffer && val);
+    virtual ~KeyBase() = default;
 
-    ~Buffer();
+    KeyBase(const KeyBase & rhs) = delete;
 
-    Buffer & operator=(const Buffer & val) = delete;
+    KeyBase & operator=(const KeyBase & rhs) = delete;
 
-    Buffer & operator=(Buffer && val);
+    void SetData(Buffer data);
 
-    void * Buf() const       { return this->buf; }
+    bool Save(std::string filename) const;
 
-    size_t Size() const      { return this->size; }
+    bool Load(std::string filename);
 
-    bool Resize(size_t size);
+    virtual bool Sign(const void * data, size_t len, std::string & output) const;
 
-    std::string ToHexString() const;
+    virtual bool Verify(const void * data, size_t len, std::string signature) const;
 
-    bool FromHexString(const char * input, size_t len);
+  protected:
 
-    bool FromHexString(std::string input);
+    bool IsPrivate() const    { return this->isPrivate; }
+
+    const void * Data() const { return this->data.Buf(); }
+
+    size_t DataLen() const    { return this->data.Size(); }
 
   private:
 
-    uint8_t * buf = nullptr;
+    bool isPrivate;
 
-    size_t size = 0;
-
-    size_t memsize = 0;
+    Buffer data;
   };
 }
