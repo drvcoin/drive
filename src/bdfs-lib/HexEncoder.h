@@ -22,41 +22,30 @@
 
 #pragma once
 
-#include <string.h>
-#include "KeyBase.h"
+#include <stdlib.h>
+#include <stdint.h>
+
 
 namespace bdfs
 {
-  class NullKey : public KeyBase
+  class HexEncoder
   {
   public:
 
-    explicit NullKey(bool isPrivate)
-      : KeyBase(isPrivate)
+    static inline size_t GetEncodedLength(size_t length)
     {
+      return length * 2;
     }
 
 
-    bool Sign(const void * data, size_t len, std::string & output) const override
+    static inline size_t GetDecodedLength(size_t length)
     {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      output = val;
-      return this->IsPrivate();
+      return length / 2;
     }
 
 
-    bool Verify(const void * data, size_t len, std::string signature) const override
-    {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      return !this->IsPrivate() && signature == val;
-    }
+    static size_t Encode(const uint8_t * src, size_t srcLen, char * dest, size_t destLen, bool upperCase = true);
 
-
-    bool Recover(const void * data, size_t len, std::string signature, std::string sender) override
-    {
-      return !this->IsPrivate();
-    }
+    static size_t Decode(const char * src, size_t srcLen, uint8_t * dest, size_t destLen, bool upperCase = true);
   };
 }

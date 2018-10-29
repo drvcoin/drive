@@ -20,43 +20,50 @@
   SOFTWARE.
 */
 
-#pragma once
-
 #include <string.h>
-#include "KeyBase.h"
+#include "Digest.h"
+
 
 namespace bdfs
 {
-  class NullKey : public KeyBase
+  bool Digest::Initialize()
   {
-  public:
+    return SHA256_Init(& this->ctx) != 0;
+  }
 
-    explicit NullKey(bool isPrivate)
-      : KeyBase(isPrivate)
+
+  bool Digest::Update(const void * data, size_t len)
+  {
+    return SHA256_Update(& this->ctx, data, len) != 0;
+  }
+
+
+  bool Digest::Finish(sha256_t digest)
+  {
+    return SHA256_Final(digest, & this->ctx) != 0;
+  }
+
+
+  bool Digest::Compute(const void * data, size_t len, sha256_t digest)
+  {
+    return SHA256(static_cast<const unsigned char *>(data), len, digest) != nullptr;
+  }
+
+
+  bool Digest::Compare(const void * data, size_t len, sha256_t digest)
+  {
+    sha256_t target;
+    if (!Digest::Compute(data, len, target))
     {
+      return false;
     }
 
-
-    bool Sign(const void * data, size_t len, std::string & output) const override
-    {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      output = val;
-      return this->IsPrivate();
-    }
+    return Digest::Compare(digest, target);
+  }
 
 
-    bool Verify(const void * data, size_t len, std::string signature) const override
-    {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      return !this->IsPrivate() && signature == val;
-    }
-
-
-    bool Recover(const void * data, size_t len, std::string signature, std::string sender) override
-    {
-      return !this->IsPrivate();
-    }
-  };
+  bool Digest::Compare(sha256_t lhs, sha256_t rhs)
+  {
+    return memcmp(lhs, rhs, sizeof(sha256_t)) == 0;
+  }
 }

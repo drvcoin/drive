@@ -22,41 +22,53 @@
 
 #pragma once
 
-#include <string.h>
-#include "KeyBase.h"
+#include <stdint.h>
+#include <string>
+#include <json/json.h>
+#include "Digest.h"
 
 namespace bdfs
 {
-  class NullKey : public KeyBase
+  class KeyBase;
+
+  class ContractTerm
   {
   public:
 
-    explicit NullKey(bool isPrivate)
-      : KeyBase(isPrivate)
-    {
-    }
+    const std::string & Payload() const   { return this->payload; }
+    const std::string & Signature() const { return this->signature; }
+    const Json::Value & Content() const   { return this->content; }
 
+    void SetSignature(std::string val)    { this->signature = std::move(val); }
 
-    bool Sign(const void * data, size_t len, std::string & output) const override
-    {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      output = val;
-      return this->IsPrivate();
-    }
+    void SetPayload(std::string val);
+    void SetAdditional(const sha256_t & val);
 
+    bool GetDigest(sha256_t result);
 
-    bool Verify(const void * data, size_t len, std::string signature) const override
-    {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      return !this->IsPrivate() && signature == val;
-    }
+    bool Sign(const KeyBase & privateKey);
+    bool Verify(const KeyBase & publicKey);
 
+    bool ParseContent();
 
-    bool Recover(const void * data, size_t len, std::string signature, std::string sender) override
-    {
-      return !this->IsPrivate();
-    }
+  private:
+
+    bool GenerateDigest();
+
+  private:
+
+    std::string payload;
+
+    std::string signature;
+
+    Json::Value content;
+
+    sha256_t additional;
+
+    sha256_t digest;
+
+    bool digestGenerated = false;
+
+    bool additionalSet = false;
   };
 }

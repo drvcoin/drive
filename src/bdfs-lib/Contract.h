@@ -22,41 +22,52 @@
 
 #pragma once
 
-#include <string.h>
+#include <string>
+#include <vector>
+#include <memory>
+#include <json/json.h>
+#include "Digest.h"
+#include "ContractTerm.h"
 #include "KeyBase.h"
 
 namespace bdfs
 {
-  class NullKey : public KeyBase
+  class Contract
   {
   public:
 
-    explicit NullKey(bool isPrivate)
-      : KeyBase(isPrivate)
-    {
-    }
+    Contract();
 
+    Contract(std::string address, KeyBase * privateKey);
 
-    bool Sign(const void * data, size_t len, std::string & output) const override
-    {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      output = val;
-      return this->IsPrivate();
-    }
+    bool SetRequest(std::string id, uint64_t space, size_t partitions, double price, std::string symbol);
 
+    bool AddResponse(std::string account, uint32_t nonce);
 
-    bool Verify(const void * data, size_t len, std::string signature) const override
-    {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      return !this->IsPrivate() && signature == val;
-    }
+    bool Seal(std::string transaction);
 
+    bool FromJSON(const Json::Value & json);
 
-    bool Recover(const void * data, size_t len, std::string signature, std::string sender) override
-    {
-      return !this->IsPrivate();
-    }
+    bool ToJSON(Json::Value & output) const;
+
+    bool Verify() const;
+
+    bool IsSealed() const;
+
+    ContractTerm * GetLastTerm() const;
+
+  private:
+
+    std::unique_ptr<ContractTerm> JsonToTerm(const Json::Value & obj, const sha256_t * additional) const;
+
+    bool GetDigest(size_t length, sha256_t result) const;
+
+  private:
+
+    std::vector<std::unique_ptr<ContractTerm>> terms;
+
+    std::string address;
+
+    KeyBase * privateKey;
   };
 }

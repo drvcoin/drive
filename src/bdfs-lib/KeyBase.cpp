@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <memory>
+#include "HexEncoder.h"
 #include "ScopeGuard.h"
 #include "KeyBase.h"
 
@@ -43,13 +44,18 @@ namespace bdfs
 
   bool KeyBase::Save(std::string filename) const
   {
-    auto hex = this->data.ToHexString();
+    size_t hexLen = HexEncoder::GetEncodedLength(this->data.Size());
+    std::unique_ptr<char[]> hex(new char[hexLen]);
+    if (!HexEncoder::Encode(static_cast<const uint8_t *>(this->data.Buf()), this->data.Size(), hex.get(), hexLen))
+    {
+      return false;
+    }
 
     bool success = false;
     FILE * file = fopen(filename.c_str(), "w");
     if (file)
     {
-      success = (fwrite(hex.c_str(), 1, hex.size(), file) == hex.size());
+      success = (fwrite(hex.get(), 1, hexLen, file) == hexLen);
       fclose(file);
     }
 
@@ -87,7 +93,15 @@ namespace bdfs
       return false;
     }
 
-    return this->data.FromHexString(hex.get(), static_cast<size_t>(length));
+    if (!this->data.Resize(HexEncoder::GetDecodedLength(length)))
+    {
+      return false;
+    }
+
+    return HexEncoder::Decode(hex.get(),
+      static_cast<size_t>(length),
+      static_cast<uint8_t *>(this->data.Buf()),
+      this->data.Size()) == this->data.Size();
   }
 
 
@@ -98,6 +112,12 @@ namespace bdfs
 
 
   bool KeyBase::Verify(const void * data, size_t len, std::string signature) const
+  {
+    return false;
+  }
+
+
+  bool KeyBase::Recover(const void * data, size_t len, std::string signature, std::string sender)
   {
     return false;
   }

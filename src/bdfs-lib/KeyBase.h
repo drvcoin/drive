@@ -49,6 +49,8 @@ namespace bdfs
 
     virtual bool Verify(const void * data, size_t len, std::string signature) const;
 
+    virtual bool Recover(const void * data, size_t len, std::string signature, std::string sender);
+
   protected:
 
     bool IsPrivate() const    { return this->isPrivate; }

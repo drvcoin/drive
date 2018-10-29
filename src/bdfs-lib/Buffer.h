@@ -49,12 +49,6 @@ namespace bdfs
 
     bool Resize(size_t size);
 
-    std::string ToHexString() const;
-
-    bool FromHexString(const char * input, size_t len);
-
-    bool FromHexString(std::string input);
-
   private:
 
     uint8_t * buf = nullptr;

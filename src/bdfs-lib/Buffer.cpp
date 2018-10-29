@@ -22,8 +22,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <sstream>
-#include <iomanip>
 #include "Buffer.h"
 
 #ifndef BUFSIZ
@@ -96,83 +94,5 @@ namespace bdfs
     {
       return false;
     }
-  }
-
-
-  std::string Buffer::ToHexString() const
-  {
-    if (!this->buf || this->size == 0)
-    {
-      return std::string();
-    }
-
-    std::stringstream output;
-    output << std::hex;
-    for (size_t i = 0; i < this->size; ++i)
-    {
-      output << std::setw(2) << std::setfill('0') << this->buf[i];
-    }
-
-    return output.str();
-  }
-
-
-  static int char2int(char input)
-  {
-    if (input >= '0' && input <= '9')
-    {
-      return input - '0';
-    }
-    else if (input >= 'a' && input <= 'f')
-    {
-      return input - 'a' + 10;
-    }
-    else if (input >= 'A' && input <= 'F')
-    {
-      return input - 'A' + 10;
-    }
-
-    return -1;
-  }
-
-
-  bool Buffer::FromHexString(const char * input, size_t len)
-  {
-    if (!input || len == 0)
-    {
-      return this->Resize(0);
-    }
-    else if (len % 2 == 1)
-    {
-      return false;
-    }
-
-    if (!this->Resize(len / 2))
-    {
-      return false;
-    }
-
-    size_t offset = 0;
-    for (size_t i = 0; i < this->size; ++i)
-    {
-      int values[2] = { char2int(input[offset]), char2int(input[offset + 1]) };
-      offset += 2;
-
-      if (values[0] < 0 || values[1] < 0)
-      {
-        return false;
-      }
-
-      this->buf[i] = static_cast<uint8_t>(values[0] * 16 + values[1]);
-    }
-
-    return true;
-
-  }
-
-
-  bool Buffer::FromHexString(std::string input)
-  {
-    return this->FromHexString(input.c_str(), input.size());
   }
 }

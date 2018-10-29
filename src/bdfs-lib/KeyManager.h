@@ -38,6 +38,8 @@ namespace bdfs
 
     KeyBase * PublicKey() const     { return this->pubKey.get(); }
 
+    static std::unique_ptr<KeyBase> Recover(const void * data, size_t len, std::string signature, std::string sender);
+
   private:
 
     std::unique_ptr<KeyBase> priKey;

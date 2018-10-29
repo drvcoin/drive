@@ -26,54 +26,25 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-project(libbdfs)
+project(test-storage-contract)
 
-set(ROOT ${PROJECT_SOURCE_DIR}/../..)
+set(ROOT ${PROJECT_SOURCE_DIR}/../../..)
 
 include(${ROOT}/Config.cmake)
 
-add_library(
-  bdfs-static STATIC
+add_executable(
+  test-storage-contract
 
-	AsyncResult.cpp
-	Base64Encoder.cpp
-	BdKademlia.cpp
-	BdObject.cpp
-	BdPartition.cpp
-	BdPartitionFolder.cpp
-	BdSession.cpp
-	BdTypes.cpp
-	Buffer.cpp
-	Contract.cpp
-	ContractTerm.cpp
-	Digest.cpp
-  Event.cpp
-	HexEncoder.cpp
-	HostInfo.cpp
-	HttpCookies.cpp
-	HttpRequest.cpp
-	KeyBase.cpp
-	KeyManager.cpp
-	ScopeGuard.cpp
-  UnixDomainSocket.cpp
+  Main.cpp
 )
 
-set_target_properties(bdfs-static PROPERTIES OUTPUT_NAME bdfs)
-
 include_directories(${ROOT}/src/jsoncpp/include)
-include_directories(${ROOT}/src/mongoose)
+include_directories(${ROOT}/src/bdfs-lib)
 
-if (DEFINED DEBUG_HTTP)
-  add_definitions(-DDEBUG_HTTP)
-endif (DEFINED DEBUG_HTTP)
+bd_lib(test-storage-contract bdfs-static ${LIBDIR}/libbdfs.a)
+bd_lib(test-storage-contract jsoncpp ${LIBDIR}/libjsoncpp.a)
 
-if (DEFINED DEBUG_API)
-  add_definitions(-DDEBUG_API)
-endif (DEFINED DEBUG_API)
+bd_sys_lib(test-storage-contract crypto)
+bd_sys_lib(test-storage-contract dl)
 
-if (DEFINED DEBUG_HTTP_RELAY)
-  add_definitions(-DDEBUG_HTTP_RELAY)
-endif (DEFINED DEBUG_HTTP_RELAY)
-
-add_definitions(-DOPENSSL_API_COMPAT=0x10100000L)
-
+bd_use_pthread(test-storage-contract)

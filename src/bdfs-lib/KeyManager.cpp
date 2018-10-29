@@ -65,4 +65,18 @@ namespace bdfs
 
     return true;
   }
+
+
+  std::unique_ptr<KeyBase> KeyManager::Recover(const void * data, size_t len, std::string signature, std::string sender)
+  {
+    // TODO: replace NullKey with actual key implementation
+    std::unique_ptr<KeyBase> key(new NullKey(false));
+
+    if (!key->Recover(data, len, signature, sender))
+    {
+      return nullptr;
+    }
+
+    return std::move(key);
+  }
 }

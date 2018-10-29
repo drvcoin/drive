@@ -22,41 +22,31 @@
 
 #pragma once
 
-#include <string.h>
-#include "KeyBase.h"
+#include <openssl/sha.h>
+#include <string>
 
 namespace bdfs
 {
-  class NullKey : public KeyBase
+  using sha256_t = unsigned char[SHA256_DIGEST_LENGTH];
+
+  class Digest
   {
   public:
 
-    explicit NullKey(bool isPrivate)
-      : KeyBase(isPrivate)
-    {
-    }
+    bool Initialize();
 
+    bool Update(const void * data, size_t len);
 
-    bool Sign(const void * data, size_t len, std::string & output) const override
-    {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      output = val;
-      return this->IsPrivate();
-    }
+    bool Finish(sha256_t digest);
 
+    static bool Compute(const void * data, size_t len, sha256_t digest);
 
-    bool Verify(const void * data, size_t len, std::string signature) const override
-    {
-      char val[32];
-      sprintf(val, "%u", static_cast<unsigned>(len));
-      return !this->IsPrivate() && signature == val;
-    }
+    static bool Compare(const void * data, size_t len, sha256_t digest);
 
+    static bool Compare(sha256_t lhs, sha256_t rhs);
 
-    bool Recover(const void * data, size_t len, std::string signature, std::string sender) override
-    {
-      return !this->IsPrivate();
-    }
+  private:
+
+    SHA256_CTX ctx;
   };
 }
