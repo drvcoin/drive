@@ -25,30 +25,70 @@
  * =============================================================================
  */
 
-#pragma once
+#include <memory.h>
+#if defined(WIN32) || defined(_WIN32)
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#endif
 
-#include "IOutputStream.h"
+#include "BufferedInputStream.h"
 
-namespace bdblob
+namespace dfs
 {
-  class BufferedOutputStream : public IOutputStream
+  bool BufferedInputStream::Initialize(const uint8_t * buffer, size_t length)
   {
-  private:
-    uint8_t * buffer;
-    size_t length;
-    size_t offset;
+    this->buffer = buffer;
 
-    inline bool EnsureBuffer(size_t length);
+    this->offset = 0;
 
-  public:
-    BufferedOutputStream();
-    ~BufferedOutputStream(void);
+    this->length = length;
 
-    bool Reset() { offset = 0; return true; }
-    size_t Write(const void * ary, size_t length);
+    this->needFree = false;
 
-    const uint8_t * Buffer() const { return buffer; }
-    size_t Offset() const { return offset; }
-    size_t Length() const { return length; }
-  };
+    this->isValid = true;
+
+    return true;
+  }
+
+
+  BufferedInputStream::~BufferedInputStream(void)
+  {
+    if (this->needFree)
+    {
+      delete[] this->buffer;
+    }
+  }
+
+  size_t BufferedInputStream::Read(void * buffer, size_t length)
+  {
+    size_t remainder = this->length - this->offset;
+
+    if (remainder < length)
+    {
+      this->isValid = false;
+
+      length = remainder;
+    }
+
+    memcpy(buffer, this->buffer + this->offset, length);
+
+    this->offset += length;
+
+    return length;
+  }
+
+  size_t BufferedInputStream::Peek(void * buffer, size_t length)
+  {
+    size_t remainder = this->length - this->offset;
+
+    if (remainder < length)
+    {
+      length = remainder;
+    }
+
+    memcpy(buffer, this->buffer + this->offset, length);
+
+    return length;
+  }
 }

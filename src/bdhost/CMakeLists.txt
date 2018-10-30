@@ -36,6 +36,7 @@ add_executable(
   bdhost
 
 	BitSet.cpp
+	ConfigHandler.cpp
 	Main.cpp
 	Options.cpp
 	Partition.cpp

@@ -123,7 +123,7 @@ namespace bdblob
 
   void BlobMap::SetMetadata(std::string key, const BlobMetadata & metadata)
   {
-    BufferedOutputStream stream;
+    dfs::BufferedOutputStream stream;
     if (metadata.Serialize(stream))
     {
       this->SetValue(std::move(key), stream.Buffer(), stream.Offset());
@@ -139,7 +139,7 @@ namespace bdblob
       return false;
     }
 
-    BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
+    dfs::BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
     return metadata.Deserialize(stream);
   }
 

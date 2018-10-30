@@ -42,9 +42,9 @@ namespace bdblob
 
   public:
 
-    bool Serialize(IOutputStream & stream) const;
+    bool Serialize(dfs::IOutputStream & stream) const;
 
-    bool Deserialize(IInputStream & stream);
+    bool Deserialize(dfs::IInputStream & stream);
 
     size_t GetSerializedSize() const;
 

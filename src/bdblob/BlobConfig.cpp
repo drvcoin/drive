@@ -58,7 +58,7 @@ namespace bdblob
         BlobMetadata metadata;
         if (blobMap->GetMetadata(val, metadata))
         {
-          BufferedOutputStream stream;
+          dfs::BufferedOutputStream stream;
           if (metadata.Serialize(stream))
           {
             fwrite(stream.Buffer(), 1, stream.Offset(), file);
@@ -109,7 +109,7 @@ namespace bdblob
     buffer = readFile("blob_root.metadata", "rb");
     if (buffer.Size() > 0)
     {
-      BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
+      dfs::BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
       BlobMetadata metadata;
       if (metadata.Deserialize(stream))
       {

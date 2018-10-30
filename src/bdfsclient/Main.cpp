@@ -29,16 +29,18 @@
 
 #include <thread>
 #include "cm256.h"
-#include "UnixDomainSocket.h"
 #include "ClientManager.h"
 #include "VolumeManager.h"
 #include "ActionHandler.h"
 #include "Util.h"
+#include "Paths.h"
 
 using namespace dfs;
 using namespace bdfs;
 
 ClientManager client;
+#if !defined(_WIN32)
+#define SIG_HANDLER setupSigHandler()
 sigset_t mySigs;
 
 void setupSigHandler()
@@ -58,11 +60,23 @@ void setupSigHandler()
   }).detach();
 }
 
+#else
+#define SIG_HANDLER 1
+void signalHandler(int signum)
+{
+  printf("Interrupt received by signal ( %d ).\n", signum);
+  ActionHandler::Cleanup();
+  client.Stop();
+  VolumeManager::Stop();
+  exit(signum);
+}
+#endif
+
 int main(int argc, char * * argv)
 {
-  setupSigHandler();
+  SIG_HANDLER;
 
-  std::ifstream cfg("/etc/drive/bdfs.conf");
+  std::ifstream cfg(GetDriveConf());
   std::string data((std::istreambuf_iterator<char>(cfg)),
                std::istreambuf_iterator<char>());
 
@@ -92,6 +106,10 @@ int main(int argc, char * * argv)
     exit(1);
   }
 
+#if defined(_WIN32)
+  signal(SIGINT, signalHandler);
+  signal(SIGTERM, signalHandler);
+#else
   auto nbdPaths = execCmd("ls -1 /dev/nbd*");
   std::stringstream ss;
   ss.str(nbdPaths);
@@ -100,8 +118,8 @@ int main(int argc, char * * argv)
   {
     ActionHandler::AddNbdPath(path);
   }
-
-  client.Run();
+#endif
+  client.Start();
 
   VolumeManager::Stop();
 

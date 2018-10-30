@@ -1,30 +1,34 @@
 /*
-  Copyright (c) 2018 Drive Foundation
+Copyright (c) 2018 Drive Foundation
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#if defined( _WIN32)
+#include <direct.h>
+#include "dirent-win.h"
+#else
 #include <unistd.h>
 #include <dirent.h>
-
+#endif
 #include <assert.h>
 #include <vector>
 #include <chrono>
@@ -33,10 +37,11 @@
 #include "Volume.h"
 #include "Buffer.h"
 #include "Cache.h"
+#include "Util.h"
 
 namespace dfs
 {
-  static int mkpath(char* path, mode_t mode)
+  static int mkpath(char* path)
   {
     char * p = path;
 
@@ -48,8 +53,12 @@ namespace dfs
         *p = '\0';
       }
 
-      int rtn = mkdir(path, mode);
-
+      int rtn = 0;
+#ifdef _WIN32
+      rtn = _mkdir(path);
+#else
+      rtn = mkdir(path, 0755);
+#endif
       if (p)
       {
         *p = '/';
@@ -91,7 +100,7 @@ namespace dfs
       char path[PATH_MAX];
       sprintf(path, "%s/%s", folder, name.c_str());
 
-      unlink(path);
+      //      unlink(path);
     }
   }
 
@@ -115,7 +124,8 @@ namespace dfs
       rootPath.resize(rootPath.size() - 1);
     }
 
-    mkpath(const_cast<char *>(rootPath.c_str()), 0755);
+    mkpath(const_cast<char *>(rootPath.c_str()));
+
     cleanpath(rootPath.c_str());
 
     this->thread = std::thread(std::bind(&Cache::ThreadProc, this));
@@ -144,18 +154,18 @@ namespace dfs
     cleanpath(this->rootPath.c_str());
   }
 
-  
+
   bool Cache::Read(uint64_t row, uint64_t column, void * buffer, size_t size, size_t offset)
   {
     assert(buffer);
     if (!this->active ||
-        column >= this->volume->DataCount() + this->volume->CodeCount() ||
-        size + offset > this->volume->BlockSize())
+      column >= this->volume->DataCount() + this->volume->CodeCount() ||
+      size + offset > this->volume->BlockSize())
     {
       return false;
     }
 
-    ReadRequest req{row, column, buffer, size, offset};
+    ReadRequest req{ row, column, buffer, size, offset };
 
     if (!this->requests.Produce(&req))
     {
@@ -181,13 +191,13 @@ namespace dfs
   {
     assert(buffer);
     if (!this->active ||
-        column >= this->volume->DataCount() + this->volume->CodeCount() ||
-        size + offset > this->volume->BlockSize())
+      column >= this->volume->DataCount() + this->volume->CodeCount() ||
+      size + offset > this->volume->BlockSize())
     {
       return false;
     }
 
-    WriteRequest req{row, column, buffer, size, offset};
+    WriteRequest req{ row, column, buffer, size, offset };
 
     if (!this->requests.Produce(&req))
     {
@@ -221,19 +231,19 @@ namespace dfs
       {
         switch (req->type)
         {
-          case RequestType::Read:
-          {
-            auto read = static_cast<ReadRequest *>(req);
-            read->result.Complete(ReadImpl(read->row, read->column, read->buffer, read->size, read->offset));
-            break;
-          }
+        case RequestType::Read:
+        {
+          auto read = static_cast<ReadRequest *>(req);
+          read->result.Complete(ReadImpl(read->row, read->column, read->buffer, read->size, read->offset));
+          break;
+        }
 
-          case RequestType::Write:
-          {
-            auto write = static_cast<WriteRequest *>(req);
-            write->result.Complete(WriteImpl(write->row, write->column, write->buffer, write->size, write->offset));
-            break;
-          }
+        case RequestType::Write:
+        {
+          auto write = static_cast<WriteRequest *>(req);
+          write->result.Complete(WriteImpl(write->row, write->column, write->buffer, write->size, write->offset));
+          break;
+        }
         }
       }
 
@@ -413,7 +423,7 @@ namespace dfs
           buf.Resize(this->volume->BlockSize());
 
           if (fread(buf.Buf(), 1, this->volume->BlockSize(), file) != this->volume->BlockSize() ||
-              !this->volume->__WriteDirect(itr->first, column, buf.Buf(), this->volume->BlockSize(), 0))
+            !this->volume->__WriteDirect(itr->first, column, buf.Buf(), this->volume->BlockSize(), 0))
           {
             success = false;
             break;
@@ -436,7 +446,7 @@ namespace dfs
       if (this->requests.Size() > 0)
       {
         // We should respond to pending requests first
-        all = (++ts  == this->timestamps.end());
+        all = (++ts == this->timestamps.end());
         break;
       }
     }
@@ -492,6 +502,7 @@ namespace dfs
       {
         if (idx == column)
         {
+          fseek(file, 0, SEEK_CUR);
           bytes = fwrite(buffer, 1, this->volume->BlockSize(), file);
           break;
         }
@@ -503,6 +514,7 @@ namespace dfs
 
       if (bytes != this->volume->BlockSize())
       {
+        fseek(file, 0, SEEK_CUR);
         if (fwrite(&column, 1, sizeof(column), file) == sizeof(column))
         {
           bytes = fwrite(buffer, 1, this->volume->BlockSize(), file);
@@ -542,8 +554,8 @@ namespace dfs
     else
     {
       this->items[row] = {
-        .timestamp = now,
-        .dirty = setDirty
+        now,
+        setDirty
       };
     }
 

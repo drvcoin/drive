@@ -25,50 +25,40 @@
  * =============================================================================
  */
 
-#include "BufferedOutputStream.h"
+#pragma once
 
-#include <memory.h>
-#include <stdlib.h>
-#include <memory>
+#include "IInputStream.h"
 
-namespace bdblob
+namespace dfs
 {
-  BufferedOutputStream::BufferedOutputStream() : buffer(NULL), length(0), offset(0)
+  class BufferedInputStream : public IInputStream
   {
-  }
+  private:
+    const uint8_t * buffer;
+    size_t length;
+    size_t offset;
+    bool needFree;
+    bool isValid;
 
-  BufferedOutputStream::~BufferedOutputStream()
-  {
-    free(this->buffer);
-  }
+  public:
+    BufferedInputStream() : buffer(NULL), length(0), offset(0), needFree(false), isValid(true) { }
+    BufferedInputStream(const uint8_t * buffer, size_t length) : buffer(buffer), length(length), offset(0), needFree(false), isValid(true) {}
+    ~BufferedInputStream(void);
 
-  bool BufferedOutputStream::EnsureBuffer(size_t length)
-  {
-    if ((this->offset + length) > this->length)
-    {
-      this->length = this->length + length + 64;
+    bool Initialize(IInputStream * stream);
+    bool Initialize(const uint8_t * buffer, size_t length);
 
-      this->length &= ~63;
+    const void * Buffer() { return buffer; }
+    const void * BufferAt(size_t offset) { return buffer + offset; }
+    void Rewind(size_t bytes) { offset -= bytes; }
+    void Skip(size_t bytes) { offset += bytes; }
 
-      this->buffer = (uint8_t *)realloc(this->buffer, this->length);
-
-      if (this->buffer == NULL)
-      {
-        throw std::bad_alloc();
-      }
-    }
-
-    return true;
-  }
-
-  size_t BufferedOutputStream::Write(const void * ary, size_t length)
-  {
-    EnsureBuffer(length);
-
-    memcpy(buffer + offset, ary, length);
-
-    this->offset += length;
-
-    return length;
-  }
+    // IInputStream members
+    size_t Length() { return length; }
+    size_t Offset() { return offset; }
+    size_t Remainder() { return length - offset; }
+    size_t Read(void * buffer, size_t length);
+    size_t Peek(void * buffer, size_t length);
+    bool IsValid() { return isValid; }
+  };
 }

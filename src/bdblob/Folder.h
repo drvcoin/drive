@@ -85,9 +85,9 @@ namespace bdblob
 
     std::unique_ptr<Folder> GetParentFolder() const;
 
-    bool Serialize(IOutputStream & stream);
+    bool Serialize(dfs::IOutputStream & stream);
 
-    bool Deserialize(IInputStream & stream);
+    bool Deserialize(dfs::IInputStream & stream);
 
     bool UpdateMetadataCache(bool includeThis = false) const;
 
@@ -95,9 +95,9 @@ namespace bdblob
 
     const Entry * Parent() const;
 
-    static bool SerializeEntry(IOutputStream & stream, const Entry & entry);
+    static bool SerializeEntry(dfs::IOutputStream & stream, const Entry & entry);
 
-    static bool DeserializeEntry(IInputStream & stream, Entry & entry);
+    static bool DeserializeEntry(dfs::IInputStream & stream, Entry & entry);
 
     static size_t GetEntrySerializedSize(const Entry & entry);
 
