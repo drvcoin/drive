@@ -45,7 +45,7 @@ namespace dfs
 #if defined(_WIN32)
     static std::string pathDir(getenv("APPDATA") + std::string(SLASH) + std::string("drive"));
 #else
-    static std::string pathDir("/var/drive");
+    static std::string pathDir("/var/drive/client");
 #endif
     mkdir(pathDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     return pathDir;

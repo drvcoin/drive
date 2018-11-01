@@ -1,6 +1,8 @@
 #!/bin/sh
-mkdir -p /var/drive/
+mkdir -p /var/drive/client/
 mkdir -p /etc/drive
+
+chmod 0755 /var/drive/client
 
 systemctl daemon-reload
 

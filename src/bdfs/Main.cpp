@@ -405,5 +405,8 @@ int main(int argc, char * * argv)
   VolumeManager::kademliaUrl = Options::KademliaUrl;
 
   HandleOptions();
+
+  VolumeManager::Stop();
+
   return 0;
 }
