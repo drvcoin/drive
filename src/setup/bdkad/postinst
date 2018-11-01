@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 mkdir -p /var/drive/bdkad
 mkdir -p /etc/drive
 
