@@ -38,7 +38,7 @@ namespace bdhost
 
   std::string Options::repo = ".";
 
-  std::string Options::workDir = "/var/drive/";
+  std::string Options::workDir = "/var/drive/bdhost/";
 
   uint64_t Options::size = 1LLU * 1024 * 1024 * 1024; // 1GB
 

@@ -2,6 +2,6 @@
 
 systemctl daemon-reload
 
-if [ "$1" == "purge" ]; then
+if [[ "$1" == "purge" ]]; then
   rm -rf /var/drive/bdkad
 fi
