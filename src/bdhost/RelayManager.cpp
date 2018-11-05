@@ -129,18 +129,10 @@ namespace bdhost
   bool RelayManager::IsRelayAlive(int pid)
   {
     char path[PATH_MAX];
-    snprintf(path, sizeof(path), "/proc/%d", pid);
-
-    FILE * file = fopen(path, "r");
-    if (!file)
-    {
-      return false;
-    }
+    snprintf(path, sizeof(path), "/proc/%d/exe", pid);
 
     char cmd[BUFSIZ];
-    int len = fread(cmd, 1, BUFSIZ - 1, file);
-    fclose(file);
-
+    int len = readlink(path, cmd, sizeof(cmd) - 1);
     if (len <= 0)
     {
       return false;
