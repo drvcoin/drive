@@ -47,7 +47,7 @@ add_library(
 	Contract.cpp
 	ContractTerm.cpp
 	Digest.cpp
-  Event.cpp
+	Event.cpp
 	HexEncoder.cpp
 	HostInfo.cpp
 	HttpCookies.cpp
@@ -55,13 +55,14 @@ add_library(
 	KeyBase.cpp
 	KeyManager.cpp
 	ScopeGuard.cpp
-  UnixDomainSocket.cpp
+	UnixDomainSocket.cpp
 )
 
 set_target_properties(bdfs-static PROPERTIES OUTPUT_NAME bdfs)
 
 include_directories(${ROOT}/src/jsoncpp/include)
 include_directories(${ROOT}/src/mongoose)
+include_directories(./libsecp256k1)
 
 if (DEFINED DEBUG_HTTP)
   add_definitions(-DDEBUG_HTTP)

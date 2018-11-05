@@ -21,7 +21,7 @@
 */
 
 #include <stdlib.h>
-#include "NullKey.h"
+#include "EcdsaKey.h"
 #include "KeyManager.h"
 
 
@@ -31,7 +31,7 @@ namespace bdfs
   {
     Buffer result;
     result.Resize(16);
-    
+
     uint8_t * buf = static_cast<uint8_t *>(result.Buf());
     for (size_t i = 0; i < result.Size(); ++i)
     {
@@ -44,9 +44,8 @@ namespace bdfs
 
   bool KeyManager::Initialize(std::string priKeyPath, std::string pubKeyPath)
   {
-    // TODO: replace NullKey with actual key implementation
-    std::unique_ptr<KeyBase> pri(new NullKey(true));
-    std::unique_ptr<KeyBase> pub(new NullKey(false));
+    std::unique_ptr<KeyBase> pri(new EcdsaKey(true));
+    std::unique_ptr<KeyBase> pub(new EcdsaKey(false));
 
     if (!pri->Load(priKeyPath) || !pub->Load(pubKeyPath))
     {
@@ -69,8 +68,7 @@ namespace bdfs
 
   std::unique_ptr<KeyBase> KeyManager::Recover(const void * data, size_t len, std::string signature, std::string sender)
   {
-    // TODO: replace NullKey with actual key implementation
-    std::unique_ptr<KeyBase> key(new NullKey(false));
+    std::unique_ptr<KeyBase> key(new EcdsaKey(false));
 
     if (!key->Recover(data, len, signature, sender))
     {

@@ -41,6 +41,8 @@ namespace bdfs
 
     void SetData(Buffer data);
 
+    void SetData(const uint8_t * data, size_t len);
+
     bool Save(std::string filename) const;
 
     bool Load(std::string filename);
@@ -50,6 +52,8 @@ namespace bdfs
     virtual bool Verify(const void * data, size_t len, std::string signature) const;
 
     virtual bool Recover(const void * data, size_t len, std::string signature, std::string sender);
+
+    void Print();
 
   protected:
 

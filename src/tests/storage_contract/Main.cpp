@@ -89,6 +89,7 @@ void LoadContract(bdfs::Contract & contract)
     exit(5);
   }
 
+  printf("Verifying contract\n");
   if (!contract.Verify())
   {
     printf("Failed to verify contract.\n");
@@ -99,6 +100,7 @@ void LoadContract(bdfs::Contract & contract)
 
 void TestRequest(size_t hostCount)
 {
+  printf("--- TEST REQUEST ---\n");
   printf("Creating client request.\n");
   bdfs::KeyManager keyManager;
   if (!keyManager.Initialize(g_clientAddress + ".pri", g_clientAddress + ".pub"))
@@ -106,6 +108,9 @@ void TestRequest(size_t hostCount)
     printf("No key pairs found for client.\n");
     exit(101);
   }
+
+  keyManager.PrivateKey()->Print();
+  keyManager.PublicKey()->Print();
 
   bdfs::Contract contract{g_clientAddress, keyManager.PrivateKey()};
   if (!contract.SetRequest("test-contract-id", _1GB, hostCount, 100, "TDRV"))
@@ -117,11 +122,13 @@ void TestRequest(size_t hostCount)
   SaveContract(contract);
 
   printf("Client request created.\n");
+  printf("--- ---\n\n");
 }
 
 
 void TestResponse(size_t index)
 {
+  printf("--- TEST RESPONSE ---\n");
   printf("Creating test response %llu\n", index);
 
   char hostname[128];
@@ -133,6 +140,9 @@ void TestResponse(size_t index)
     printf("No key pairs found for host-%llu.\n", index);
     exit(201);
   }
+
+  keyManager.PrivateKey()->Print();
+  keyManager.PublicKey()->Print();
 
   bdfs::Contract contract{hostname, keyManager.PrivateKey()};
 
@@ -147,11 +157,14 @@ void TestResponse(size_t index)
   SaveContract(contract);
 
   printf("Host %llu response created.\n", index);
+  printf("--- ---\n\n");
 }
 
 
 void TestSeal()
 {
+  printf("--- TEST SEAL ---\n");
+
   printf("Sealing test contract.\n");
 
   bdfs::KeyManager keyManager;
@@ -173,11 +186,14 @@ void TestSeal()
   SaveContract(contract);
 
   printf("Contract sealed.\n");
+  printf("--- ---\n\n");
 }
 
 
 void VerifyContract()
 {
+  printf("--- VERIFY CONTRACT ---\n");
+
   printf("Verifying contract.\n");
 
   bdfs::Contract contract;
@@ -190,6 +206,7 @@ void VerifyContract()
   }
 
   printf("Contract verfied.\n");
+  printf("--- ---\n\n");
 }
 
 
