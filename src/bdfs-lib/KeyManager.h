@@ -42,6 +42,8 @@ namespace bdfs
 
   private:
 
+    bool GenerateKeys(uint8_t * private_key, uint8_t * public_key);
+
     std::unique_ptr<KeyBase> priKey;
 
     std::unique_ptr<KeyBase> pubKey;

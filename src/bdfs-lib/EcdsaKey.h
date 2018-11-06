@@ -57,6 +57,7 @@ namespace bdfs
         return false;
       }
 
+      // TODO: Make context global, not create for each operation
       secp256k1_context * ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
 
       int rc;
@@ -98,8 +99,8 @@ namespace bdfs
         return false;
       }
 
+      // TODO: Make context global, not create for each operation
       secp256k1_context * ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
-
 
       size_t hexLen = signature.size();
       size_t sgnLen = HexEncoder::GetDecodedLength(hexLen);
@@ -146,6 +147,7 @@ namespace bdfs
 
     bool Recover(const void * data, size_t len, std::string signature, std::string sender) override
     {
+      // TODO: Make context global, not create for each operation
       secp256k1_context * ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
 
       size_t hexLen = signature.size();
