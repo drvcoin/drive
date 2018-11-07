@@ -23,10 +23,10 @@
 
 #include <stdio.h>
 #include <memory>
+#include <cstring>
 #include "HexEncoder.h"
 #include "ScopeGuard.h"
 #include "KeyBase.h"
-
 
 namespace bdfs
 {
@@ -39,6 +39,13 @@ namespace bdfs
   void KeyBase::SetData(Buffer data)
   {
     this->data = std::move(data);
+  }
+
+
+  void KeyBase::SetData(const uint8_t * data, size_t len)
+  {
+    this->data.Resize(len);
+    memcpy(this->data.Buf(), data, len);
   }
 
 
@@ -120,5 +127,24 @@ namespace bdfs
   bool KeyBase::Recover(const void * data, size_t len, std::string signature, std::string sender)
   {
     return false;
+  }
+
+  void KeyBase::Print()
+  {
+    size_t hexLen = HexEncoder::GetEncodedLength(this->data.Size());
+    std::unique_ptr<char[]> hex(new char[hexLen]);
+    if (!HexEncoder::Encode(static_cast<const uint8_t *>(this->data.Buf()), this->data.Size(), hex.get(), hexLen))
+    {
+      printf("Error\n");
+    }
+
+    if (this->IsPrivate())
+    {
+      printf("[PRIVATE KEY] %s\n", hex.get());
+    }
+    else
+    {
+      printf("[PUBLIC KEY] %s\n", hex.get());
+    }
   }
 }
