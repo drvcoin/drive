@@ -22,8 +22,8 @@
 
 #include <string.h>
 #include <unistd.h>
-#include "BufferedOutputStream.h"
-#include "BufferedInputStream.h"
+#include <drive/client/BufferedOutputStream.h>
+#include <drive/client/BufferedInputStream.h>
 #include "BlobMap.h"
 
 namespace bdblob
@@ -65,7 +65,7 @@ namespace bdblob
       return;
     }
 
-    Buffer buffer = GetValue(key);
+    bdfs::Buffer buffer = GetValue(key);
     if (buffer.Size() == len && memcmp(buffer.Buf(), data, len) == 0)
     {
       return;
@@ -88,33 +88,33 @@ namespace bdblob
   }
 
 
-  Buffer BlobMap::GetValue(std::string key) const
+  bdfs::Buffer BlobMap::GetValue(std::string key) const
   {
     if (!this->file || key.empty())
     {
-      return Buffer();
+      return bdfs::Buffer();
     }
 
     auto itr = this->indexes.find(std::move(key));
     if (itr == this->indexes.end() || itr->second.size == 0)
     {
-      return Buffer();
+      return bdfs::Buffer();
     }
 
     if (fseeko(this->file, itr->second.offset, SEEK_SET) < 0)
     {
-      return Buffer();
+      return bdfs::Buffer();
     }
 
-    Buffer result;
+    bdfs::Buffer result;
     if (!result.Resize(itr->second.size))
     {
-      return Buffer();
+      return bdfs::Buffer();
     }
 
     if (fread(result.Buf(), 1, itr->second.size, this->file) < itr->second.size)
     {
-      return Buffer();
+      return bdfs::Buffer();
     }
 
     return std::move(result);

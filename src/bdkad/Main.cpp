@@ -25,9 +25,9 @@
 #include <stdio.h>
 #include <mongoose.h>
 #include <unistd.h>
+#include <drive/httpserver/HttpModule.h>
+#include <drive/httpserver/HttpServer.h>
 #include "Options.h"
-#include "HttpModule.h"
-#include "HttpServer.h"
 #include "KademliaModule.h"
 
 

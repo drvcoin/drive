@@ -21,9 +21,9 @@
 */
 
 #include <json/json.h>
-#include "BdTypes.h"
-#include "Base64Encoder.h"
-#include "BdPartition.h"
+#include <drive/common/BdTypes.h>
+#include <drive/common/Base64Encoder.h>
+#include <drive/common/BdPartition.h>
 
 namespace bdfs
 {

@@ -20,8 +20,8 @@
   SOFTWARE.
 */
 
-#include "HttpModule.h"
-#include "HttpHandler.h"
+#include <drive/httpserver/HttpModule.h>
+#include <drive/httpserver/HttpHandler.h>
 
 #include <stdio.h>
 #include <stdlib.h>

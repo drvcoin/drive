@@ -20,9 +20,9 @@
   SOFTWARE.
 */
 
-#include "BdObject.h"
+#include <drive/common/BdObject.h>
 
-#include "BdSession.h"
+#include <drive/common/BdSession.h>
 
 namespace bdfs
 {

@@ -30,19 +30,22 @@
 #include <errno.h>
 
 #include "ActionHandler.h"
-#include "BdTypes.h"
-#include "BdSession.h"
-#include "Cache.h"
-#include "Util.h"
 
-#include "cm256.h"
-#include "gf256.h"
+#include <drive/common/BdTypes.h>
+#include <drive/common/BdSession.h>
+#include <drive/client/Cache.h>
+#include <drive/client/Util.h>
+#include <drive/client/VolumeManager.h>
+#include <drive/client/Paths.h>
+
+#include <cm256.h>
+#include <gf256.h>
 #if defined(_WIN32)
 #include "devio.h"
 #else
-#include "ubd.h"
+#include <ubd.h>
+#include <unistd.h>
 #endif
-#include "VolumeManager.cpp"
 
 namespace dfs
 {

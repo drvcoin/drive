@@ -21,10 +21,10 @@
 */
 
 #include <string.h>
-#include "Base64Encoder.h"
-#include "Buffer.h"
-#include "KeyBase.h"
-#include "ContractTerm.h"
+#include <drive/common/Base64Encoder.h>
+#include <drive/common/Buffer.h>
+#include <drive/common/KeyBase.h>
+#include <drive/common/ContractTerm.h>
 
 
 namespace bdfs

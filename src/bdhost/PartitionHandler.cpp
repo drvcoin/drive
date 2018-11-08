@@ -27,9 +27,9 @@
 #include <chrono>
 #include <string>
 #include <assert.h>
+#include <drive/httpserver/HttpHandlerRegister.h>
 #include "Util.h"
 #include "Options.h"
-#include "HttpHandlerRegister.h"
 #include "Partition.h"
 #include "PartitionHandler.h"
 

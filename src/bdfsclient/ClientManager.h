@@ -27,10 +27,10 @@
 
 #if defined(_WIN32)
 #include <Windows.h>
-#include "PiperIPC.h"
+#include <drive/client/PiperIPC.h>
 #else
-#include "EventLoop.h"
-#include "UnixDomainSocket.h"
+#include <drive/common/EventLoop.h>
+#include <drive/common/UnixDomainSocket.h>
 #endif
 
 namespace dfs

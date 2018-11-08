@@ -26,7 +26,7 @@
 #include <map>
 #include <string>
 #include "BlobMetadata.h"
-#include "Buffer.h"
+#include <drive/common/Buffer.h>
 
 namespace bdblob
 {
@@ -48,7 +48,7 @@ namespace bdblob
 
     void SetValue(std::string key, const void * data, size_t len);
 
-    Buffer GetValue(std::string key) const;
+    bdfs::Buffer GetValue(std::string key) const;
 
     void SetMetadata(std::string key, const BlobMetadata & metadata);
 

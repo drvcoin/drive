@@ -21,9 +21,9 @@
 */
 
 #include <sstream>
+#include <drive/httpserver/HttpHandlerRegister.h>
 #include "Options.h"
 #include "Util.h"
-#include "HttpHandlerRegister.h"
 #include "ConfigHandler.h"
 
 namespace bdhost

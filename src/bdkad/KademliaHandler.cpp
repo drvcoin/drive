@@ -28,7 +28,7 @@
 
 #include <thread>
 
-#include "HttpHandlerRegister.h"
+#include <drive/httpserver/HttpHandlerRegister.h>
 #include "KademliaHandler.h"
 #include "Digest.h"
 

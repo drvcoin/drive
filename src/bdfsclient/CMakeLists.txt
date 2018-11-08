@@ -43,8 +43,7 @@ add_executable(
 include_directories(${ROOT_UBD}/src)
 include_directories(${ROOT_CM256}/src)
 include_directories(${ROOT}/src/jsoncpp/include)
-include_directories(${ROOT}/src/bdfs-lib)
-include_directories(${ROOT}/src/bdfsclient-lib)
+include_directories(${ROOT}/include)
 
 bd_lib(bdfsclient bdfsclient-static ${LIBDIR}/libbdfsclient.a)
 bd_lib(bdfsclient bdfs-static ${LIBDIR}/libbdfs.a)

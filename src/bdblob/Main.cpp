@@ -24,11 +24,11 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <drive/client/VolumeManager.h>
 #include "BlobConfig.h"
 #include "FileBlobProvider.h"
 #include "RemoteBlobProvider.h"
 #include "BlobApi.h"
-#include "VolumeManager.h"
 #include "commands/CatCommand.h"
 #include "commands/GetCommand.h"
 #include "commands/ListCommand.h"
