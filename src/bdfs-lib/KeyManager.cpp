@@ -21,8 +21,7 @@
 */
 
 #include <stdlib.h>
-#include "EcdsaKey.h"
-#include <drive/common/KeyManager.h>
+#include "drive/common/EcdsaKey.h"
 #include <drive/common/KeyManager.h>
 
 #include <openssl/ec.h>

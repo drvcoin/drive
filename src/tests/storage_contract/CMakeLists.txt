@@ -38,6 +38,7 @@ add_executable(
   Main.cpp
 )
 
+include_directories(${ROOT}/include)
 include_directories(${ROOT}/src/jsoncpp/include)
 include_directories(${ROOT}/src/bdfs-lib)
 
