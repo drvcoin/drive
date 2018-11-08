@@ -24,7 +24,7 @@ SOFTWARE.
 #include <sys/stat.h>
 #if defined( _WIN32)
 #include <direct.h>
-#include "dirent-win.h"
+#include <drive/common/dirent-win.h>
 #else
 #include <unistd.h>
 #include <dirent.h>
@@ -34,10 +34,10 @@ SOFTWARE.
 #include <chrono>
 #include <string.h>
 #include <inttypes.h>
-#include "Volume.h"
-#include "Buffer.h"
-#include "Cache.h"
-#include "Util.h"
+#include <drive/common/Buffer.h>
+#include <drive/client/Volume.h>
+#include <drive/client/Cache.h>
+#include <drive/client/Util.h>
 
 namespace dfs
 {

@@ -21,7 +21,7 @@
 */
 
 
-#include "HexEncoder.h"
+#include <drive/common/HexEncoder.h>
 
 
 namespace bdfs

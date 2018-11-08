@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Paths.h"
-#include "Util.h"
+#include <drive/client/Paths.h>
+#include <drive/client/Util.h>
 
 #if !defined(_WIN32)
 #include <sys/stat.h>

@@ -21,7 +21,7 @@
 */
 
 #include <json/json.h>
-#include "HostInfo.h"
+#include <drive/common/HostInfo.h>
 
 namespace bdfs
 {

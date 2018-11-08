@@ -27,22 +27,20 @@
 #include <vector>
 #include <json/json.h>
 
-#include "BdTypes.h"
-#include "HttpConfig.h"
-#include "BdSession.h"
+#include <drive/common/BdTypes.h>
+#include <drive/common/HttpConfig.h>
+#include <drive/common/BdSession.h>
+#include <drive/common/BdPartitionFolder.h>
+#include <drive/common/Buffer.h>
+#include <drive/client/BdProtocol.h>
+#include <drive/client/Util.h>
+#include <drive/client/VolumeManager.h>
+#include <drive/client/Volume.h>
+#include <drive/client/Cache.h>
 
-#include "Options.h"
-#include "Util.h"
-#include "VolumeManager.h"
-#include "Volume.h"
-#include "BdPartitionFolder.h"
-#include "Buffer.h"
-#include "Cache.h"
-
-#include "BdProtocol.h"
 #if defined(_WIN32)
 
-#include "PiperIPC.h"
+#include <drive/client/PiperIPC.h>
 #define IPC_INSTANCE PiperIPC
 #define IPC_ATTACH() AttachEndPoint()
 #define IPC_WRITE(BUFF, LEN) SyncWrite((uint8_t*)BUFF, LEN)
@@ -50,13 +48,14 @@
 #else
 
 #include <unistd.h>
-#include "UnixDomainSocket.h"
+#include <drive/common/UnixDomainSocket.h>
 #define IPC_INSTANCE UnixDomainSocket
 #define IPC_ATTACH() Connect("bdfsclient")
 #define IPC_WRITE(BUFF, LEN) SendMessage(BUFF, LEN, SENDRECV_TIMEOUT) == LEN
 
 #endif
 
+#include "Options.h"
 
 using namespace dfs;
 using namespace bdfs;

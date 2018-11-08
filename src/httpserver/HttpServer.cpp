@@ -21,10 +21,10 @@
 */
 
 #include <vector>
-#include "HttpModule.h"
-#include "MGHttpContext.h"
+#include <drive/httpserver/HttpModule.h>
+#include <drive/httpserver/MGHttpContext.h>
 
-#include "HttpServer.h"
+#include <drive/httpserver/HttpServer.h>
 
 #define CALLBACK_RESULT_NOT_HANDLED 0
 #define CALLBACK_RESULT_HANDLED 1

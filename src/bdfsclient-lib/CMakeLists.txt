@@ -47,7 +47,6 @@ add_library(
   VolumeCell.cpp
   VolumeColumn.cpp
   VolumeRow.cpp
-  BitSet.cpp
   Partition.cpp
   VolumeManager.cpp
   Paths.cpp
@@ -59,5 +58,4 @@ include_directories(${ROOT_UBD}/src)
 include_directories(${ROOT_CM256}/src)
 include_directories(${ROOT}/src/jsoncpp/include)
 include_directories(${ROOT}/src/mongoose)
-include_directories(${ROOT}/src/bdfs-lib)
-
+include_directories(${ROOT}/include)

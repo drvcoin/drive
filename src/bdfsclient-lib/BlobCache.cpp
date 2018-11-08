@@ -23,11 +23,11 @@
 #include <string.h>
 #include <fstream>
 #include <ctime>
-#include "BufferedOutputStream.h"
-#include "BufferedInputStream.h"
-#include "BlobCache.h"
 #include <json/json.h>
-#include "Paths.h"
+#include <drive/client/BufferedOutputStream.h>
+#include <drive/client/BufferedInputStream.h>
+#include <drive/client/BlobCache.h>
+#include <drive/client/Paths.h>
 
 namespace dfs
 {

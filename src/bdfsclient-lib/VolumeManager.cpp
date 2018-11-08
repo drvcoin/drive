@@ -32,20 +32,19 @@
 #include <unistd.h>
 #endif
 
-#include "VolumeManager.h"
-#include "BdTypes.h"
-#include "BdSession.h"
+#include <cm256.h>
+#include <gf256.h>
 
-#include "cm256.h"
-#include "gf256.h"
-
-#include "BdKademlia.h"
-#include "BdPartitionFolder.h"
-#include "Buffer.h"
-#include "Offer.h"
-#include "BlobCache.h"
-#include "Paths.h"
-#include "Util.h"
+#include <drive/common/BdTypes.h>
+#include <drive/common/BdSession.h>
+#include <drive/common/BdKademlia.h>
+#include <drive/common/BdPartitionFolder.h>
+#include <drive/common/Buffer.h>
+#include <drive/client/VolumeManager.h>
+#include <drive/client/Offer.h>
+#include <drive/client/BlobCache.h>
+#include <drive/client/Paths.h>
+#include <drive/client/Util.h>
 
 namespace dfs
 {

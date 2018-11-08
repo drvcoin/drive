@@ -22,10 +22,10 @@
 
 #include <assert.h>
 #include <string.h>
-#include "Base64Encoder.h"
-#include "Buffer.h"
-#include "KeyManager.h"
-#include "Contract.h"
+#include <drive/common/Base64Encoder.h>
+#include <drive/common/Buffer.h>
+#include <drive/common/KeyManager.h>
+#include <drive/common/Contract.h>
 
 
 namespace bdfs

@@ -21,7 +21,7 @@
 */
 
 #include <assert.h>
-#include "BdTypes.h"
+#include <drive/common/BdTypes.h>
 
 namespace bdfs
 {

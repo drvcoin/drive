@@ -22,10 +22,12 @@
 
 #include <stdlib.h>
 #include "EcdsaKey.h"
-#include "KeyManager.h"
+#include <drive/common/KeyManager.h>
+#include <drive/common/KeyManager.h>
 
 #include <openssl/ec.h>
 #include <openssl/ssl.h>
+#include <openssl/bn.h>
 
 
 namespace bdfs

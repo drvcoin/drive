@@ -21,7 +21,7 @@
 */
 
 #include <json/json.h>
-#include "Offer.h"
+#include <drive/client/Offer.h>
 
 namespace dfs
 {

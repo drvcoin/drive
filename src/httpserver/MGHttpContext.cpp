@@ -20,7 +20,7 @@
   SOFTWARE.
 */
 
-#include "MGHttpContext.h"
+#include <drive/httpserver/MGHttpContext.h>
 
 #include <stdio.h>
 #include <string.h>

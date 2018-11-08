@@ -20,8 +20,8 @@
   SOFTWARE.
 */
 
-#include "PlatformHelper.h"
-#include "HttpRequest.h"
+#include <drive/common/PlatformHelper.h>
+#include <drive/common/HttpRequest.h>
 
 #include <sstream>
 #include <curl/curl.h>

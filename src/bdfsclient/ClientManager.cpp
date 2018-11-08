@@ -26,8 +26,8 @@
 #include <memory>
 #include <thread>
 #include "ActionHandler.h"
-#include "VolumeManager.h"
-#include "BdProtocol.h"
+#include <drive/client/VolumeManager.h>
+#include <drive/client/BdProtocol.h>
 
 namespace dfs
 {

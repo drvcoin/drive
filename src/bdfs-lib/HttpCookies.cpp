@@ -20,8 +20,8 @@
   SOFTWARE.
 */
 
-#include "PlatformHelper.h"
-#include "HttpCookies.h"
+#include <drive/common/PlatformHelper.h>
+#include <drive/common/HttpCookies.h>
 
 #include <algorithm>
 #include <sstream>

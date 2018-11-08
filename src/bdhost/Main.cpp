@@ -26,14 +26,14 @@
 #include <thread>
 #include <mongoose.h>
 #include <unistd.h>
+#include <drive/httpserver/HttpModule.h>
+#include <drive/httpserver/HttpServer.h>
+#include <drive/common/HttpConfig.h>
+#include <drive/common/BdSession.h>
+#include <drive/common/BdKademlia.h>
+#include <drive/common/HostInfo.h>
 #include "Options.h"
-#include "HttpModule.h"
-#include "HttpServer.h"
-#include "HttpConfig.h"
-#include "BdSession.h"
-#include "BdKademlia.h"
 #include "RelayManager.h"
-#include "HostInfo.h"
 #include "Util.h"
 
 void PublishStorage()
