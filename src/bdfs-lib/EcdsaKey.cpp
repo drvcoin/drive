@@ -29,7 +29,11 @@
 #define USE_SCALAR_8X32
 #define USE_SCALAR_INV_BUILTIN
 #include "include/secp256k1.h"
+
+extern "C" {
 #include "src/secp256k1.c"
+}
+
 #include "src/modules/recovery/main_impl.h"
 
 
