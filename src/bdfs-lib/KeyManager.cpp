@@ -26,6 +26,7 @@
 
 #include <openssl/ec.h>
 #include <openssl/ssl.h>
+#include <openssl/bn.h>
 
 
 namespace bdfs
