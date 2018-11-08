@@ -30,7 +30,7 @@
 
 #include <drive/httpserver/HttpHandlerRegister.h>
 #include "KademliaHandler.h"
-#include "Digest.h"
+#include <drive/kad/Digest.h>
 
 
 using namespace kad;

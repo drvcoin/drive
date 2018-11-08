@@ -27,11 +27,11 @@
 #include <thread>
 #include <arpa/inet.h>
 
-#include "Config.h"
-#include "TransportFactory.h"
-#include "TcpTransport.h"
-#include "Digest.h"
-#include "Kademlia.h"
+#include <drive/kad/Config.h>
+#include <drive/kad/TransportFactory.h>
+#include <drive/kad/TcpTransport.h>
+#include <drive/kad/Digest.h>
+#include <drive/kad/Kademlia.h>
 
 #include "Options.h"
 #include "KademliaHandler.h"
