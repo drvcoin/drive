@@ -20,7 +20,7 @@
   SOFTWARE.
 */
 
-#include "EcdsaKey.h"
+#include <drive/common/EcdsaKey.h>
 
 
 #define USE_NUM_NONE

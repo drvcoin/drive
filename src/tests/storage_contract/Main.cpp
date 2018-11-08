@@ -23,8 +23,8 @@
 
 #include <stdio.h>
 #include <memory>
-#include "KeyManager.h"
-#include "Contract.h"
+#include <drive/common/KeyManager.h>
+#include <drive/common/Contract.h>
 
 static std::string g_clientAddress = "client";
 static std::string g_hostAddressPrefix = "host-";
