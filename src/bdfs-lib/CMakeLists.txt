@@ -60,6 +60,7 @@ add_library(
 
 set_target_properties(bdfs-static PROPERTIES OUTPUT_NAME bdfs)
 
+include_directories(${ROOT}/include)
 include_directories(${ROOT}/src/jsoncpp/include)
 include_directories(${ROOT}/src/mongoose)
 

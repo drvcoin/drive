@@ -22,7 +22,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "Buffer.h"
+#include <drive/common/Buffer.h>
 
 #ifndef BUFSIZ
 #define BUFSIZ 8192

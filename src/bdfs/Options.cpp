@@ -28,7 +28,7 @@
 #include <stdarg.h>
 #include <json/json.h>
 #include <errno.h>
-#include "Paths.h"
+#include <drive/client/Paths.h>
 
 namespace dfs
 {

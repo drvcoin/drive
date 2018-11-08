@@ -21,7 +21,7 @@
 */
 
 #include <string.h>
-#include "Partition.h"
+#include <drive/client/Partition.h>
 
 namespace dfs
 {

@@ -20,11 +20,11 @@
   SOFTWARE.
 */
 
-#include "BdSession.h"
-#include "HttpRequest.h"
-#include "BdObject.h"
-#include "BdTypes.h"
-#include "AsyncQueue.h"
+#include <drive/common/BdSession.h>
+#include <drive/common/HttpRequest.h>
+#include <drive/common/BdObject.h>
+#include <drive/common/BdTypes.h>
+#include <drive/common/AsyncQueue.h>
 
 #include <sstream>
 

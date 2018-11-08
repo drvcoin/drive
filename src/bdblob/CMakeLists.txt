@@ -51,7 +51,6 @@ add_executable(
   BlobError.cpp
   BlobMap.cpp
   BlobMetadata.cpp
-  Buffer.cpp
   Command.cpp
   File.cpp
   FileBlob.cpp
@@ -64,8 +63,7 @@ add_executable(
 
 include_directories(".")
 include_directories(${ROOT}/src/jsoncpp/include)
-include_directories(${ROOT}/src/bdfs-lib)
-include_directories(${ROOT}/src/bdfsclient-lib)
+include_directories(${ROOT}/include)
 
 bd_lib(bdblob bdfsclient-static ${LIBDIR}/libbdfsclient.a)
 bd_lib(bdblob bdfs-static ${LIBDIR}/libbdfs.a)

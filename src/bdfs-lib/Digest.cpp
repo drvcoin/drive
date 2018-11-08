@@ -21,7 +21,7 @@
 */
 
 #include <string.h>
-#include "Digest.h"
+#include <drive/common/Digest.h>
 
 
 namespace bdfs

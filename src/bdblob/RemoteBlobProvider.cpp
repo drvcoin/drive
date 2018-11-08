@@ -28,9 +28,9 @@
 #include <string.h>
 #include <cmath>
 
+#include <drive/client/VolumeManager.h>
 #include "RemoteBlob.h"
 #include "RemoteBlobProvider.h"
-#include "VolumeManager.h"
 #include "BlobConfig.h"
 
 #ifndef PATH_MAX

@@ -32,7 +32,7 @@
 #include <arpa/inet.h>
 #endif
 
-#include "BufferedInputStream.h"
+#include <drive/client/BufferedInputStream.h>
 
 namespace dfs
 {

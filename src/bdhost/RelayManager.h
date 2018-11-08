@@ -23,7 +23,7 @@
 #pragma once
 
 #include <map>
-#include <RelayInfo.h>
+#include <drive/common/RelayInfo.h>
 
 namespace bdhost
 {

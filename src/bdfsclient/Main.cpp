@@ -28,12 +28,12 @@
 #include <array>
 
 #include <thread>
-#include "cm256.h"
-#include "ClientManager.h"
-#include "VolumeManager.h"
+#include <cm256.h>
+#include <drive/client/VolumeManager.h>
+#include <drive/client/Util.h>
+#include <drive/client/Paths.h>
 #include "ActionHandler.h"
-#include "Util.h"
-#include "Paths.h"
+#include "ClientManager.h"
 
 using namespace dfs;
 using namespace bdfs;

@@ -30,9 +30,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <HttpConfig.h>
-#include <BdSession.h>
-#include <BdKademlia.h>
+#include <drive/common/HttpConfig.h>
+#include <drive/common/BdSession.h>
+#include <drive/common/BdKademlia.h>
 #include "Options.h"
 #include "RelayManager.h"
 

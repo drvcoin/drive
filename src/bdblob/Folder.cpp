@@ -21,10 +21,10 @@
 */
 
 #include <assert.h>
+#include <drive/client/BufferedOutputStream.h>
+#include <drive/client/BufferedInputStream.h>
 #include "BlobProvider.h"
 #include "BlobApi.h"
-#include "BufferedOutputStream.h"
-#include "BufferedInputStream.h"
 #include "BlobMap.h"
 #include "Folder.h"
 
@@ -69,7 +69,7 @@ namespace bdblob
     properties.createTime = properties.modifyTime = now();
     properties.size = 0;
 
-    Buffer buffer = blobMap->GetValue(properties.id);
+    bdfs::Buffer buffer = blobMap->GetValue(properties.id);
     BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
     properties.metadata.Deserialize(stream);
 

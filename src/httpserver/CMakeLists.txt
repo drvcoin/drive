@@ -43,3 +43,4 @@ add_library(
 
 include_directories(${ROOT}/src/jsoncpp/include)
 include_directories(${ROOT}/src/mongoose)
+include_directories(${ROOT}/include)

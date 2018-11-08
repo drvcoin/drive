@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
-#include "IOutputStream.h"
-#include "IInputStream.h"
+#include <drive/client/IOutputStream.h>
+#include <drive/client/IInputStream.h>
 
 namespace bdblob
 {

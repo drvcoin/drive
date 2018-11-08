@@ -22,10 +22,10 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <drive/common/Buffer.h>
+#include <drive/client/BufferedOutputStream.h>
+#include <drive/client/BufferedInputStream.h>
 #include "BlobMap.h"
-#include "BufferedOutputStream.h"
-#include "BufferedInputStream.h"
-#include "Buffer.h"
 #include "BlobConfig.h"
 
 namespace bdblob
@@ -73,9 +73,9 @@ namespace bdblob
   }
 
 
-  static Buffer readFile(const char * path, const char * mode)
+  static bdfs::Buffer readFile(const char * path, const char * mode)
   {
-    Buffer buffer;
+    bdfs::Buffer buffer;
 
     FILE * file = fopen(path, mode);
     if (file)

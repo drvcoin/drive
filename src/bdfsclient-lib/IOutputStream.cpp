@@ -25,8 +25,8 @@
  * =============================================================================
  */
 
-#include "IOutputStream.h"
-#include "EndianUtil.h"
+#include <drive/client/IOutputStream.h>
+#include <drive/client/EndianUtil.h>
 
 namespace dfs
 {

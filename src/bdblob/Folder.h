@@ -27,10 +27,10 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <drive/client/IInputStream.h>
+#include <drive/client/IOutputStream.h>
 
 #include "BlobMetadata.h"
-#include "IInputStream.h"
-#include "IOutputStream.h"
 
 namespace bdblob
 {
