@@ -50,6 +50,7 @@ bd_lib(bdkad bdhttp ${LIBDIR}/libbdhttp.a)
 bd_lib(bdkad mongoose ${LIBDIR}/libmongoose.a)
 bd_lib(bdkad jsoncpp ${LIBDIR}/libjsoncpp.a)
 bd_lib(bdkad kad ${ROOT_KADEMLIA}/out/lib/libkad.a)
+bd_lib(bdkad bdfs-static ${LIBDIR}/libbdfs.a)
 
 bd_sys_lib(bdkad crypto)
 bd_sys_lib(bdkad curl)
