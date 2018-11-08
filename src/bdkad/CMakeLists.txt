@@ -41,7 +41,7 @@ add_executable(
 	KademliaHandler.cpp
 )
 
-include_directories(${ROOT_KADEMLIA}/src/kad)
+include_directories(${ROOT_KADEMLIA}/include)
 include_directories(${ROOT}/src/jsoncpp/include)
 include_directories(${ROOT}/src/mongoose)
 include_directories(${ROOT}/include)

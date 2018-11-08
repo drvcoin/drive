@@ -23,7 +23,7 @@
 #pragma once
 
 #include <drive/httpserver/HttpHandler.h>
-#include "Kademlia.h"
+#include <drive/kad/Kademlia.h>
 
 
 namespace bdkad

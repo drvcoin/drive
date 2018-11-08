@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <string>
 
-#include "Kademlia.h"
+#include <drive/kad/Kademlia.h>
 
 
 namespace bdkad
