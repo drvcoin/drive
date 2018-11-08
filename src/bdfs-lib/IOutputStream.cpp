@@ -25,10 +25,10 @@
  * =============================================================================
  */
 
-#include <drive/client/IOutputStream.h>
-#include <drive/client/EndianUtil.h>
+#include <drive/common/IOutputStream.h>
+#include <drive/common/EndianUtil.h>
 
-namespace dfs
+namespace bdfs
 {
   static unsigned long signature= 0x01020304UL; 
 

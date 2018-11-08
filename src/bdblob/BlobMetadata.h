@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
-#include <drive/client/IOutputStream.h>
-#include <drive/client/IInputStream.h>
+#include <drive/common/IOutputStream.h>
+#include <drive/common/IInputStream.h>
 
 namespace bdblob
 {
@@ -42,9 +42,9 @@ namespace bdblob
 
   public:
 
-    bool Serialize(dfs::IOutputStream & stream) const;
+    bool Serialize(bdfs::IOutputStream & stream) const;
 
-    bool Deserialize(dfs::IInputStream & stream);
+    bool Deserialize(bdfs::IInputStream & stream);
 
     size_t GetSerializedSize() const;
 

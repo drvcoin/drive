@@ -25,10 +25,10 @@
  * =============================================================================
  */
 
-#include <drive/client/IInputStream.h>
-#include <drive/client/EndianUtil.h>
+#include <drive/common/IInputStream.h>
+#include <drive/common/EndianUtil.h>
 
-namespace dfs
+namespace bdfs
 {
   int8_t IInputStream::ReadInt8()
   {

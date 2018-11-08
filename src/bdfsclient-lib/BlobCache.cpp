@@ -24,8 +24,8 @@
 #include <fstream>
 #include <ctime>
 #include <json/json.h>
-#include <drive/client/BufferedOutputStream.h>
-#include <drive/client/BufferedInputStream.h>
+#include <drive/common/BufferedOutputStream.h>
+#include <drive/common/BufferedInputStream.h>
 #include <drive/client/BlobCache.h>
 #include <drive/client/Paths.h>
 

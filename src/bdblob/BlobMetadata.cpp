@@ -29,7 +29,7 @@
 
 namespace bdblob
 {
-  bool BlobMetadata::Serialize(dfs::IOutputStream & stream) const
+  bool BlobMetadata::Serialize(bdfs::IOutputStream & stream) const
   {
     return_false_if(!stream.WriteUInt64(this->size));
     return_false_if(!stream.WriteUInt64(this->blockSize));
@@ -43,7 +43,7 @@ namespace bdblob
   }
 
 
-  bool BlobMetadata::Deserialize(dfs::IInputStream & stream)
+  bool BlobMetadata::Deserialize(bdfs::IInputStream & stream)
   {
     return_false_if(stream.Remainder() < (sizeof(uint64_t) + sizeof(uint64_t) + sizeof(uint32_t)));
 

@@ -25,40 +25,50 @@
  * =============================================================================
  */
 
-#pragma once
+#include <drive/common/BufferedOutputStream.h>
 
-#include <drive/client/IInputStream.h>
+#include <memory.h>
+#include <stdlib.h>
+#include <memory>
 
-namespace dfs
+namespace bdfs
 {
-  class BufferedInputStream : public IInputStream
+  BufferedOutputStream::BufferedOutputStream() : buffer(NULL), length(0), offset(0)
   {
-  private:
-    const uint8_t * buffer;
-    size_t length;
-    size_t offset;
-    bool needFree;
-    bool isValid;
+  }
 
-  public:
-    BufferedInputStream() : buffer(NULL), length(0), offset(0), needFree(false), isValid(true) { }
-    BufferedInputStream(const uint8_t * buffer, size_t length) : buffer(buffer), length(length), offset(0), needFree(false), isValid(true) {}
-    ~BufferedInputStream(void);
+  BufferedOutputStream::~BufferedOutputStream()
+  {
+    free(this->buffer);
+  }
 
-    bool Initialize(IInputStream * stream);
-    bool Initialize(const uint8_t * buffer, size_t length);
+  bool BufferedOutputStream::EnsureBuffer(size_t length)
+  {
+    if ((this->offset + length) > this->length)
+    {
+      this->length = this->length + length + 64;
 
-    const void * Buffer() { return buffer; }
-    const void * BufferAt(size_t offset) { return buffer + offset; }
-    void Rewind(size_t bytes) { offset -= bytes; }
-    void Skip(size_t bytes) { offset += bytes; }
+      this->length &= ~63;
 
-    // IInputStream members
-    size_t Length() { return length; }
-    size_t Offset() { return offset; }
-    size_t Remainder() { return length - offset; }
-    size_t Read(void * buffer, size_t length);
-    size_t Peek(void * buffer, size_t length);
-    bool IsValid() { return isValid; }
-  };
+      this->buffer = (uint8_t *)realloc(this->buffer, this->length);
+
+      if (this->buffer == NULL)
+      {
+        throw std::bad_alloc();
+      }
+    }
+
+    return true;
+  }
+
+  size_t BufferedOutputStream::Write(const void * ary, size_t length)
+  {
+    EnsureBuffer(length);
+
+    memcpy(buffer + offset, ary, length);
+
+    this->offset += length;
+
+    return length;
+  }
 }

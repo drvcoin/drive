@@ -23,8 +23,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <drive/common/Buffer.h>
-#include <drive/client/BufferedOutputStream.h>
-#include <drive/client/BufferedInputStream.h>
+#include <drive/common/BufferedOutputStream.h>
+#include <drive/common/BufferedInputStream.h>
 #include "BlobMap.h"
 #include "BlobConfig.h"
 
@@ -58,7 +58,7 @@ namespace bdblob
         BlobMetadata metadata;
         if (blobMap->GetMetadata(val, metadata))
         {
-          dfs::BufferedOutputStream stream;
+          bdfs::BufferedOutputStream stream;
           if (metadata.Serialize(stream))
           {
             fwrite(stream.Buffer(), 1, stream.Offset(), file);
@@ -109,7 +109,7 @@ namespace bdblob
     buffer = readFile("blob_root.metadata", "rb");
     if (buffer.Size() > 0)
     {
-      dfs::BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
+      bdfs::BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
       BlobMetadata metadata;
       if (metadata.Deserialize(stream))
       {

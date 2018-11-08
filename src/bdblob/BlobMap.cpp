@@ -22,8 +22,8 @@
 
 #include <string.h>
 #include <unistd.h>
-#include <drive/client/BufferedOutputStream.h>
-#include <drive/client/BufferedInputStream.h>
+#include <drive/common/BufferedOutputStream.h>
+#include <drive/common/BufferedInputStream.h>
 #include "BlobMap.h"
 
 namespace bdblob
@@ -123,7 +123,7 @@ namespace bdblob
 
   void BlobMap::SetMetadata(std::string key, const BlobMetadata & metadata)
   {
-    dfs::BufferedOutputStream stream;
+    bdfs::BufferedOutputStream stream;
     if (metadata.Serialize(stream))
     {
       this->SetValue(std::move(key), stream.Buffer(), stream.Offset());
@@ -139,7 +139,7 @@ namespace bdblob
       return false;
     }
 
-    dfs::BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
+    bdfs::BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
     return metadata.Deserialize(stream);
   }
 

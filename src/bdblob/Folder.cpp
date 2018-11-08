@@ -21,8 +21,8 @@
 */
 
 #include <assert.h>
-#include <drive/client/BufferedOutputStream.h>
-#include <drive/client/BufferedInputStream.h>
+#include <drive/common/BufferedOutputStream.h>
+#include <drive/common/BufferedInputStream.h>
 #include "BlobProvider.h"
 #include "BlobApi.h"
 #include "BlobMap.h"
@@ -35,7 +35,6 @@
 
 namespace bdblob
 {
-  using namespace dfs;
   static const uint64_t FOLDER_BLOB_UNIT_SIZE = 64 * 1024;
 
   static inline uint32_t now()
@@ -70,7 +69,7 @@ namespace bdblob
     properties.size = 0;
 
     bdfs::Buffer buffer = blobMap->GetValue(properties.id);
-    BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
+    bdfs::BufferedInputStream stream{static_cast<const uint8_t *>(buffer.Buf()), buffer.Size()};
     properties.metadata.Deserialize(stream);
 
     if (parent)
@@ -111,7 +110,7 @@ namespace bdblob
     size_t len = blob->Read(0, buffer, blob->Size());
     if (len > 0)
     {
-      BufferedInputStream stream{buffer, len};
+      bdfs::BufferedInputStream stream{buffer, len};
       success = folder->Deserialize(stream);
       if (success)
       {
@@ -212,7 +211,7 @@ namespace bdblob
 
     return_false_if(!blob);
 
-    BufferedOutputStream stream;
+    bdfs::BufferedOutputStream stream;
     return_false_if(!this->Serialize(stream));
 
     return_false_if(blob->Write(0, stream.Buffer(), stream.Offset()) < stream.Offset());
@@ -224,7 +223,7 @@ namespace bdblob
   }
 
 
-  bool Folder::Serialize(IOutputStream & stream)
+  bool Folder::Serialize(bdfs::IOutputStream & stream)
   {
     return_false_if(!stream.WriteUInt32(MAGIC_HEADER));
 
@@ -242,7 +241,7 @@ namespace bdblob
   }
 
 
-  bool Folder::Deserialize(IInputStream & stream)
+  bool Folder::Deserialize(bdfs::IInputStream & stream)
   {
     return_false_if(stream.Remainder() < sizeof(uint32_t));
     return_false_if(stream.ReadUInt32() != MAGIC_HEADER);
@@ -287,7 +286,7 @@ namespace bdblob
   }
 
 
-  bool Folder::SerializeEntry(IOutputStream & stream, const Entry & entry)
+  bool Folder::SerializeEntry(bdfs::IOutputStream & stream, const Entry & entry)
   {
     return_false_if(!stream.WriteString(entry.id));
     return_false_if(!stream.WriteUInt8(static_cast<uint8_t>(entry.type)));
@@ -300,7 +299,7 @@ namespace bdblob
   }
 
 
-  bool Folder::DeserializeEntry(IInputStream & stream, Entry & entry)
+  bool Folder::DeserializeEntry(bdfs::IInputStream & stream, Entry & entry)
   {
     return_false_if(stream.Remainder() < sizeof(uint32_t));
 

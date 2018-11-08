@@ -27,8 +27,8 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <drive/client/IInputStream.h>
-#include <drive/client/IOutputStream.h>
+#include <drive/common/IInputStream.h>
+#include <drive/common/IOutputStream.h>
 
 #include "BlobMetadata.h"
 
@@ -85,9 +85,9 @@ namespace bdblob
 
     std::unique_ptr<Folder> GetParentFolder() const;
 
-    bool Serialize(dfs::IOutputStream & stream);
+    bool Serialize(bdfs::IOutputStream & stream);
 
-    bool Deserialize(dfs::IInputStream & stream);
+    bool Deserialize(bdfs::IInputStream & stream);
 
     bool UpdateMetadataCache(bool includeThis = false) const;
 
@@ -95,9 +95,9 @@ namespace bdblob
 
     const Entry * Parent() const;
 
-    static bool SerializeEntry(dfs::IOutputStream & stream, const Entry & entry);
+    static bool SerializeEntry(bdfs::IOutputStream & stream, const Entry & entry);
 
-    static bool DeserializeEntry(dfs::IInputStream & stream, Entry & entry);
+    static bool DeserializeEntry(bdfs::IInputStream & stream, Entry & entry);
 
     static size_t GetEntrySerializedSize(const Entry & entry);
 

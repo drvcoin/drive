@@ -44,15 +44,19 @@ add_library(
 	BdSession.cpp
 	BdTypes.cpp
 	Buffer.cpp
+  BufferedInputStream.cpp
+  BufferedOutputStream.cpp
 	Contract.cpp
 	ContractTerm.cpp
 	Digest.cpp
 	Event.cpp
-        EcdsaKey.cpp
+  EcdsaKey.cpp
 	HexEncoder.cpp
 	HostInfo.cpp
 	HttpCookies.cpp
 	HttpRequest.cpp
+  IInputStream.cpp
+  IOutputStream.cpp
 	KeyBase.cpp
 	KeyManager.cpp
 	ScopeGuard.cpp
